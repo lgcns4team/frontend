@@ -1,4 +1,4 @@
-# 🍔 AI Smart Kiosk (Frontend)
+# ☕ AI Smart Kiosk (Frontend)
 
 > 대상인식과 실시간 대화 기능이 탑재된 스마트 키오스크 프론트엔드 프로젝트입니다.** <br/>
 > React 18과 Vite 5를 기반으로 구축되었으며, 엄격한 버전 관리를 통해 안정성을 보장합니다.
