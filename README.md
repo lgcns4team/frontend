@@ -89,3 +89,35 @@ chrome.exe --kiosk "http://localhost:5173" --disable-pinch --overscroll-history-
 
 ```
 
+```Bash
+
+react:                 18.2.0
+react-dom:             18.2.0
+vite:                  5.0.8
+@vitejs/plugin-react:  4.2.1
+typescript:            5.3.3
+react-router-dom:      6.22.1
+axios:                 1.6.5
+tailwindcss:           3.4.1
+postcss:               8.4.33
+autoprefixer:          10.4.16
+zustand:               4.5.2
+zod:                   3.22.4
+socket.io-client:      4.7.2 (선택)
+
+⭐ 이것들 한 번에 설치하는 명령어
+1 기본 의존성
+npm install react@18.2.0 react-dom@18.2.0
+npm install react-router-dom@6.22.1
+npm install axios@1.6.5
+npm install zustand@4.5.2
+npm install zod@3.22.4
+
+2 개발 의존성
+npm install -D vite@5.0.8 @vitejs/plugin-react@4.2.1
+npm install -D typescript@5.3.3
+npm install -D tailwindcss@3.4.1 postcss@8.4.33 autoprefixer@10.4.16
+
+3 WebSocket 옵션
+npm install socket.io-client@4.7.2
+```
