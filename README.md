@@ -13,12 +13,12 @@
 | Category | Technology | Version (Fixed) | Description |
 | :--- | :--- | :--- | :--- |
 | **Runtime** | **Node.js** | **20.x (LTS)** | 실행 환경 (필수) |
-| **Framework** | React | 18.x | UI 라이브러리 |
-| **Build Tool** | Vite | 5.x | 초고속 빌드 도구 |
-| **Language** | TypeScript | 5.x | 정적 타입 언어 |
-| **Styling** | Tailwind CSS | 3.x | 유틸리티 퍼스트 CSS |
-| **Routing** | React Router | 6.x | SPA 라우팅 |
-| **HTTP** | Axios | 1.x | API 통신 |
+| **Framework** | React | 18.2.0 | UI 라이브러리 |
+| **Build Tool** | Vite | 5.0.8 | 초고속 빌드 도구 |
+| **Language** | TypeScript | 5.3.3 | 정적 타입 언어 |
+| **Styling** | Tailwind CSS | 3.4.1 | 유틸리티 퍼스트 CSS |
+| **Routing** | React Router | 6.22.1 | SPA 라우팅 |
+| **HTTP** | Axios | 1.6.5 | API 통신 |
 | **Realtime** | WebSocket | Native | 실시간 주문/음성 데이터 전송 |
 
 ---
