@@ -1,11 +1,25 @@
+import { Routes, Route } from 'react-router-dom'
+import AdScreen from './pages/AdScreen'
+import Order from './pages/Order'
+import Voice from './pages/Voice'
+import Payment from './pages/Payment'
+import Easy from './pages/Easy'
+import { Toaster } from '@/components/ui/toaster'
+
 function App() {
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-gray-900">
-      <h1 className="text-5xl font-bold text-blue-500">
-        키오스크 설정 완료! 🚀
-      </h1>
-    </div>
+    <>
+      <Routes>
+        <Route path="/" element={<AdScreen />} />
+        <Route path="/order" element={<Order />} />
+        <Route path="/voice" element={<Voice />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/easy" element={<Easy />} />
+      </Routes>
+      <Toaster />
+    </>
   )
 }
 
 export default App
+
