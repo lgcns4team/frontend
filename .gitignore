@@ -1,0 +1,98 @@
+# ===========================
+# 기본 Node / Vite / React
+# ===========================
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Vite cache
+.vite/
+vite.config.ts.timestamp-*
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Env files (DO NOT COMMIT)
+.env
+.env.*
+!.env.example
+
+# ===========================
+# Tailwind / PostCSS
+# ===========================
+.postcssrc
+.postcssrc.js
+.postcssrc.json
+
+# ===========================
+# nvm / npm / cache
+# ===========================
+.npm/
+.nvm/
+.cache/
+*.cache/
+*.pid
+*.seed
+*.tgz
+*.tmp
+
+# ===========================
+# Editor / IDE 관련
+# ===========================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+.ionide
+.idea/
+*.iml
+
+# ===========================
+# macOS ======================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+*.icloud
+
+# ===========================
+# Windows ====================
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
