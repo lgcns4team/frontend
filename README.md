@@ -120,4 +120,45 @@ npm install -D tailwindcss@3.4.1 postcss@8.4.33 autoprefixer@10.4.16
 
 3 WebSocket 옵션
 npm install socket.io-client@4.7.2
+
+## 🔀 Routing 구조 (Frontend)
+
+프론트엔드는 `react-router-dom@6`을 사용하여 SPA 라우팅을 구성했습니다.  
+주요 경로와 화면 역할은 아래와 같습니다.
+
+| Path        | Component   | Description                                  |
+|------------|------------|----------------------------------------------|
+| `/`        | `AdScreen` | 키오스크 대기/광고 화면. 최초 진입 화면입니다. |
+| `/order`   | `Order`    | 메뉴를 선택하고 장바구니에 담는 주문 화면입니다. |
+| `/voice`   | `Voice`    | 음성 인식 기반 AI 주문/대화가 이루어지는 화면입니다. |
+| `/payment` | `Payment`  | 주문 내역 확인 및 결제를 진행하는 화면입니다. |
+| `/easy`    | `Easy`     | 고령자/초보자용 쉬운 모드 UI 화면입니다.      |
+
+라우팅 설정은 `src/App.tsx`에서 관리하며, `Routes` / `Route` 컴포넌트를 통해 각 경로와 페이지 컴포넌트를 매핑합니다.
+
+```tsx
+// src/App.tsx
+import { Routes, Route } from "react-router-dom";
+import AdScreen from "@/src/pages/AdScreen";
+import Order from "@/src/pages/Order";
+import Voice from "@/src/pages/Voice";
+import Payment from "@/src/pages/Payment";
+import Easy from "@/src/pages/Easy";
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<AdScreen />} />
+      <Route path="/order" element={<Order />} />
+      <Route path="/voice" element={<Voice />} />
+      <Route path="/payment" element={<Payment />} />
+      <Route path="/easy" element={<Easy />} />
+    </Routes>
+  );
+}
+
+export default App;
+
+
+
 ```
