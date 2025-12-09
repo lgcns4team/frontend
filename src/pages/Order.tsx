@@ -1,34 +1,27 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Volume2, Sparkles } from "lucide-react";
-
 // 컴포넌트들 Import
 import { useMenu } from "../hooks/UseMenu";
-import { useCartStore } from "../store/UseCartStore";
+import { useCartStore } from "../store/UseCartStore"; 
 import MenuGrid from "../components/MenuGrid";
 import BeverageOptionsModal from "../components/BeverageOptionsModal";
-import BottomCart from "../components/BottomCart"; // 하단 고정 바
-import CartSheet from "../components/CartSheet";   // [부활] 상세 팝업
-
+import BottomCart from "../components/BottomCart"; 
+import CartSheet from "../components/CartSheet";   
 import type { MenuItem } from "../types";
 
 export default function Order() {
   const navigate = useNavigate();
-  
   const { items, categories, isLoading } = useMenu();
-  const { cart, addToCart, removeFromCart, updateQuantity, clearCart } = useCartStore(); // CartSheet에 넘겨줄 함수들 추가
-
+  const { cart, addToCart, removeFromCart, updateQuantity, clearCart } = useCartStore();
   const [activeCategory, setActiveCategory] = useState("추천메뉴");
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  
-  // [부활] 팝업 열림/닫힘 상태 관리
   const [isCartOpen, setIsCartOpen] = useState(false);
-
   const filteredItems = useMemo(() => {
     return activeCategory === "추천메뉴"
       ? items
       : items.filter((item) => item.category === activeCategory);
-  }, [activeCategory, items]);
+  }, [activeCategory, items]);  
 
   return (
     // 90도 회전 래퍼
@@ -75,7 +68,6 @@ export default function Order() {
         </main>
 
         {/* 4. 하단 고정 바 (BottomCart) */}
-        {/* 여기서 [주문확인]을 누르면 -> 결제가 아니라 -> 팝업(isCartOpen)을 엽니다 */}
         <BottomCart onCheckout={() => setIsCartOpen(true)} />
 
         {/* 5. 옵션 모달 */}
@@ -89,14 +81,11 @@ export default function Order() {
           }}
         />
         
-        {/* 6. [부활] 장바구니 상세 팝업 (CartSheet) */}
-        {/* 여기서 최종 [결제하기]를 눌러야 진짜 결제 페이지로 갑니다 */}
         <CartSheet
           isOpen={isCartOpen}
           cart={cart}
           onClose={() => setIsCartOpen(false)}
           onCheckout={() => {
-            // alert("결제 페이지로 이동!"); // 테스트용
             navigate("/payment"); // 실제 이동
           }}
           onUpdateQuantity={updateQuantity}

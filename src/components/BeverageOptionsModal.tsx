@@ -6,7 +6,7 @@ type Props = {
   open: boolean;
   item: MenuItem | null;
   onClose: () => void;
-  // [수정 1] quantity를 별도 인자로 분리
+  // [유지] 수량(quantity) 분리 (에러 방지용)
   onAdd: (item: MenuItem, options: Options, quantity: number) => void;
 };
 
@@ -63,7 +63,7 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
 
   if (!open || !item) return null;
 
-  const isTea = item.name?.includes('티') || false;
+  const isTea = item.name?.includes('티') || item.category === '음료';
   const isCoffee = item.category === '커피';
 
   return (
@@ -79,162 +79,200 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="w-[90%] max-w-[800px] h-[80vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          transition={{ type: 'spring', damping: 20 }}
+          className="w-[44rem] max-h-[85vh] bg-white rounded-2xl shadow-2xl flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex h-full overflow-hidden">
-            {/* 왼쪽 */}
-            <div className="w-2/5 p-6 border-r flex flex-col items-center justify-center bg-gray-50">
-              <div className="w-48 h-48 bg-gray-200 rounded-full mb-6 overflow-hidden shadow-md">
+          <div className="flex-grow flex overflow-hidden">
+            {/* [왼쪽] 이미지 및 수량 */}
+            <div className="w-2/5 p-6 flex flex-col items-center justify-center border-r">
+              <div className="w-48 h-48 bg-gray-100 rounded-full mb-4 overflow-hidden">
                 {item.img ? (
                   <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="text-gray-400">No Image</div>
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    No Image
+                  </div>
                 )}
               </div>
-              <h3 className="font-bold text-2xl text-gray-900 text-center mb-2">{item.name}</h3>
-              <p className="text-3xl font-extrabold text-orange-600 mb-8">
+              <h3 className="font-bold text-xl text-center">{item.name}</h3>
+              <p className="text-red-600 font-bold text-2xl my-4">
                 {finalPrice.toLocaleString()}원
               </p>
-
-              <div className="flex items-center gap-6 bg-white px-6 py-3 rounded-full shadow-sm border border-gray-200">
-                <button
-                  onClick={() => handleQuantityChange(-1)}
-                  className="text-3xl w-8 h-8 text-gray-400 hover:text-black"
-                >
-                  -
-                </button>
-                <span className="text-2xl font-bold w-8 text-center text-gray-800">{quantity}</span>
-                <button
-                  onClick={() => handleQuantityChange(1)}
-                  className="text-3xl w-8 h-8 text-gray-400 hover:text-black"
-                >
-                  +
-                </button>
+              <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center gap-4 bg-white rounded-full px-4 py-2 border border-gray-200 shadow-sm">
+                  <button
+                    onClick={() => handleQuantityChange(-1)}
+                    className="text-2xl font-light hover:text-red-500 transition-colors"
+                  >
+                    -
+                  </button>
+                  <span className="font-bold text-xl w-8 text-center">{quantity}</span>
+                  <button
+                    onClick={() => handleQuantityChange(1)}
+                    className="text-2xl font-light hover:text-red-500 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* 오른쪽 */}
-            <div className="w-3/5 p-8 overflow-y-auto bg-white scrollbar-hide">
-              <div className="mb-8">
-                <h4 className="font-bold text-lg mb-3">1. 온도</h4>
-                <div className="flex gap-3">
-                  {['hot', 'cold'].map((t) => (
+            {/* [오른쪽] 옵션 선택 (원래 디자인 복구) */}
+            <div className="w-3/5 p-6 overflow-y-auto">
+              <div className="space-y-4">
+                {/* 1. 온도 */}
+                <div className="py-4 border-b">
+                  <h4 className="font-bold mb-3">1. 온도(hot or ice)</h4>
+                  <div className="flex gap-2">
                     <button
-                      key={t}
-                      onClick={() => setOptions((prev) => ({ ...prev, temperature: t as any }))}
-                      className={`flex-1 py-4 rounded-xl border-2 font-bold text-lg ${
-                        options.temperature === t
-                          ? t === 'hot'
-                            ? 'border-red-500 bg-red-50 text-red-600'
-                            : 'border-blue-500 bg-blue-50 text-blue-600'
-                          : 'border-gray-100 text-gray-400'
+                      onClick={() => setOptions((s) => ({ ...s, temperature: 'hot' }))}
+                      className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
+                        options.temperature === 'hot'
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-200 bg-white'
                       }`}
                     >
-                      {t === 'hot' ? 'HOT 🔥' : 'ICE 🧊'}
+                      <span className="text-2xl">🔥</span>
+                      <span>핫</span>
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <h4 className="font-bold text-lg mb-3">2. 사이즈</h4>
-                <div className="flex gap-3">
-                  {['tall', 'grande', 'venti'].map((s) => (
                     <button
-                      key={s}
-                      onClick={() => setOptions((prev) => ({ ...prev, size: s as any }))}
-                      className={`flex-1 py-4 rounded-xl border-2 font-bold uppercase text-lg ${
-                        options.size === s
-                          ? 'border-gray-900 bg-gray-900 text-white'
-                          : 'border-gray-100 text-gray-400'
+                      onClick={() => setOptions((s) => ({ ...s, temperature: 'cold' }))}
+                      className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
+                        options.temperature === 'cold'
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-200 bg-white'
                       }`}
                     >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {isCoffee && !isTea && (
-                <div className="mb-8">
-                  <h4 className="font-bold text-lg mb-3">3. 커피 옵션</h4>
-                  <div className="flex gap-3 mb-3">
-                    <button
-                      onClick={() => setOptions((s) => ({ ...s, isWeak: !s.isWeak }))}
-                      className={`flex-1 py-3 rounded-xl border-2 font-bold ${
-                        options.isWeak
-                          ? 'border-orange-500 bg-orange-50 text-orange-600'
-                          : 'border-gray-100 text-gray-400'
-                      }`}
-                    >
-                      연하게 💧
+                      <span className="text-2xl">❄️</span>
+                      <span>아이스</span>
                     </button>
                   </div>
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <span className="font-bold text-gray-600">샷 추가 (+500원)</span>
-                    <div className="flex items-center gap-4">
+                </div>
+
+                {/* 2. 사이즈 */}
+                <div className="py-4 border-b">
+                  <h4 className="font-bold mb-3">2. 사이즈</h4>
+                  <div className="flex gap-2">
+                    {['tall', 'grande', 'venti'].map((size) => (
                       <button
-                        onClick={() => handleShotChange(-1)}
-                        className="w-8 h-8 rounded-full bg-white border text-gray-500 hover:text-black"
+                        key={size}
+                        onClick={() => setOptions((s) => ({ ...s, size: size as any }))}
+                        className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
+                          options.size === size
+                            ? 'border-red-500 bg-red-50'
+                            : 'border-gray-200 bg-white'
+                        }`}
                       >
-                        -
+                        <span className="text-2xl">🥤</span>
+                        <span className="capitalize">{size}</span>
                       </button>
-                      <span className="font-bold text-lg w-4 text-center">{options.shot}</span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. 얼음 양 (아이스일 때만) */}
+                {options.temperature === 'cold' && (
+                  <div className="py-4 border-b">
+                    <h4 className="font-bold mb-3">3. 얼음 양</h4>
+                    <div className="flex gap-2">
+                      {['less', 'normal', 'more'].map((ice) => (
+                        <button
+                          key={ice}
+                          onClick={() => setOptions((s) => ({ ...s, ice: ice as any }))}
+                          className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
+                            options.ice === ice
+                              ? 'border-red-500 bg-red-50'
+                              : 'border-gray-200 bg-white'
+                          }`}
+                        >
+                          <span className="text-2xl">🧊</span>
+                          <span className="capitalize">
+                            {ice === 'less' ? '적게' : ice === 'normal' ? '보통' : '많게'}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. 커피 옵션 (샷/연하게) */}
+                {isCoffee && !isTea && (
+                  <div className="py-4 border-b">
+                    <h4 className="font-bold mb-3">4. 샷 추가 (+500원)</h4>
+                    <div className="flex items-center justify-center gap-4">
                       <button
-                        onClick={() => handleShotChange(1)}
-                        className="w-8 h-8 rounded-full bg-white border text-gray-500 hover:text-black"
+                        onClick={() => setOptions((s) => ({ ...s, isWeak: !s.isWeak }))}
+                        className={`flex flex-col items-center px-6 py-2 rounded-lg border-2 ${
+                          options.isWeak ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
+                        }`}
                       >
-                        +
+                        <span className="text-2xl">💧</span>
+                        <span>연하게</span>
+                      </button>
+                      <div className="flex items-center gap-4 bg-white rounded-full px-4 py-2 border border-gray-200 shadow-sm">
+                        <button
+                          onClick={() => handleShotChange(-1)}
+                          className="text-xl hover:text-red-500 transition-colors"
+                        >
+                          -
+                        </button>
+                        <span className="font-bold text-lg w-6 text-center">{options.shot}</span>
+                        <button
+                          onClick={() => handleShotChange(1)}
+                          className="text-xl hover:text-red-500 transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. 휘핑 옵션 */}
+                {!isTea && (
+                  <div className="py-4">
+                    <h4 className="font-bold mb-3">{isCoffee ? '5.' : '4.'} 휘핑</h4>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setOptions((s) => ({ ...s, whip: true }))}
+                        className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
+                          options.whip ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
+                        }`}
+                      >
+                        <span className="text-2xl">🍦</span>
+                        <span>추가</span>
+                      </button>
+                      <button
+                        onClick={() => setOptions((s) => ({ ...s, whip: false }))}
+                        className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
+                          !options.whip ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
+                        }`}
+                      >
+                        <span className="text-2xl">🚫</span>
+                        <span>없음</span>
                       </button>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {!isTea && (
-                <div>
-                  <h4 className="font-bold text-lg mb-3">{isCoffee ? '4.' : '3.'} 휘핑 옵션</h4>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setOptions((s) => ({ ...s, whip: true }))}
-                      className={`flex-1 py-3 rounded-xl border-2 font-bold ${
-                        options.whip
-                          ? 'border-pink-500 bg-pink-50 text-pink-600'
-                          : 'border-gray-100 text-gray-400'
-                      }`}
-                    >
-                      휘핑 추가 ☁️
-                    </button>
-                    <button
-                      onClick={() => setOptions((s) => ({ ...s, whip: false }))}
-                      className={`flex-1 py-3 rounded-xl border-2 font-bold ${
-                        !options.whip
-                          ? 'border-gray-900 bg-gray-900 text-white'
-                          : 'border-gray-100 text-gray-400'
-                      }`}
-                    >
-                      휘핑 없음 🚫
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="p-4 border-t border-gray-100 flex gap-3 bg-white">
+          {/* [하단 버튼] */}
+          <div className="grid grid-cols-2 gap-3 p-4 border-t">
             <button
               onClick={onClose}
-              className="flex-1 py-4 rounded-xl border-2 border-gray-200 font-bold text-gray-500 hover:bg-gray-50 text-lg"
+              className="w-full bg-white text-red-500 border-2 border-red-500 rounded-lg py-3 font-bold text-lg"
             >
-              취소하기
+              이전으로
             </button>
-            {/* [수정 2] onAdd 호출 시 options와 quantity를 따로 전달 */}
             <button
+              // 조정된 가격으로 아이템 전달
               onClick={() => onAdd({ ...item, price: unitPrice }, options, quantity)}
-              className="flex-[2] py-4 rounded-xl bg-orange-600 text-white font-bold text-xl shadow-lg hover:bg-orange-700"
+              className="w-full bg-red-500 text-white rounded-lg py-3 font-bold text-lg"
             >
-              {finalPrice.toLocaleString()}원 담기
+              주문하기 (담기)
             </button>
           </div>
         </motion.div>
