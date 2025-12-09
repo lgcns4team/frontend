@@ -95,22 +95,22 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                   </div>
                 )}
               </div>
-              <h3 className="font-bold text-xl text-center">{item.name}</h3>
-              <p className="text-red-600 font-bold text-2xl my-4">
+              <h3 className="font-bold text-3xl text-center">{item.name}</h3>
+              <p className="text-red-600 font-bold text-4xl my-4">
                 {finalPrice.toLocaleString()}원
               </p>
               <div className="flex items-center justify-center gap-2">
-                <div className="flex items-center gap-4 bg-white rounded-full px-4 py-2 border border-gray-200 shadow-sm">
+                <div className="flex items-center gap-6 bg-white rounded-full px-6 py-3 border border-gray-200 shadow-sm">
                   <button
                     onClick={() => handleQuantityChange(-1)}
-                    className="text-2xl font-light hover:text-red-500 transition-colors"
+                    className="text-3xl font-light hover:text-red-500 transition-colors"
                   >
                     -
                   </button>
-                  <span className="font-bold text-xl w-8 text-center">{quantity}</span>
+                  <span className="font-bold text-2xl w-10 text-center">{quantity}</span>
                   <button
                     onClick={() => handleQuantityChange(1)}
-                    className="text-2xl font-light hover:text-red-500 transition-colors"
+                    className="text-3xl font-light hover:text-red-500 transition-colors"
                   >
                     +
                   </button>
@@ -123,7 +123,7 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
               <div className="space-y-4">
                 {/* 1. 온도 */}
                 <div className="py-4 border-b">
-                  <h4 className="font-bold mb-3">1. 온도(hot or ice)</h4>
+                  <h4 className="font-bold text-xl mb-3">1. 온도(hot or ice)</h4>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setOptions((s) => ({ ...s, temperature: 'hot' }))}
@@ -133,8 +133,8 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                           : 'border-gray-200 bg-white'
                       }`}
                     >
-                      <span className="text-2xl">🔥</span>
-                      <span>핫</span>
+                      <span className="text-3xl">🔥</span>
+                      <span className="text-lg font-semibold">핫</span>
                     </button>
                     <button
                       onClick={() => setOptions((s) => ({ ...s, temperature: 'cold' }))}
@@ -144,15 +144,15 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                           : 'border-gray-200 bg-white'
                       }`}
                     >
-                      <span className="text-2xl">❄️</span>
-                      <span>아이스</span>
+                      <span className="text-3xl">❄️</span>
+                      <span className="text-lg font-semibold">아이스</span>
                     </button>
                   </div>
                 </div>
 
                 {/* 2. 사이즈 */}
                 <div className="py-4 border-b">
-                  <h4 className="font-bold mb-3">2. 사이즈</h4>
+                  <h4 className="font-bold text-xl mb-3">2. 사이즈</h4>
                   <div className="flex gap-2">
                     {['tall', 'grande', 'venti'].map((size) => (
                       <button
@@ -164,8 +164,8 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                             : 'border-gray-200 bg-white'
                         }`}
                       >
-                        <span className="text-2xl">🥤</span>
-                        <span className="capitalize">{size}</span>
+                        <span className="text-3xl">🥤</span>
+                        <span className="capitalize text-lg font-semibold">{size}</span>
                       </button>
                     ))}
                   </div>
@@ -174,7 +174,7 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                 {/* 3. 얼음 양 (아이스일 때만) */}
                 {options.temperature === 'cold' && (
                   <div className="py-4 border-b">
-                    <h4 className="font-bold mb-3">3. 얼음 양</h4>
+                    <h4 className="font-bold text-xl mb-3">3. 얼음 양</h4>
                     <div className="flex gap-2">
                       {['less', 'normal', 'more'].map((ice) => (
                         <button
@@ -186,8 +186,8 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                               : 'border-gray-200 bg-white'
                           }`}
                         >
-                          <span className="text-2xl">🧊</span>
-                          <span className="capitalize">
+                          <span className="text-3xl">🧊</span>
+                          <span className="capitalize text-lg font-semibold">
                             {ice === 'less' ? '적게' : ice === 'normal' ? '보통' : '많게'}
                           </span>
                         </button>
@@ -199,7 +199,7 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                 {/* 4. 커피 옵션 (샷/연하게) */}
                 {isCoffee && !isTea && (
                   <div className="py-4 border-b">
-                    <h4 className="font-bold mb-3">4. 샷 추가 (+500원)</h4>
+                    <h4 className="font-bold text-xl mb-3">4. 샷 추가 (+500원)</h4>
                     <div className="flex items-center justify-center gap-4">
                       <button
                         onClick={() => setOptions((s) => ({ ...s, isWeak: !s.isWeak }))}
@@ -207,20 +207,20 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                           options.isWeak ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
                         }`}
                       >
-                        <span className="text-2xl">💧</span>
-                        <span>연하게</span>
+                        <span className="text-3xl">💧</span>
+                        <span className="text-lg font-semibold">연하게</span>
                       </button>
-                      <div className="flex items-center gap-4 bg-white rounded-full px-4 py-2 border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-5 bg-white rounded-full px-5 py-3 border border-gray-200 shadow-sm">
                         <button
                           onClick={() => handleShotChange(-1)}
-                          className="text-xl hover:text-red-500 transition-colors"
+                          className="text-2xl hover:text-red-500 transition-colors"
                         >
                           -
                         </button>
-                        <span className="font-bold text-lg w-6 text-center">{options.shot}</span>
+                        <span className="font-bold text-2xl w-8 text-center">{options.shot}</span>
                         <button
                           onClick={() => handleShotChange(1)}
-                          className="text-xl hover:text-red-500 transition-colors"
+                          className="text-2xl hover:text-red-500 transition-colors"
                         >
                           +
                         </button>
@@ -232,7 +232,7 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                 {/* 5. 휘핑 옵션 */}
                 {!isTea && (
                   <div className="py-4">
-                    <h4 className="font-bold mb-3">{isCoffee ? '5.' : '4.'} 휘핑</h4>
+                    <h4 className="font-bold text-xl mb-3">{isCoffee ? '5.' : '4.'} 휘핑</h4>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setOptions((s) => ({ ...s, whip: true }))}
@@ -240,8 +240,8 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                           options.whip ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
                         }`}
                       >
-                        <span className="text-2xl">🍦</span>
-                        <span>추가</span>
+                        <span className="text-3xl">🍦</span>
+                        <span className="text-lg font-semibold">추가</span>
                       </button>
                       <button
                         onClick={() => setOptions((s) => ({ ...s, whip: false }))}
@@ -249,8 +249,8 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                           !options.whip ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
                         }`}
                       >
-                        <span className="text-2xl">🚫</span>
-                        <span>없음</span>
+                        <span className="text-3xl">🚫</span>
+                        <span className="text-lg font-semibold">없음</span>
                       </button>
                     </div>
                   </div>
@@ -263,14 +263,14 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
           <div className="grid grid-cols-2 gap-3 p-4 border-t">
             <button
               onClick={onClose}
-              className="w-full bg-white text-red-500 border-2 border-red-500 rounded-lg py-3 font-bold text-lg"
+              className="w-full bg-white text-red-500 border-2 border-red-500 rounded-lg py-4 font-bold text-xl"
             >
               이전으로
             </button>
             <button
               // 조정된 가격으로 아이템 전달
               onClick={() => onAdd({ ...item, price: unitPrice }, options, quantity)}
-              className="w-full bg-red-500 text-white rounded-lg py-3 font-bold text-lg"
+              className="w-full bg-red-500 text-white rounded-lg py-4 font-bold text-xl"
             >
               주문하기 (담기)
             </button>
