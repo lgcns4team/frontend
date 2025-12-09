@@ -1,22 +1,22 @@
 export type MenuItem = {
-    id: number;
-    name: string;
-    price: number;
-    category: string;
-    img: string;
-  };
-  
-  export type Options = {
-    temperature: "hot" | "cold";
-    whip: boolean;
-    shot: number;
-    size: "tall" | "grande" | "venti"; // string에서 구체화
-    ice: "less" | "normal" | "more"; // string에서 구체화
-    isWeak?: boolean;
-  };
-  
-  export type CartItem = MenuItem & {
-    cartId: string;
-    quantity: number;
-    options?: Partial<Options>;
-  };
+  id: number;
+  name: string;
+  price: number;
+  category: string;
+  img: string;
+};
+
+export type Options = {
+  temperature: "hot" | "cold";
+  size: "tall" | "grande" | "venti";
+  ice: "less" | "normal" | "more"; // 얼음 옵션
+  shot: number;                    // 샷 개수
+  whip: boolean;                   // 휘핑 여부
+  isWeak: boolean;                 // 연하게 여부
+};
+
+export type CartItem = MenuItem & {
+  cartId: string;
+  quantity: number;
+  options?: Partial<Options>;
+};
