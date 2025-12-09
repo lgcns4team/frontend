@@ -120,7 +120,7 @@ export default function BottomCart({ onCheckout }: Props) {
           }`}
         >
           <CreditCard className="w-11 h-11 mb-1" />
-          <span className="text-4xl font-extrabold leading-none">주문확인</span>
+          <span className="text-3xl font-bold leading-none">주문확인</span>
         </button>
       </div>
     </div>
