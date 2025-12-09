@@ -1,7 +1,6 @@
-import { useEffect, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import type { MenuItem, Options } from "../types";
-import { calculateItemPrice } from "../utils/pricing";
+import { useEffect, useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { MenuItem, Options } from '../types';
 
 type Props = {
   open: boolean;
@@ -11,19 +10,14 @@ type Props = {
   onAdd: (item: MenuItem, options: Options, quantity: number) => void;
 };
 
-export default function BeverageOptionsModal({
-  open,
-  item,
-  onClose,
-  onAdd,
-}: Props) {
+export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [options, setOptions] = useState<Options>({
-    temperature: "cold",
+    temperature: 'cold',
     whip: false,
     shot: 0,
-    size: "grande",
-    ice: "normal",
+    size: 'grande',
+    ice: 'normal',
     isWeak: false,
   });
 
@@ -31,20 +25,30 @@ export default function BeverageOptionsModal({
     if (open) {
       setQuantity(1);
       setOptions({
-        temperature: "cold",
+        temperature: 'cold',
         whip: false,
         shot: 0,
-        size: "grande",
-        ice: "normal",
+        size: 'grande',
+        ice: 'normal',
         isWeak: false,
       });
     }
   }, [open]);
 
-  // 가격 계산 (원래 로직 유지)
+  // 옵션이 적용된 개당 가격
+  const unitPrice = useMemo(() => {
+    if (!item) return 0;
+    let price = item.price;
+    if (options.size === 'tall') price -= 500;
+    if (options.size === 'venti') price += 500;
+    if (options.shot) price += options.shot * 500;
+    return price;
+  }, [item, options]);
+
+  // 최종 표시 가격 (개당 가격 * 수량)
   const finalPrice = useMemo(() => {
-    return calculateItemPrice(item, options, quantity);
-  }, [item, options, quantity]);
+    return unitPrice * quantity;
+  }, [unitPrice, quantity]);
 
   const handleShotChange = (delta: number) => {
     setOptions((prev) => ({
@@ -59,8 +63,8 @@ export default function BeverageOptionsModal({
 
   if (!open || !item) return null;
 
-  const isTea = item.name?.includes("티") || item.category === "음료";
-  const isCoffee = item.category === "커피";
+  const isTea = item.name?.includes('티') || item.category === '음료';
+  const isCoffee = item.category === '커피';
 
   return (
     <AnimatePresence>
@@ -75,7 +79,7 @@ export default function BeverageOptionsModal({
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          transition={{ type: "spring", damping: 20 }}
+          transition={{ type: 'spring', damping: 20 }}
           className="w-[44rem] max-h-[85vh] bg-white rounded-2xl shadow-2xl flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
@@ -83,11 +87,13 @@ export default function BeverageOptionsModal({
             {/* [왼쪽] 이미지 및 수량 */}
             <div className="w-2/5 p-6 flex flex-col items-center justify-center border-r">
               <div className="w-48 h-48 bg-gray-100 rounded-full mb-4 overflow-hidden">
-                 {item.img ? (
-                   <img src={item.img} alt={item.name} className="w-full h-full object-cover"/>
-                 ) : (
-                   <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
-                 )}
+                {item.img ? (
+                  <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    No Image
+                  </div>
+                )}
               </div>
               <h3 className="font-bold text-xl text-center">{item.name}</h3>
               <p className="text-red-600 font-bold text-2xl my-4">
@@ -101,9 +107,7 @@ export default function BeverageOptionsModal({
                   >
                     -
                   </button>
-                  <span className="font-bold text-xl w-8 text-center">
-                    {quantity}
-                  </span>
+                  <span className="font-bold text-xl w-8 text-center">{quantity}</span>
                   <button
                     onClick={() => handleQuantityChange(1)}
                     className="text-2xl font-light hover:text-red-500 transition-colors"
@@ -117,28 +121,27 @@ export default function BeverageOptionsModal({
             {/* [오른쪽] 옵션 선택 (원래 디자인 복구) */}
             <div className="w-3/5 p-6 overflow-y-auto">
               <div className="space-y-4">
-                
                 {/* 1. 온도 */}
                 <div className="py-4 border-b">
                   <h4 className="font-bold mb-3">1. 온도(hot or ice)</h4>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setOptions((s) => ({ ...s, temperature: "hot" }))}
+                      onClick={() => setOptions((s) => ({ ...s, temperature: 'hot' }))}
                       className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
-                        options.temperature === "hot"
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-200 bg-white"
+                        options.temperature === 'hot'
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-200 bg-white'
                       }`}
                     >
                       <span className="text-2xl">🔥</span>
                       <span>핫</span>
                     </button>
                     <button
-                      onClick={() => setOptions((s) => ({ ...s, temperature: "cold" }))}
+                      onClick={() => setOptions((s) => ({ ...s, temperature: 'cold' }))}
                       className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
-                        options.temperature === "cold"
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-200 bg-white"
+                        options.temperature === 'cold'
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-200 bg-white'
                       }`}
                     >
                       <span className="text-2xl">❄️</span>
@@ -151,14 +154,14 @@ export default function BeverageOptionsModal({
                 <div className="py-4 border-b">
                   <h4 className="font-bold mb-3">2. 사이즈</h4>
                   <div className="flex gap-2">
-                    {["tall", "grande", "venti"].map((size) => (
+                    {['tall', 'grande', 'venti'].map((size) => (
                       <button
                         key={size}
                         onClick={() => setOptions((s) => ({ ...s, size: size as any }))}
                         className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
                           options.size === size
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-200 bg-white"
+                            ? 'border-red-500 bg-red-50'
+                            : 'border-gray-200 bg-white'
                         }`}
                       >
                         <span className="text-2xl">🥤</span>
@@ -169,23 +172,23 @@ export default function BeverageOptionsModal({
                 </div>
 
                 {/* 3. 얼음 양 (아이스일 때만) */}
-                {options.temperature === "cold" && (
+                {options.temperature === 'cold' && (
                   <div className="py-4 border-b">
                     <h4 className="font-bold mb-3">3. 얼음 양</h4>
                     <div className="flex gap-2">
-                      {["less", "normal", "more"].map((ice) => (
+                      {['less', 'normal', 'more'].map((ice) => (
                         <button
                           key={ice}
                           onClick={() => setOptions((s) => ({ ...s, ice: ice as any }))}
                           className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
                             options.ice === ice
-                              ? "border-red-500 bg-red-50"
-                              : "border-gray-200 bg-white"
+                              ? 'border-red-500 bg-red-50'
+                              : 'border-gray-200 bg-white'
                           }`}
                         >
                           <span className="text-2xl">🧊</span>
                           <span className="capitalize">
-                            {ice === "less" ? "적게" : ice === "normal" ? "보통" : "많게"}
+                            {ice === 'less' ? '적게' : ice === 'normal' ? '보통' : '많게'}
                           </span>
                         </button>
                       ))}
@@ -201,9 +204,7 @@ export default function BeverageOptionsModal({
                       <button
                         onClick={() => setOptions((s) => ({ ...s, isWeak: !s.isWeak }))}
                         className={`flex flex-col items-center px-6 py-2 rounded-lg border-2 ${
-                          options.isWeak
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-200 bg-white"
+                          options.isWeak ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
                         }`}
                       >
                         <span className="text-2xl">💧</span>
@@ -216,9 +217,7 @@ export default function BeverageOptionsModal({
                         >
                           -
                         </button>
-                        <span className="font-bold text-lg w-6 text-center">
-                          {options.shot}
-                        </span>
+                        <span className="font-bold text-lg w-6 text-center">{options.shot}</span>
                         <button
                           onClick={() => handleShotChange(1)}
                           className="text-xl hover:text-red-500 transition-colors"
@@ -233,16 +232,12 @@ export default function BeverageOptionsModal({
                 {/* 5. 휘핑 옵션 */}
                 {!isTea && (
                   <div className="py-4">
-                    <h4 className="font-bold mb-3">
-                      {isCoffee ? "5." : "4."} 휘핑
-                    </h4>
+                    <h4 className="font-bold mb-3">{isCoffee ? '5.' : '4.'} 휘핑</h4>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setOptions((s) => ({ ...s, whip: true }))}
                         className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
-                          options.whip
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-200 bg-white"
+                          options.whip ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
                         }`}
                       >
                         <span className="text-2xl">🍦</span>
@@ -251,9 +246,7 @@ export default function BeverageOptionsModal({
                       <button
                         onClick={() => setOptions((s) => ({ ...s, whip: false }))}
                         className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
-                          !options.whip
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-200 bg-white"
+                          !options.whip ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
                         }`}
                       >
                         <span className="text-2xl">🚫</span>
@@ -275,8 +268,8 @@ export default function BeverageOptionsModal({
               이전으로
             </button>
             <button
-              // [유지] quantity 전달 필수
-              onClick={() => onAdd(item, options, quantity)}
+              // 조정된 가격으로 아이템 전달
+              onClick={() => onAdd({ ...item, price: unitPrice }, options, quantity)}
               className="w-full bg-red-500 text-white rounded-lg py-3 font-bold text-lg"
             >
               주문하기 (담기)
