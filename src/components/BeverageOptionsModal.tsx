@@ -51,10 +51,12 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
   }, [unitPrice, quantity]);
 
   const handleShotChange = (delta: number) => {
-    setOptions((prev) => ({
-      ...prev,
-      shot: Math.max(0, prev.shot + delta),
-    }));
+    setOptions((prev) => {
+      const newShotCount = Math.max(0, prev.shot + delta);
+      // 샷을 추가하면 '연하게' 옵션을 해제합니다.
+      const newIsWeak = delta > 0 && newShotCount > 0 ? false : prev.isWeak;
+      return { ...prev, shot: newShotCount, isWeak: newIsWeak };
+    });
   };
 
   const handleQuantityChange = (delta: number) => {
