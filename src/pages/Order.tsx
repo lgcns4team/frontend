@@ -6,6 +6,8 @@ import MenuGrid from '../components/MenuGrid';
 import BeverageOptionsModal from '../components/BeverageOptionsModal';
 import BottomCart from '../components/BottomCart';
 import CartSheet from '../components/CartSheet';
+import MicrophoneIcon from '../assets/icons/microphone.svg';
+import FingerIcon from '../assets/icons/finger.svg';
 import type { MenuItem } from '../types';
 
 export default function Order() {
@@ -41,70 +43,27 @@ export default function Order() {
           <div className="flex gap-3 px-4 py-3">
             <button
               onClick={() => navigate('/voice')}
-              className="flex-1 bg-pink-50 p-3 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
+              className="flex-1 bg-pink-50 p-6 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
             >
-              <style>{`
-                .wave-bar {
-                  animation: wave 1s linear infinite;
-                  animation-delay: calc(1s - var(--delay));
-                  opacity: 0.7;
-                  transition: opacity 0.3s ease;
-                }
-                .group:hover .wave-bar {
-                  opacity: 1;
-                }
-                @keyframes wave {
-                  0% { transform: scale(0); }
-                  50% { transform: scale(1); }
-                  100% { transform: scale(0); }
-                }
-              `}</style>
-              <div className="flex gap-1 items-end justify-center h-6">
-                <div
-                  className="wave-bar rounded-full w-1 h-3 bg-pink-500/60"
-                  style={{ '--delay': '0.2s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-1 bg-pink-700/60"
-                  style={{ '--delay': '0.4s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-2 bg-pink-600/60"
-                  style={{ '--delay': '0.7s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-4 bg-pink-600/60"
-                  style={{ '--delay': '0.6s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-5 bg-pink-500/60"
-                  style={{ '--delay': '0.5s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-4 bg-pink-600/60"
-                  style={{ '--delay': '0.6s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-2 bg-pink-600/60"
-                  style={{ '--delay': '0.7s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-1 bg-pink-700/60"
-                  style={{ '--delay': '0.4s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-3 bg-pink-500/60"
-                  style={{ '--delay': '0.2s' } as React.CSSProperties}
-                ></div>
-              </div>
-              <span className="font-bold text-pink-900 text-lg">음성 주문</span>
+              <img
+                src={MicrophoneIcon}
+                alt="마이크"
+                className="w-12 h-12 animate-micScale"
+                style={{ filter: 'hue-rotate(-10deg) saturate(1.3) brightness(0.8)' }}
+              />
+              <span className="font-semibold text-pink-900 text-xl">음성 주문</span>
             </button>
             <button
               onClick={() => navigate('/easy')}
-              className="flex-1 bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-center gap-2 justify-center animate-pulseGlow"
+              className="flex-1 bg-orange-50 p-6 rounded-xl border border-orange-100 flex items-center gap-2 justify-center animate-pulseGlow"
             >
-              <span className="text-2xl animate-[wiggle_1s_ease-in-out_infinite]">👉</span>{' '}
-              <span className="font-bold text-orange-900 text-lg">쉬운 주문</span>
+              <img
+                src={FingerIcon}
+                alt="손가락"
+                className="w-14 h-14 animate-fingerTap"
+                style={{ filter: 'hue-rotate(-20deg) saturate(1.5) brightness(0.7)' }}
+              />
+              <span className="font-semibold text-orange-600 text-xl">쉬운 주문</span>
             </button>
           </div>
           <div className="flex gap-2 overflow-x-auto px-4 py-2 no-scrollbar">
