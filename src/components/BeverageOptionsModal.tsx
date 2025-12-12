@@ -204,7 +204,13 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                     <h4 className="font-bold text-xl mb-3">4. 샷 추가 (+500원)</h4>
                     <div className="flex items-center justify-center gap-4">
                       <button
-                        onClick={() => setOptions((s) => ({ ...s, isWeak: !s.isWeak }))}
+                        onClick={() =>
+                          setOptions((s) => ({
+                            ...s,
+                            isWeak: !s.isWeak,
+                            shot: !s.isWeak ? 0 : s.shot, // '연하게'를 켜면 샷을 0으로 초기화
+                          }))
+                        }
                         className={`flex flex-col items-center px-6 py-2 rounded-lg border-2 ${
                           options.isWeak ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
                         }`}

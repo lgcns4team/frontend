@@ -23,6 +23,20 @@ export default function CartSheet({
 }: CartSheetProps) {
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
+  const renderOptions = (options?: CartItem['options']) => {
+    if (!options) return null;
+    const parts: string[] = [];
+    if (options.temperature) parts.push(`온도: ${options.temperature === 'hot' ? 'HOT' : 'ICE'}`);
+    if (options.size) parts.push(`사이즈: ${options.size.toUpperCase()}`);
+    if (options.ice) parts.push(`얼음: ${options.ice}`);
+    if (options.shot && options.shot > 0) parts.push(`샷 추가: ${options.shot}`);
+    if (options.whip) parts.push('휘핑 추가');
+    if (options.isWeak) parts.push('연하게');
+
+    if (parts.length === 0) return null;
+    return parts.map((part) => <div key={part}>{part}</div>);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -70,12 +84,10 @@ export default function CartSheet({
                   >
                     <div>
                       <h4 className="font-bold text-2xl mb-1">{item.name}</h4>
-                      <p className="text-lg text-gray-400 mb-2">
-                        {item.options?.temperature === 'hot' ? 'HOT' : 'ICE'} /{' '}
-                        {item.options?.size?.toUpperCase()}
-                        {item.options?.shot ? ` / 샷+${item.options.shot}` : ''}
-                      </p>
-                      <p className="text-orange-600 font-bold text-2xl">
+                      <div className="text-lg text-gray-500 mb-2 space-y-0.5">
+                        {renderOptions(item.options)}
+                      </div>
+                      <p className="text-orange-600 font-bold text-2xl mt-2">
                         {(item.price * item.quantity).toLocaleString()}원
                       </p>
                     </div>
