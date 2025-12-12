@@ -23,6 +23,20 @@ export default function CartSheet({
 }: CartSheetProps) {
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
+  const renderOptions = (options?: CartItem['options']) => {
+    if (!options) return null;
+    const parts: string[] = [];
+    if (options.temperature) parts.push(`온도: ${options.temperature === 'hot' ? 'HOT' : 'ICE'}`);
+    if (options.size) parts.push(`사이즈: ${options.size.toUpperCase()}`);
+    if (options.ice) parts.push(`얼음: ${options.ice}`);
+    if (options.shot && options.shot > 0) parts.push(`샷 추가: ${options.shot}`);
+    if (options.whip) parts.push('휘핑 추가');
+    if (options.isWeak) parts.push('연하게');
+
+    if (parts.length === 0) return null;
+    return parts.map((part) => <div key={part}>{part}</div>);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (

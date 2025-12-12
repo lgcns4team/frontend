@@ -1,4 +1,4 @@
-import { apiClient } from '../Lib/ApiClient';
+import { apiClient } from '../lib/ApiClient';
 import type { MenuItem } from '../types/index';
 
 export const fetchMenus = async (): Promise<MenuItem[]> => {
