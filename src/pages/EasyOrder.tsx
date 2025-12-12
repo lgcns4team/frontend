@@ -58,7 +58,7 @@ export default function EasyOrder() {
     options: Pick<Options, 'temperature'>,
     quantity: number
   ) => {
-    // ✅ 여기서는 장바구니에만 담고, 화면 전환은 하지 않는다
+    // 여기서는 장바구니에만 담고, 화면 전환은 하지 않는다
     addToCart(item, options, quantity);
     setSelectedItem(null);
   };
@@ -126,7 +126,7 @@ export default function EasyOrder() {
           )}
         </main>
 
-        {/* 하단 장바구니 - ✅ 여기서 주문확인이 EasyConfirm으로 이동 */}
+        {/* 하단 장바구니 -  여기서 주문확인이 EasyConfirm으로 이동 */}
         <BottomCart onCheckout={() => navigate('/easy/confirm')} />
 
         {/* 옵션 모달 */}

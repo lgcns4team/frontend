@@ -41,7 +41,7 @@ export default function EasyConfirm() {
         </header>
 
         {/* 🔹 상단 고정 안내 문구 (카드 밖, 핑크 배경 위에 고정) */}
-        <div className="absolute left-1/2 top-60 -translate-x-1/2 text-center pointer-events-none z-10">
+        <div className="absolute left-1/2 top-28 -translate-x-1/2 text-center pointer-events-none z-10">
           <p className="text-6xl font-extrabold text-gray-900 leading-tight whitespace-nowrap">
             주문 내역을 확인해주세요
           </p>
