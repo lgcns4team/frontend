@@ -18,9 +18,12 @@ const allMenus = [
     name: '얼그레이 티',
     price: 4800,
     category: '음료',
-    img: '/raw/menu_peach_ice_tea.jpg', // 얼그레이용 이미지 없으니 티 사진 중 하나 사용
+    img: '/raw/menu_peach_ice_tea.jpg',
   },
+  { id: 11, name: '페퍼민트 티', price: 5000, category: '음료', img: '/raw/menu_peppermint.jpg' },
+  { id: 12, name: '캐모마일 티', price: 5000, category: '음료', img: '/raw/menu_chamomile.jpg' },
 
+  // 디저트
   {
     id: 7,
     name: '치즈케이크 디저트',
