@@ -1,25 +1,31 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Minus, ShoppingCart, CreditCard } from "lucide-react";
-import type { CartItemData } from "../types/VoiceOrderTypes"; // 음성 전용 타입
+import type { CartItemData } from "../types/VoiceOrderTypes";
 
 interface Props {
   cart: CartItemData[];
   totalAmount: number;
   onCheckout: () => void;
   onClear: () => void;
-  onUpdateQuantity: (id: string, delta: number) => void; // 수량 변경 함수 필요 시 구현
+  onUpdateQuantity: (id: string, delta: number) => void;
+  onRemoveItem: (id: string) => void;
 }
 
-export default function VoiceBottomCart({ cart, totalAmount, onCheckout, onClear, onUpdateQuantity }: Props) {
+export default function VoiceBottomCart({ 
+  cart, 
+  totalAmount, 
+  onCheckout, 
+  onClear, 
+  onUpdateQuantity, 
+  onRemoveItem 
+}: Props) {
   
-  // 옵션 렌더링 헬퍼 (음성 주문은 string[] 형태이므로 단순 join)
   const renderOptions = (options?: string[]) => {
     if (!options || options.length === 0) return null;
     return options.join(" / ");
   };
 
   return (
-    // [UI 동일] 높이 h-[420px], 그림자, 테두리 등 BottomCart와 완벽히 동일
     <div className="bg-white border-t border-gray-200 shadow-[0_-8px_30px_rgba(0,0,0,0.1)] z-30 flex flex-col h-[420px] shrink-0">
       
       {/* 1. 헤더 */}
@@ -58,14 +64,13 @@ export default function VoiceBottomCart({ cart, totalAmount, onCheckout, onClear
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                key={item._uid} // VoiceOrder는 _uid 사용
+                key={item._uid}
                 className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100"
               >
-                <div className="flex flex-col">
+                <div className="flex flex-col flex-1">
                   <span className="font-bold text-gray-800 text-sm">
                     {item.name}
                   </span>
-                  {/* 음성 옵션 표시 */}
                   {item.options && item.options.length > 0 && (
                     <span className="text-gray-400 text-xs mt-0.5">
                       {renderOptions(item.options)}
@@ -76,23 +81,25 @@ export default function VoiceBottomCart({ cart, totalAmount, onCheckout, onClear
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 bg-white rounded-lg px-2 py-1 border border-gray-200 shadow-sm">
-                  {/* 수량 조절 기능은 Voice 로직에 맞춰 연결 */}
-                  <button
-                    onClick={() => onUpdateQuantity(item.id, -1)} 
-                    className="p-1 hover:bg-gray-100 rounded"
-                  >
-                    <Minus className="w-3 h-3 text-gray-600" />
-                  </button>
-                  <span className="font-bold text-sm w-4 text-center">
-                    {item.quantity}
-                  </span>
-                  <button
-                    onClick={() => onUpdateQuantity(item.id, 1)}
-                    className="p-1 hover:bg-gray-100 rounded"
-                  >
-                    <Plus className="w-3 h-3 text-gray-600" />
-                  </button>
+                <div className="flex items-center">
+                    {/* 수량 조절 버튼 */}
+                    <div className="flex items-center gap-2 bg-white rounded-lg px-2 py-1 border border-gray-200 shadow-sm mr-3">
+                      <button onClick={() => onUpdateQuantity(item._uid, -1)} className="p-1 hover:bg-gray-100 rounded">
+                        <Minus className="w-3 h-3 text-gray-600" />
+                      </button>
+                      <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
+                      <button onClick={() => onUpdateQuantity(item._uid, 1)} className="p-1 hover:bg-gray-100 rounded">
+                        <Plus className="w-3 h-3 text-gray-600" />
+                      </button>
+                    </div>
+
+                    {/* ✅ [수정됨] 글자 "삭제" 버튼 */}
+                    <button 
+                      onClick={() => onRemoveItem(item._uid)}
+                      className="px-3 py-1.5 text-xs font-bold text-red-500 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
+                    >
+                      삭제
+                    </button>
                 </div>
               </motion.div>
             ))
@@ -132,8 +139,3 @@ export default function VoiceBottomCart({ cart, totalAmount, onCheckout, onClear
     </div>
   );
 }
-
-
-
-
-

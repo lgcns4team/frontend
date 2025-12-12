@@ -1,68 +1,129 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from "react";
 
-// 녹음이 종료되었을 때 호출할 콜백 함수 타입 정의
-type OnStopCallback = (blob: Blob) => void;
+interface UseRecorderReturn {
+  isRecording: boolean;
+  audioUrl: string | null;
+  audioFile: File | null;
+  audioLevel: number; // 0.0 ~ 1.0 (비주얼라이저용)
+  startRecording: () => Promise<void>;
+  stopRecording: () => void;
+  resetRecording: () => void;
+}
 
+export const useRecorder = (): UseRecorderReturn => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioLevel, setAudioLevel] = useState<number>(0);
 
-export const useRecorder = (onStopCallback?: OnStopCallback) => {
-  // 1. 화면에 보여줄 상태
-  const [isRecording, setIsRecording] = useState<boolean>(false);
-
-  // 2. 화면엔 안 보이지만 기억해야할 도구들
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  
+  // 비주얼라이저용 Refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const rafIdRef = useRef<number | null>(null);
 
-  const startRecording = async () => {
+  // 오디오 레벨 분석 루프
+  const analyzeAudioLevel = useCallback(() => {
+    if (!analyserRef.current || !dataArrayRef.current) return;
+
+    analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+
+    let sum = 0;
+    for (let i = 0; i < dataArrayRef.current.length; i++) {
+      sum += dataArrayRef.current[i];
+    }
+    const average = sum / dataArrayRef.current.length;
+
+    // 감도 조절 (평균값을 0~1 사이로 정규화)
+    const normalizedLevel = Math.min(1, average / 50); 
+    setAudioLevel(normalizedLevel);
+    
+    rafIdRef.current = requestAnimationFrame(analyzeAudioLevel);
+  }, []);
+
+  const startRecording = useCallback(async () => {
     try {
-
-      // 1. 마이크 권한 요청 및 스트림 얻기
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // 1. MediaRecorder 설정
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
 
-      // 1-1. 오디오 mime 타입 확인 및 설정
-      let options = {};
-      if (MediaRecorder.isTypeSupported('audio/webm')) {
-        options = { mimeType: 'audio/webm' };
-      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-        options = { mimeType: 'audio/mp4' };
-      }
-
-      // 2. 녹음 기계 생성 (스트림 연결)
-      const mediaRecorder = new MediaRecorder(stream, options);
-      mediaRecorderRef.current = mediaRecorder;  // Ref에 창고에 기계 보관 
-      audioChunksRef.current = []; // 녹음 테이프 배열 초기화
-
-      // 3. 데이터 수집 (테이프 감기)
-      mediaRecorder.ondataavailable = (e: BlobEvent) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
 
-      // 4. 녹음 종료 시 처리 (테이프 완성)
-      mediaRecorder.onstop = () => {
-        // 바구니에 담긴 조각들을 본드로 붙려서 하나의 파일 blob 으로 만들기
-        const mimeType = mediaRecorder.mimeType || 'audio/webm';
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        // Voiceorder.tsx 로 파일 배달
-        if (onStopCallback) onStopCallback(audioBlob);
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioUrl(url);
+
+        const file = new File([audioBlob], "recording.webm", {
+          type: "audio/webm",
+          lastModified: Date.now(),
+        });
+        setAudioFile(file);
         
-        // 스트림 트랙 종료 (마이크 아이콘 끄기)
+        // 스트림 트랙 정지
         stream.getTracks().forEach(track => track.stop());
       };
 
-      // 5. 녹음 시작
-      mediaRecorder.start();
+      mediaRecorderRef.current.start();
+      
+      // 2. Web Audio API 설정 (비주얼라이저)
+      const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+      audioContextRef.current = new AudioContextClass();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 256;
+      
+      const bufferLength = analyserRef.current.frequencyBinCount;
+      dataArrayRef.current = new Uint8Array(bufferLength);
+      
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      source.connect(analyserRef.current);
+      
+      analyzeAudioLevel(); // 분석 시작
+      
       setIsRecording(true);
-    } catch (err) {
-      console.error(err);
-      alert("마이크 권한이 필요합니다.");
-    }
-  };
+      setAudioLevel(0);
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
+    } catch (err) {
+      console.error("마이크 오류:", err);
+      alert("마이크 사용 권한을 허용해주세요.");
     }
+  }, [analyzeAudioLevel]);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+    }
+    
+    // 분석 중단
+    if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    if (audioContextRef.current) audioContextRef.current.close();
+    
+    setIsRecording(false);
+    setAudioLevel(0);
+  }, [isRecording]);
+
+  const resetRecording = useCallback(() => {
+    setAudioUrl(null);
+    setAudioFile(null);
+    setAudioLevel(0);
+  }, []);
+
+  return {
+    isRecording,
+    audioUrl,
+    audioFile,
+    audioLevel,
+    startRecording,
+    stopRecording,
+    resetRecording,
   };
-  // 이 훅을 사용하는 컴포넌트(App.tsx)에게 이 3가지 기능만 선물 세트로 묶어서 줍니다.
-  return { isRecording, startRecording, stopRecording };
 };

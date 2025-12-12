@@ -27,7 +27,7 @@ const DUMMY_MENU_ITEMS: MenuItem[] = [
     category: '음료',
     img: '/raw/menu_peach_ice_tea.jpg',
   },
-  { id: 11, name: '페퍼민트', price: 5000, category: '음료', img: '/raw/menu_peppermint.jpg' },
+  { id: 11, name: '페퍼민트 티', price: 5000, category: '음료', img: '/raw/menu_peppermint.jpg' },
   { id: 12, name: '캐모마일 티', price: 5000, category: '음료', img: '/raw/menu_chamomile.jpg' },
 
   // 디저트
