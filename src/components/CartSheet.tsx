@@ -59,8 +59,8 @@ export default function CartSheet({
             <div className="flex items-center justify-between px-6 py-5 border-b">
               <div className="flex items-center gap-3">
                 <ShoppingCart className="w-8 h-8 text-gray-800" />
-                <span className="text-3xl font-bold">주문 내역</span>
-                <span className="bg-orange-500 text-white text-base font-bold px-3 py-1.5 rounded-full">
+                <span className="text-m font-bold">주문 내역</span>
+                <span className="bg-orange-500 text-white text-sm font-bold px-3 py-1.5 rounded-full">
                   {totalItems}
                 </span>
               </div>
@@ -74,43 +74,44 @@ export default function CartSheet({
               {cart.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-gray-400">
                   <ShoppingCart className="w-16 h-16 opacity-20 mb-3" />
-                  <span className="text-2xl">비어있음</span>
+                  <span className="text-xl">비어있음</span>
                 </div>
               ) : (
                 cart.map((item) => (
                   <div
                     key={item.cartId}
-                    className="bg-white p-4 rounded-xl border shadow-sm flex justify-between items-center"
+                    className="bg-white p-3 rounded-xl border shadow-sm flex justify-between items-center"
                   >
                     <div>
-                      <h4 className="font-bold text-2xl mb-1">{item.name}</h4>
-                      <div className="text-lg text-gray-500 mb-2 space-y-0.5">
-                        {renderOptions(item.options)}
-                      </div>
-                      <p className="text-orange-600 font-bold text-2xl mt-2">
+                      <h4 className="font-bold text-sm mb-1">{item.name}</h4>
+                      {item.category !== '디저트' && (
+                        <p className="text-sm text-gray-400 mb-2 font-semibold">
+                          {item.options?.temperature === 'hot' ? 'HOT' : 'ICE'} /{'  '}
+                          {item.options?.size?.toUpperCase()}
+                          {item.options?.shot ? ` / 샷+${item.options.shot}` : ''}
+                        </p>
+                      )}
+                      <p className="text-gray-600 text-sm">
                         {(item.price * item.quantity).toLocaleString()}원
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={() => onUpdateQuantity(item.cartId, -1)}
-                        className="p-2 bg-gray-100 rounded-lg"
-                      >
-                        <Minus className="w-6 h-6" />
-                      </button>
-                      <span className="font-bold text-2xl min-w-[2rem] text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => onUpdateQuantity(item.cartId, 1)}
-                        className="p-2 bg-gray-100 rounded-lg"
-                      >
-                        <Plus className="w-6 h-6" />
-                      </button>
-                      <button
-                        onClick={() => onRemoveItem(item.cartId)}
-                        className="ml-3 text-red-400"
-                      >
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3 bg-white rounded-lg px-3 py-1.5 border border-gray-200 shadow-sm">
+                        <button
+                          onClick={() => onUpdateQuantity(item.cartId, -1)}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          <Minus className="w-5 h-5 text-gray-600" />
+                        </button>
+                        <span className="font-bold text-lg w-7 text-center">{item.quantity}</span>
+                        <button
+                          onClick={() => onUpdateQuantity(item.cartId, 1)}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          <Plus className="w-5 h-5 text-gray-600" />
+                        </button>
+                      </div>
+                      <button onClick={() => onRemoveItem(item.cartId)} className="text-red-400">
                         <X className="w-7 h-7" />
                       </button>
                     </div>
@@ -120,20 +121,26 @@ export default function CartSheet({
             </div>
 
             {/* 결제 버튼 */}
-            <div className="p-4 border-t bg-white">
+            <div className="p-3 border-t bg-white">
               <div className="flex gap-3">
                 <button
                   onClick={onClearCart}
-                  className="flex-1 py-5 border-2 rounded-xl font-bold text-gray-500 text-xl"
+                  className="flex-1 py-3 border-2 rounded-xl font-semibold text-gray-500 text-sm"
                 >
-                  전체삭제
+                  전체 삭제
                 </button>
                 <button
                   onClick={onCheckout}
                   disabled={cart.length === 0}
-                  className="flex-[2] py-5 bg-pink-500 text-white rounded-xl font-bold text-2xl disabled:bg-gray-300"
+                  className="flex-[2] py-3 bg-pink-500 text-white rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 disabled:bg-gray-300"
                 >
-                  결제하기
+                  <span className="text-sm font-medium text-pink-100 font-semibold">총 결제금액</span>
+                  <span className="text-lg font-extrabold">
+                    {cart
+                      .reduce((sum, item) => sum + item.price * item.quantity, 0)
+                      .toLocaleString()}
+                    원 결제하기
+                  </span>
                 </button>
               </div>
             </div>

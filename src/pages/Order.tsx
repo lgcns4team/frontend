@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Volume2, Sparkles } from 'lucide-react';
-// 컴포넌트들 Import
 import { useMenu } from '../hooks/UseMenu';
 import { useCartStore } from '../store/UseCartStore';
 import MenuGrid from '../components/MenuGrid';
 import BeverageOptionsModal from '../components/BeverageOptionsModal';
 import BottomCart from '../components/BottomCart';
 import CartSheet from '../components/CartSheet';
+import MicrophoneIcon from '../assets/icons/microphone.svg';
+import FingerIcon from '../assets/icons/finger.svg';
 import type { MenuItem } from '../types';
 
 export default function Order() {
@@ -30,8 +30,11 @@ export default function Order() {
         {/* 1. 헤더 */}
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
-          <button onClick={() => navigate('/')} className="text-sm text-gray-400 underline">
-            홈으로
+          <button
+            onClick={() => navigate('/')}
+            className="text-base text-gray-400 underline hover:text-gray-600 transition-colors flex items-center gap-1"
+          >
+            <span className="text-3xl">🏠</span> <span className="font-bold">처음으로</span>
           </button>
         </header>
 
@@ -40,20 +43,29 @@ export default function Order() {
           <div className="flex gap-3 px-4 py-3">
             <button
               onClick={() => navigate('/voice')}
-              className="flex-1 bg-pink-50 p-3 rounded-xl border border-pink-100 flex items-center gap-2 justify-center"
+              className="flex-1 bg-pink-50 p-6 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
             >
-              <Volume2 className="text-pink-500 w-6 h-6" />{' '}
-              <span className="font-bold text-pink-600 text-lg">음성주문</span>
+              <img
+                src={MicrophoneIcon}
+                alt="마이크"
+                className="w-12 h-12 animate-micScale"
+                style={{ filter: 'hue-rotate(-10deg) saturate(1.3) brightness(0.8)' }}
+              />
+              <span className="font-semibold text-pink-900 text-xl">음성 주문</span>
             </button>
             <button
               onClick={() => navigate('/easy')}
-              className="flex-1 bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-center gap-2 justify-center"
+              className="flex-1 bg-orange-50 p-6 rounded-xl border border-orange-100 flex items-center gap-2 justify-center animate-pulseGlow"
             >
-              <Sparkles className="text-orange-500 w-6 h-6" />{' '}
-              <span className="font-bold text-orange-600 text-lg">쉬운주문</span>
+              <img
+                src={FingerIcon}
+                alt="손가락"
+                className="w-14 h-14 animate-fingerTap"
+                style={{ filter: 'hue-rotate(-20deg) saturate(1.5) brightness(0.7)' }}
+              />
+              <span className="font-semibold text-orange-600 text-xl">쉬운 주문</span>
             </button>
           </div>
-
           <div className="flex gap-2 overflow-x-auto px-4 py-2 no-scrollbar">
             {categories.map((cat) => (
               <button
