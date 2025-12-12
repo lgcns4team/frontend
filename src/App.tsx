@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Order from './pages/Order';
 import EasyOrder from './pages/EasyOrder';
 import EasyConfirm from './pages/EasyConfirm';
+import VoiceOrder from "./pages/VoiceOrder";
 
 function App() {
   return (
@@ -12,7 +13,7 @@ function App() {
         <Route path="/easy" element={<EasyOrder />} />
         <Route path="/easy/confirm" element={<EasyConfirm />} />
         {/* 추후 추가 */}
-        {/* <Route path="/voice" element={<VoiceOrder />} /> */}
+        <Route path="/voice" element={<VoiceOrder />} />
       </Routes>
     </BrowserRouter>
   );
