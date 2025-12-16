@@ -3,6 +3,7 @@ import InsertCardAnimation from './InsertCardAnimation';
 import QrScanAnimation from './QrScanAnimation';
 import BarcodeScanAnimation from './BarcodeScanAnimation';
 import NfcPayAnimation from './NfcPayAnimation';
+import { getRandomAd } from '../config/ads';
 
 interface PaymentProgressModalProps {
   paymentMethod: 'card' | 'mobile' | 'voucher' | 'nfc';
@@ -41,6 +42,7 @@ export default function PaymentProgressModal({
   const [isProcessing, setIsProcessing] = useState(true);
   const [countdown, setCountdown] = useState(5);
   const [orderNumber, setOrderNumber] = useState<number>(0);
+  const [adImage, setAdImage] = useState<string>('');
 
   useEffect(() => {
     // 5초 후 결제 완료
@@ -55,6 +57,7 @@ export default function PaymentProgressModal({
   useEffect(() => {
     if (!isProcessing) {
       setOrderNumber(getOrderNumber());
+      setAdImage(getRandomAd().image);
     }
   }, [isProcessing]);
 
@@ -165,6 +168,15 @@ export default function PaymentProgressModal({
                 <p className="text-4xl font-bold text-gray-800 mb-6">{orderNumber}</p>
                 <p className="text-gray-600 text-lg">{countdown}초 후 주문화면으로 돌아갑니다</p>
               </div>
+              {adImage && (
+                <div className="w-full max-w-xs mx-auto mb-8">
+                  <img
+                    src={adImage}
+                    alt="advertisement"
+                    className="w-full aspect-[9/16] rounded-2xl object-cover"
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
