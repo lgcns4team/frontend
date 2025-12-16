@@ -6,7 +6,7 @@ import { useMenu } from '../hooks/UseMenu';
 import { useCartStore } from '../store/UseCartStore';
 import BottomCart from '../components/BottomCart';
 import EasyMenuGrid from '../components/EasyMenuGrid';
-import EasyBeverageOptionsModal from '../components/EasyBeverageOptionsModal';
+import EasyBeverageOptionsModal from '../components/EasyOptionsModal';
 import type { MenuItem, Options } from '../types';
 
 const EASY_CATEGORIES = [

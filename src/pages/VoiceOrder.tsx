@@ -5,13 +5,16 @@ import { MousePointer2, Sparkles, Lightbulb } from 'lucide-react';
 // [Hooks & API]
 import { useMenu } from '../hooks/UseMenu';
 import { useCart } from '../hooks/VoiceuseCart';
-import { useRecorder } from '../hooks/UseRecorder'; // UseRecorder.ts
-import { sendAudioOrder } from '../api/VoiceOrderApi'; // sendAudioOrder
+import { useRecorder } from '../hooks/UseRecorder'; 
+import { sendAudioOrder } from '../api/VoiceOrderApi'; 
+
+// [Global Store & Types]
+import { useCartStore } from '../store/UseCartStore';
+import type { Options } from '../types/OrderTypes';
 
 // [Components]
 import RecordButton from '../components/RecordButton';
 import VoiceBottomCart from '../components/VoiceBottomCart';
-// ✅ 비주얼라이저 컴포넌트 import (경로 확인해주세요)
 import AudioVisualizer from '../components/AudioVisualizer';
 
 const VoiceOrder: React.FC = () => {
@@ -19,18 +22,77 @@ const VoiceOrder: React.FC = () => {
   const [logText, setLogText] = useState<string>('파란색 버튼을 누르고\n말씀해주세요');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
+  // 1. 전역 장바구니 스토어 (이름 충돌 방지를 위해 clearCart를 별칭으로 가져옴)
+  const { addToCart, clearCart: clearGlobalCart } = useCartStore();
+
   const { items, isLoading } = useMenu();
   const { cart, updateCart, clearCart, totalAmount, changeQuantity, removeItem } = useCart();
-
-  // ✅ audioLevel 받아오기 (UseRecorder 훅에서 지원해야 함)
   const { isRecording, audioFile, audioLevel, startRecording, stopRecording, resetRecording } =
     useRecorder();
+
+  // 2. 음성 옵션(배열) -> 전역 옵션(객체) 변환 함수
+  const convertVoiceOptionsToGlobal = (voiceOptions: string[] = []): Partial<Options> => {
+    const options: Partial<Options> = {};
+
+    // 온도 변환
+    if (voiceOptions.includes('hot')) options.temperature = 'hot';
+    else if (voiceOptions.includes('cold')) options.temperature = 'cold';
+
+    // 사이즈 변환
+    if (voiceOptions.includes('tall')) options.size = 'tall';
+    else if (voiceOptions.includes('venti')) options.size = 'venti';
+    else options.size = 'grande'; // 기본값
+
+    // 샷 추가 (배열에 'shot'이 몇 개 있는지 카운트)
+    const shotCount = voiceOptions.filter(opt => opt === 'shot').length;
+    options.shot = shotCount;
+
+    // 얼음 옵션
+    if (voiceOptions.includes('less_ice')) options.ice = 'less';
+    else if (voiceOptions.includes('more_ice')) options.ice = 'more';
+    else options.ice = 'normal';
+
+    // 기타
+    if (voiceOptions.includes('whip')) options.whip = true;
+    if (voiceOptions.includes('weak')) options.isWeak = true;
+
+    return options;
+  };
+
+  // 3. 결제하기 핸들러 (전역 장바구니로 이관 후 이동)
+  const handleCheckout = () => {
+    if (cart.length === 0) {
+      alert("장바구니가 비어있습니다.");
+      return;
+    }
+
+    // 기존 전역 장바구니 비우기 (새로운 주문 시작)
+    clearGlobalCart();
+
+    // 음성 장바구니 아이템들을 전역 장바구니로 이동
+    cart.forEach((voiceItem) => {
+      // 원본 메뉴 정보 찾기 (이미지, 카테고리 등)
+      const originalItem = items.find((item) => item.name === voiceItem.name);
+
+      if (originalItem) {
+        // 옵션 포맷 변환
+        const globalOptions = convertVoiceOptionsToGlobal(voiceItem.option_ids || []);
+        // 전역 스토어에 추가
+        addToCart(originalItem, globalOptions, voiceItem.quantity);
+      } else {
+        console.warn(`메뉴를 찾을 수 없습니다: ${voiceItem.name}`);
+      }
+    });
+
+    // 결제 페이지로 이동
+    navigate('/payment');
+  };
 
   // 오디오 파일 생성 시 API 전송 로직
   useEffect(() => {
     const processAudio = async () => {
       if (audioFile && !isRecording) {
-        setIsProcessing(true); // 로딩 시작
+        setIsProcessing(true); 
         setLogText('분석 중입니다...\n잠시만 기다려주세요');
 
         try {
@@ -48,7 +110,7 @@ const VoiceOrder: React.FC = () => {
           console.error(error);
           setLogText('오류가 발생했습니다\n직원을 호출해주세요');
         } finally {
-          setIsProcessing(false); // 로딩 끝
+          setIsProcessing(false); 
           resetRecording();
         }
       }
@@ -64,7 +126,7 @@ const VoiceOrder: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      {/* 원래 디자인: 90도 회전된 래퍼 */}
+      {/* 90도 회전된 래퍼 */}
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl relative">
         {/* 로딩 오버레이 */}
         {isProcessing && (
@@ -135,16 +197,15 @@ const VoiceOrder: React.FC = () => {
             {/* === 왼쪽: 텍스트 박스 영역 === */}
             <div className="flex-1 flex flex-col gap-4 h-full justify-center max-w-[60%]">
               {/* 1. 안내 멘트 & 비주얼라이저 박스 */}
-              {/* isRecording일 때 배경을 흰색으로 바꾸고 테두리를 진하게 해서 파란색 비주얼라이저가 잘 보이게 했습니다 */}
               <div
                 className={`p-6 rounded-[2rem] border text-center transition-all duration-300 flex flex-col items-center justify-center h-[190px] shadow-sm gap-2
                         ${
                           isRecording
-                            ? 'bg-white border-blue-500 border-2 text-blue-600 scale-[1.02] shadow-md' // 녹음 중 스타일 (흰 배경 + 파란 테두리)
-                            : 'bg-blue-50 border-blue-200 text-blue-800' // 대기 중 스타일
+                            ? 'bg-white border-blue-500 border-2 text-blue-600 scale-[1.02] shadow-md'
+                            : 'bg-blue-50 border-blue-200 text-blue-800'
                         }`}
               >
-                {/* ✅ [추가됨] 비주얼라이저 (녹음 중에만 표시) */}
+                {/* 비주얼라이저 (녹음 중에만 표시) */}
                 {isRecording ? (
                   <div className="w-full mb-8 ">
                     <AudioVisualizer level={audioLevel} />
@@ -187,11 +248,11 @@ const VoiceOrder: React.FC = () => {
           </section>
         </main>
 
-        {/* 4. 하단 장바구니 */}
+        {/* 4. 하단 장바구니 (핸들러 교체됨) */}
         <VoiceBottomCart
           cart={cart}
           totalAmount={totalAmount}
-          onCheckout={() => alert('결제를 진행합니다.')}
+          onCheckout={handleCheckout}
           onClear={clearCart}
           onUpdateQuantity={changeQuantity}
           onRemoveItem={removeItem}

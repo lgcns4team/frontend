@@ -46,7 +46,14 @@ export const useRecorder = (): UseRecorderReturn => {
 
   const startRecording = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+
+          echoCancellation: true, // 스피커 소리가 다시 마이크로 들어가는 것 방지
+          noiseSuppression: true, // 배경 잡음 제거 (브라우저 내장 기능)
+          autoGainControl: true,
+        }
+      });
       
       // 1. MediaRecorder 설정
       mediaRecorderRef.current = new MediaRecorder(stream);

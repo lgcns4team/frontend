@@ -12,7 +12,7 @@ export const sendAudioOrder = async (audioBlob: Blob): Promise<OrderResponse> =>
   // 타임아웃 설정 추가 (AI 분석이 오래 걸릴 수 있으므로 넉넉하게 10초)
   const response = await axios.post<OrderResponse>(API_URL, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 10000 
+    timeout: 15000 
   });
 
   return response.data;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMenu } from '../hooks/UseMenu';
 import { useCartStore } from '../store/UseCartStore';
 import MenuGrid from '../components/MenuGrid';
-import BeverageOptionsModal from '../components/BeverageOptionsModal';
+import BeverageOptionsModal from '../components/OptionsModal';
 import BottomCart from '../components/BottomCart';
 import CartSheet from '../components/CartSheet';
 import type { MenuItem } from '../types';
