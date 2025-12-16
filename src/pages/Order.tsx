@@ -158,7 +158,7 @@ export default function Order() {
           cart={cart}
           onClose={() => setIsCartOpen(false)}
           onCheckout={() => {
-            navigate('/payment'); // 실제 이동
+            navigate('/payment', { state: { directToMethod: true } });
           }}
           onUpdateQuantity={updateQuantity}
           onClearCart={clearCart}
