@@ -23,6 +23,20 @@ export default function CartSheet({
 }: CartSheetProps) {
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
+  const renderOptions = (options?: CartItem['options']) => {
+    if (!options) return null;
+    const parts: string[] = [];
+    if (options.temperature) parts.push(`온도: ${options.temperature === 'hot' ? 'HOT' : 'ICE'}`);
+    if (options.size) parts.push(`사이즈: ${options.size.toUpperCase()}`);
+    if (options.ice) parts.push(`얼음: ${options.ice}`);
+    if (options.shot && options.shot > 0) parts.push(`샷 추가: ${options.shot}`);
+    if (options.whip) parts.push('휘핑 추가');
+    if (options.isWeak) parts.push('연하게');
+
+    if (parts.length === 0) return null;
+    return parts.map((part) => <div key={part}>{part}</div>);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -120,7 +134,9 @@ export default function CartSheet({
                   disabled={cart.length === 0}
                   className="flex-[2] py-3 bg-pink-500 text-white rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 disabled:bg-gray-300"
                 >
-                  <span className="text-sm font-medium text-pink-100 font-semibold">총 결제금액</span>
+                  <span className="text-sm font-medium text-pink-100 font-semibold">
+                    총 결제금액
+                  </span>
                   <span className="text-lg font-extrabold">
                     {cart
                       .reduce((sum, item) => sum + item.price * item.quantity, 0)
