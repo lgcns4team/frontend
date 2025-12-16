@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMenu } from '../hooks/UseMenu';
 import { useCartStore } from '../store/UseCartStore';
@@ -6,6 +6,9 @@ import MenuGrid from '../components/MenuGrid';
 import BeverageOptionsModal from '../components/OptionsModal';
 import BottomCart from '../components/BottomCart';
 import CartSheet from '../components/CartSheet';
+import AdSlideshow from '../components/AdSlideshow';
+import microphoneIcon from '../assets/icons/microphone.svg';
+import fingerIcon from '../assets/icons/finger.svg';
 import type { MenuItem } from '../types';
 
 export default function Order() {
@@ -15,6 +18,46 @@ export default function Order() {
   const [activeCategory, setActiveCategory] = useState('추천메뉴');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [showAdSlideshow, setShowAdSlideshow] = useState(false);
+  const [inactivityTimer, setInactivityTimer] = useState<number | null>(null);
+
+  // 무동작 감지 로직 (30초)
+  useEffect(() => {
+    const resetInactivityTimer = () => {
+      // 기존 타이머 제거
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+
+      // 광고 슬라이드쇼가 표시 중이면 다시 시작하지 않음
+      if (showAdSlideshow) return;
+
+      // 새로운 30초 타이머 설정
+      const newTimer = setTimeout(() => {
+        setShowAdSlideshow(true);
+      }, 30000); // 30초
+
+      setInactivityTimer(newTimer);
+    };
+
+    // 마우스/터치 이벤트 감지
+    window.addEventListener('mousemove', resetInactivityTimer);
+    window.addEventListener('click', resetInactivityTimer);
+    window.addEventListener('touchstart', resetInactivityTimer);
+
+    // 초기 타이머 설정
+    resetInactivityTimer();
+
+    return () => {
+      window.removeEventListener('mousemove', resetInactivityTimer);
+      window.removeEventListener('click', resetInactivityTimer);
+      window.removeEventListener('touchstart', resetInactivityTimer);
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+    };
+  }, [showAdSlideshow, inactivityTimer]);
+
   const filteredItems = useMemo(() => {
     return activeCategory === '추천메뉴'
       ? items
@@ -24,6 +67,7 @@ export default function Order() {
   return (
     // 90도 회전 래퍼
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
+      {showAdSlideshow && <AdSlideshow onClose={() => setShowAdSlideshow(false)} />}
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl">
         {/* 1. 헤더 */}
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
@@ -58,52 +102,48 @@ export default function Order() {
                   50% { transform: scale(1); }
                   100% { transform: scale(0); }
                 }
+                .mic-icon {
+                  animation: micPulse 1.5s ease-in-out infinite;
+                }
+                @keyframes micPulse {
+                  0%, 100% { transform: scale(1); }
+                  50% { transform: scale(1.1); }
+                }
               `}</style>
-              <div className="flex gap-1 items-end justify-center h-6">
-                <div
-                  className="wave-bar rounded-full w-1 h-3 bg-pink-500/60"
-                  style={{ '--delay': '0.2s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-1 bg-pink-700/60"
-                  style={{ '--delay': '0.4s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-2 bg-pink-600/60"
-                  style={{ '--delay': '0.7s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-4 bg-pink-600/60"
-                  style={{ '--delay': '0.6s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-5 bg-pink-500/60"
-                  style={{ '--delay': '0.5s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-4 bg-pink-600/60"
-                  style={{ '--delay': '0.6s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-2 bg-pink-600/60"
-                  style={{ '--delay': '0.7s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-1 bg-pink-700/60"
-                  style={{ '--delay': '0.4s' } as React.CSSProperties}
-                ></div>
-                <div
-                  className="wave-bar rounded-full w-1 h-3 bg-pink-500/60"
-                  style={{ '--delay': '0.2s' } as React.CSSProperties}
-                ></div>
-              </div>
+              <img src={microphoneIcon} alt="microphone" className="mic-icon w-8 h-8" />
               <span className="font-bold text-pink-900 text-lg">음성 주문</span>
             </button>
             <button
               onClick={() => navigate('/easy')}
-              className="flex-1 bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-center gap-2 justify-center animate-pulseGlow"
+              className="flex-1 bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group easy-button"
             >
-              <span className="text-2xl animate-[wiggle_1s_ease-in-out_infinite]">👉</span>{' '}
+              <style>{`
+                .easy-button {
+                  animation: easyButtonGlow 0.8s ease-in-out infinite;
+                }
+                @keyframes easyButtonGlow {
+                  0%, 100% { 
+                    border-color: rgb(254, 208, 121);
+                    background-color: rgb(254, 245, 230);
+                    box-shadow: 0 0 0 0px rgba(217, 119, 6, 0);
+                  }
+                  50% { 
+                    border-color: rgb(217, 119, 6);
+                    background-color: rgb(255, 251, 235);
+                    box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3);
+                  }
+                }
+                .finger-icon {
+                  animation: fingerWiggle 0.8s ease-in-out infinite;
+                  transform-origin: bottom center;
+                }
+                @keyframes fingerWiggle {
+                  0%, 100% { transform: rotate(0deg); }
+                  25% { transform: rotate(-8deg); }
+                  75% { transform: rotate(8deg); }
+                }
+              `}</style>
+              <img src={fingerIcon} alt="finger" className="finger-icon w-8 h-8" />
               <span className="font-bold text-orange-900 text-lg">쉬운 주문</span>
             </button>
           </div>
