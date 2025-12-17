@@ -5,9 +5,10 @@ import type { Options } from '../types';
 
 interface Props {
   onCheckout: () => void;
+  onEditOptions?: (cartId: string) => void;
 }
 
-export default function BottomCart({ onCheckout }: Props) {
+export default function BottomCart({ onCheckout, onEditOptions }: Props) {
   // Zustand Store에서 상태와 함수들을 가져옵니다.
   const { cart, updateQuantity, clearCart, getCartTotalPrice } = useCartStore();
 
@@ -64,7 +65,7 @@ export default function BottomCart({ onCheckout }: Props) {
                 key={item.cartId}
                 className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100"
               >
-                <div className="flex flex-col">
+                <div className="flex flex-col flex-1">
                   <span className="font-bold text-gray-800 text-m">{item.name}</span>
                   {/* 옵션 표시 */}
                   {item.options && (
@@ -77,20 +78,33 @@ export default function BottomCart({ onCheckout }: Props) {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 bg-white rounded-lg px-3 py-1.5 border border-gray-200 shadow-sm">
-                  <button
-                    onClick={() => updateQuantity(item.cartId, -1)}
-                    className="p-1 hover:bg-gray-100 rounded"
-                  >
-                    <Minus className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <span className="font-bold text-lg w-7 text-center">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(item.cartId, 1)}
-                    className="p-1 hover:bg-gray-100 rounded"
-                  >
-                    <Plus className="w-4 h-4 text-gray-600" />
-                  </button>
+                <div className="flex items-center gap-2">
+                  {/* 수량 버튼 */}
+                  <div className="flex items-center gap-3 bg-white rounded-lg px-3 py-1.5 border border-gray-200 shadow-sm">
+                    <button
+                      onClick={() => updateQuantity(item.cartId, -1)}
+                      className="p-1 hover:bg-gray-100 rounded"
+                    >
+                      <Minus className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <span className="font-bold text-lg w-7 text-center">{item.quantity}</span>
+                    <button
+                      onClick={() => updateQuantity(item.cartId, 1)}
+                      className="p-1 hover:bg-gray-100 rounded"
+                    >
+                      <Plus className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </div>
+
+                  {/* 옵션 수정 버튼 */}
+                  {item.category !== '디저트' && (
+                    <button
+                      onClick={() => onEditOptions?.(item.cartId)}
+                      className="px-3 py-1.5 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-colors whitespace-nowrap"
+                    >
+                      옵션 변경
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))
