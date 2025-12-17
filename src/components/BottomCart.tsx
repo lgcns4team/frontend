@@ -79,6 +79,16 @@ export default function BottomCart({ onCheckout, onEditOptions }: Props) {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {/* 옵션 수정 버튼 */}
+                  {item.category !== '디저트' && (
+                    <button
+                      onClick={() => onEditOptions?.(item.cartId)}
+                      className="h-9 flex items-center px-3 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-colors whitespace-nowrap"
+                    >
+                      옵션 변경
+                    </button>
+                  )}
+
                   {/* 수량 버튼 */}
                   <div className="flex items-center gap-3 bg-white rounded-lg px-3 py-1.5 border border-gray-200 shadow-sm">
                     <button
@@ -95,16 +105,6 @@ export default function BottomCart({ onCheckout, onEditOptions }: Props) {
                       <Plus className="w-4 h-4 text-gray-600" />
                     </button>
                   </div>
-
-                  {/* 옵션 수정 버튼 */}
-                  {item.category !== '디저트' && (
-                    <button
-                      onClick={() => onEditOptions?.(item.cartId)}
-                      className="px-3 py-1.5 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-colors whitespace-nowrap"
-                    >
-                      옵션 변경
-                    </button>
-                  )}
                 </div>
               </motion.div>
             ))

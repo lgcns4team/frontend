@@ -22,10 +22,14 @@ export default function Order() {
   const [showAdSlideshow, setShowAdSlideshow] = useState(false);
   const [inactivityTimer, setInactivityTimer] = useState<number | null>(null);
 
-  // 광고 닫기 핸들러 - Order 화면으로 돌아감
+  // 광고 닫기 핸들러 - Order 화면으로 돌아감 및 1분 타이머 초기화
   const handleCloseAd = () => {
+    // 기존 타이머 제거
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+      setInactivityTimer(null);
+    }
     setShowAdSlideshow(false);
-    // 타이머 리셋은 useEffect에서 처리
   };
 
   // 옵션 수정 핸들러 - 장바구니에서 옵션 변경
@@ -43,8 +47,10 @@ export default function Order() {
 
   // 무동작 감지 로직 (1분)
   useEffect(() => {
-    // 광고가 표시 중이면 타이머를 추가로 설정하지 않음
-    if (showAdSlideshow) return;
+    // 광고가 표시 중이면 이벤트 리스너 설정하지 않음
+    if (showAdSlideshow) {
+      return;
+    }
 
     const resetInactivityTimer = () => {
       // 기존 타이머 제거
@@ -72,11 +78,8 @@ export default function Order() {
       window.removeEventListener('mousemove', resetInactivityTimer);
       window.removeEventListener('click', resetInactivityTimer);
       window.removeEventListener('touchstart', resetInactivityTimer);
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-      }
     };
-  }, [showAdSlideshow, inactivityTimer]);
+  }, [showAdSlideshow]);
 
   const filteredItems = useMemo(() => {
     return activeCategory === '추천메뉴'

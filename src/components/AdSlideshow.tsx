@@ -21,17 +21,25 @@ export default function AdSlideshow({ onClose }: AdSlideshowProps) {
 
   const currentAd = ADS[currentAdIndex];
 
+  const handleClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClose?.();
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-40"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-black flex flex-col items-center justify-center cursor-pointer"
-        onClick={onClose}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* 광고 이미지 */}
-        <div className="w-[90%] h-[90%] flex items-center justify-center px-4" onClick={onClose}>
+        <div
+          className="w-[90%] h-[90%] flex items-center justify-center px-4"
+          onClick={handleClose}
+        >
           <img
             src={currentAd.image}
             alt="advertisement"
