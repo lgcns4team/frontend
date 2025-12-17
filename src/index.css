@@ -2,7 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 스크롤바 숨기기 유틸리티 추가 (키오스크용) */
+/* 1. 커서 설정 (평소엔 손바닥, 클릭 시 움켜쥐는 손) */
+@layer base {
+  body {
+    /* ✋ 이모지를 90도 돌려서 커서로 씀 */
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewport='0 0 32 32'><text y='22' font-size='24' transform='rotate(-90 16 16)'>✋</text></svg>") 16 16, grab;
+  }
+
+  body:active {
+    /* ✊ 이모지를 90도 돌려서 클릭 커서로 씀 */
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewport='0 0 32 32'><text y='22' font-size='24' transform='rotate(-90 16 16)'>✊</text></svg>") 16 16, grabbing;
+  }
+
+  button, a {
+    cursor: inherit;
+  }
+}
+
+
+/* 2. 스크롤바 숨기기 유틸리티 (Tailwind 레이어에 등록) */
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -13,8 +31,7 @@
   }
 }
 
-
-
+/* 3. 일반 CSS 클래스로도 사용 가능하도록 유지 (기존 코드 보존) */
 /* Chrome, Safari, Edge */
 .scrollbar-hide::-webkit-scrollbar {
     display: none;

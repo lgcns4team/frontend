@@ -4,6 +4,8 @@ import Payment from './pages/Payment';
 import EasyOrder from './pages/EasyOrder';
 import EasyConfirm from './pages/EasyConfirm';
 import VoiceOrder from "./pages/VoiceOrder";
+import './index.css';
+
 
 function App() {
   return (
