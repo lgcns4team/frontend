@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, ShoppingCart } from 'lucide-react';
+import type { CartItem } from '../types/OrderTypes';
 
 interface CartSheetProps {
   isOpen: boolean;
-  cart: any[];
+  cart: CartItem[];
   onClose: () => void;
   onCheckout: () => void;
   onUpdateQuantity: (cartId: string, delta: number) => void;
