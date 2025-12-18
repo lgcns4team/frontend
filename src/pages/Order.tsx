@@ -21,6 +21,7 @@ export default function Order() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showAdSlideshow, setShowAdSlideshow] = useState(false);
   const [inactivityTimer, setInactivityTimer] = useState<number | null>(null);
+  const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
 
   // 광고 닫기 핸들러 - Order 화면으로 돌아감 및 1분 타이머 초기화
   const handleCloseAd = () => {
@@ -98,9 +99,7 @@ export default function Order() {
           <button
             onClick={() => navigate('/')}
             className="text-base text-gray-400 underline hover:text-gray-600 transition-colors flex items-center gap-1"
-          >
-            <span className="text-3xl">🏠</span> <span className="font-bold">처음으로</span>
-          </button>
+          ></button>
         </header>
 
         {/* 2. 접근성 & 카테고리 */}
@@ -203,7 +202,12 @@ export default function Order() {
         </main>
 
         {/* 4. 하단 고정 바 (BottomCart) */}
-        <BottomCart onCheckout={() => setIsCartOpen(true)} onEditOptions={handleEditOptions} />
+        <BottomCart
+          onCheckout={() => setIsCartOpen(true)}
+          onEditOptions={handleEditOptions}
+          orderMethod={orderMethod}
+          onOrderMethodChange={setOrderMethod}
+        />
 
         {/* 5. 옵션 모달 */}
         <BeverageOptionsModal

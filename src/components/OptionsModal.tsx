@@ -90,7 +90,12 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
             <div className="w-2/5 p-6 flex flex-col items-center justify-center border-r">
               <div className="w-48 h-48 bg-gray-100 rounded-full mb-4 overflow-hidden">
                 {item.img ? (
-                  <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                  <img
+                    src={item.img}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                    draggable={false}
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     No Image
@@ -122,148 +127,155 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
 
             {/* [오른쪽] 옵션 선택 (원래 디자인 복구) */}
             <div className="w-3/5 p-6 overflow-y-auto">
-              <div className="space-y-4">
-                {/* 1. 온도 */}
-                <div className="py-4 border-b">
-                  <h4 className="font-bold text-xl mb-3">1. 온도(hot or ice)</h4>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setOptions((s) => ({ ...s, temperature: 'hot' }))}
-                      className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
-                        options.temperature === 'hot'
-                          ? 'border-red-500 bg-red-50'
-                          : 'border-gray-200 bg-white'
-                      }`}
-                    >
-                      <span className="text-3xl">🔥</span>
-                      <span className="text-lg font-semibold">핫</span>
-                    </button>
-                    <button
-                      onClick={() => setOptions((s) => ({ ...s, temperature: 'cold' }))}
-                      className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
-                        options.temperature === 'cold'
-                          ? 'border-red-500 bg-red-50'
-                          : 'border-gray-200 bg-white'
-                      }`}
-                    >
-                      <span className="text-3xl">❄️</span>
-                      <span className="text-lg font-semibold">아이스</span>
-                    </button>
-                  </div>
+              {/* 디저트는 옵션 없음 */}
+              {item.category === '디저트' ? (
+                <div className="h-full flex items-center justify-center text-gray-400">
+                  <p className="text-lg">옵션이 없습니다</p>
                 </div>
-
-                {/* 2. 사이즈 */}
-                <div className="py-4 border-b">
-                  <h4 className="font-bold text-xl mb-3">2. 사이즈</h4>
-                  <div className="flex gap-2">
-                    {['tall', 'grande', 'venti'].map((size) => (
+              ) : (
+                <div className="space-y-4">
+                  {/* 1. 온도 */}
+                  <div className="py-4 border-b">
+                    <h4 className="font-bold text-xl mb-3">1. 온도(hot or ice)</h4>
+                    <div className="flex gap-2">
                       <button
-                        key={size}
-                        onClick={() => setOptions((s) => ({ ...s, size: size as any }))}
+                        onClick={() => setOptions((s) => ({ ...s, temperature: 'hot' }))}
                         className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
-                          options.size === size
+                          options.temperature === 'hot'
                             ? 'border-red-500 bg-red-50'
                             : 'border-gray-200 bg-white'
                         }`}
                       >
-                        <span className="text-3xl">🥤</span>
-                        <span className="capitalize text-lg font-semibold">{size}</span>
+                        <span className="text-3xl">🔥</span>
+                        <span className="text-lg font-semibold">핫</span>
                       </button>
-                    ))}
+                      <button
+                        onClick={() => setOptions((s) => ({ ...s, temperature: 'cold' }))}
+                        className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
+                          options.temperature === 'cold'
+                            ? 'border-red-500 bg-red-50'
+                            : 'border-gray-200 bg-white'
+                        }`}
+                      >
+                        <span className="text-3xl">❄️</span>
+                        <span className="text-lg font-semibold">아이스</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {/* 3. 얼음 양 (아이스일 때만) */}
-                {options.temperature === 'cold' && (
+                  {/* 2. 사이즈 */}
                   <div className="py-4 border-b">
-                    <h4 className="font-bold text-xl mb-3">3. 얼음 양</h4>
+                    <h4 className="font-bold text-xl mb-3">2. 사이즈</h4>
                     <div className="flex gap-2">
-                      {['less', 'normal', 'more'].map((ice) => (
+                      {['tall', 'grande', 'venti'].map((size) => (
                         <button
-                          key={ice}
-                          onClick={() => setOptions((s) => ({ ...s, ice: ice as any }))}
+                          key={size}
+                          onClick={() => setOptions((s) => ({ ...s, size: size as any }))}
                           className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
-                            options.ice === ice
+                            options.size === size
                               ? 'border-red-500 bg-red-50'
                               : 'border-gray-200 bg-white'
                           }`}
                         >
-                          <span className="text-3xl">🧊</span>
-                          <span className="capitalize text-lg font-semibold">
-                            {ice === 'less' ? '적게' : ice === 'normal' ? '보통' : '많게'}
-                          </span>
+                          <span className="text-3xl">🥤</span>
+                          <span className="capitalize text-lg font-semibold">{size}</span>
                         </button>
                       ))}
                     </div>
                   </div>
-                )}
 
-                {/* 4. 커피 옵션 (샷/연하게) */}
-                {isCoffee && !isTea && (
-                  <div className="py-4 border-b">
-                    <h4 className="font-bold text-xl mb-3">4. 샷 추가 (+500원)</h4>
-                    <div className="flex items-center justify-center gap-4">
-                      <button
-                        onClick={() =>
-                          setOptions((s) => ({
-                            ...s,
-                            isWeak: !s.isWeak,
-                            shot: !s.isWeak ? 0 : s.shot, // '연하게'를 켜면 샷을 0으로 초기화
-                          }))
-                        }
-                        className={`flex flex-col items-center px-6 py-2 rounded-lg border-2 ${
-                          options.isWeak ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
-                        }`}
-                      >
-                        <span className="text-3xl">💧</span>
-                        <span className="text-lg font-semibold">연하게</span>
-                      </button>
-                      <div className="flex items-center gap-5 bg-white rounded-full px-5 py-3 border border-gray-200 shadow-sm">
+                  {/* 3. 얼음 양 (아이스일 때만) */}
+                  {options.temperature === 'cold' && (
+                    <div className="py-4 border-b">
+                      <h4 className="font-bold text-xl mb-3">3. 얼음 양</h4>
+                      <div className="flex gap-2">
+                        {['less', 'normal', 'more'].map((ice) => (
+                          <button
+                            key={ice}
+                            onClick={() => setOptions((s) => ({ ...s, ice: ice as any }))}
+                            className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
+                              options.ice === ice
+                                ? 'border-red-500 bg-red-50'
+                                : 'border-gray-200 bg-white'
+                            }`}
+                          >
+                            <span className="text-3xl">🧊</span>
+                            <span className="capitalize text-lg font-semibold">
+                              {ice === 'less' ? '적게' : ice === 'normal' ? '보통' : '많게'}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4. 커피 옵션 (샷/연하게) */}
+                  {isCoffee && !isTea && (
+                    <div className="py-4 border-b">
+                      <h4 className="font-bold text-xl mb-3">4. 샷 추가 (+500원)</h4>
+                      <div className="flex items-center justify-center gap-4">
                         <button
-                          onClick={() => handleShotChange(-1)}
-                          className="text-2xl hover:text-red-500 transition-colors"
+                          onClick={() =>
+                            setOptions((s) => ({
+                              ...s,
+                              isWeak: !s.isWeak,
+                              shot: !s.isWeak ? 0 : s.shot, // '연하게'를 켜면 샷을 0으로 초기화
+                            }))
+                          }
+                          className={`flex flex-col items-center px-6 py-2 rounded-lg border-2 ${
+                            options.isWeak ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
+                          }`}
                         >
-                          -
+                          <span className="text-3xl">💧</span>
+                          <span className="text-lg font-semibold">연하게</span>
                         </button>
-                        <span className="font-bold text-2xl w-8 text-center">{options.shot}</span>
+                        <div className="flex items-center gap-5 bg-white rounded-full px-5 py-3 border border-gray-200 shadow-sm">
+                          <button
+                            onClick={() => handleShotChange(-1)}
+                            className="text-2xl hover:text-red-500 transition-colors"
+                          >
+                            -
+                          </button>
+                          <span className="font-bold text-2xl w-8 text-center">{options.shot}</span>
+                          <button
+                            onClick={() => handleShotChange(1)}
+                            className="text-2xl hover:text-red-500 transition-colors"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 5. 휘핑 옵션 */}
+                  {!isTea && (
+                    <div className="py-4">
+                      <h4 className="font-bold text-xl mb-3">{isCoffee ? '5.' : '4.'} 휘핑</h4>
+                      <div className="flex gap-2">
                         <button
-                          onClick={() => handleShotChange(1)}
-                          className="text-2xl hover:text-red-500 transition-colors"
+                          onClick={() => setOptions((s) => ({ ...s, whip: true }))}
+                          className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
+                            options.whip ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
+                          }`}
                         >
-                          +
+                          <span className="text-3xl">🍦</span>
+                          <span className="text-lg font-semibold">추가</span>
+                        </button>
+                        <button
+                          onClick={() => setOptions((s) => ({ ...s, whip: false }))}
+                          className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
+                            !options.whip ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
+                          }`}
+                        >
+                          <span className="text-3xl">🚫</span>
+                          <span className="text-lg font-semibold">없음</span>
                         </button>
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {/* 5. 휘핑 옵션 */}
-                {!isTea && (
-                  <div className="py-4">
-                    <h4 className="font-bold text-xl mb-3">{isCoffee ? '5.' : '4.'} 휘핑</h4>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setOptions((s) => ({ ...s, whip: true }))}
-                        className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
-                          options.whip ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
-                        }`}
-                      >
-                        <span className="text-3xl">🍦</span>
-                        <span className="text-lg font-semibold">추가</span>
-                      </button>
-                      <button
-                        onClick={() => setOptions((s) => ({ ...s, whip: false }))}
-                        className={`flex-1 flex flex-col items-center p-3 rounded-lg border-2 ${
-                          !options.whip ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-white'
-                        }`}
-                      >
-                        <span className="text-3xl">🚫</span>
-                        <span className="text-lg font-semibold">없음</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

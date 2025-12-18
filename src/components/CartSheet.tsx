@@ -41,7 +41,7 @@ export default function CartSheet({
             className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl flex flex-col h-[70vh]"
           >
             {/* 헤더 */}
-            <div className="flex items-center justify-between px-6 py-5 border-b">
+            <div className="flex items-center justify-between px-6 py-5 border-b-2 border-black">
               <div className="flex items-center gap-3">
                 <ShoppingCart className="w-8 h-8 text-gray-800" />
                 <span className="text-m font-bold">주문 내역</span>
@@ -55,7 +55,7 @@ export default function CartSheet({
             </div>
 
             {/* 리스트 */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 scrollbar scrollbar-thumb-gray-400 scrollbar-track-gray-200">
               {cart.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-gray-400">
                   <ShoppingCart className="w-16 h-16 opacity-20 mb-3" />
