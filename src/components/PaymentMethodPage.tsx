@@ -22,7 +22,7 @@ export default function PaymentMethodPage({ onSelectMethod }: PaymentMethodPageP
 
   return (
     <div className="h-full flex flex-col items-center justify-center gap-8 p-8">
-      <h2 className="text-3xl font-semibold text-center">결제 수단을 선택해주세요</h2>
+      <h2 className="text-3xl font-semibold text-center">결제 수단을 선택해주세요</h2>ㅁ
 
       <div className="grid grid-cols-3 gap-6 w-full max-w-4xl">
         {paymentMethods.map((method) => (
