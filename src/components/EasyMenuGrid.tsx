@@ -16,7 +16,12 @@ export default function EasyMenuGrid({ items, onItemClick }: EasyMenuGridProps) 
           className="bg-white rounded-3xl shadow-lg overflow-hidden flex flex-col h-[380px]"
         >
           <div className="flex-1 overflow-hidden">
-            <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+            <img
+              src={item.img}
+              alt={item.name}
+              className="w-full h-full object-cover"
+              draggable={false}
+            />
           </div>
 
           <div className="p-4">

@@ -1,5 +1,5 @@
-import { motion } from "framer-motion";
-import type { MenuItem } from "../types/index";
+import { motion } from 'framer-motion';
+import type { MenuItem } from '../types/index';
 
 interface MenuGridProps {
   items: MenuItem[];
@@ -19,9 +19,16 @@ export default function MenuGrid({ items, onItemClick }: MenuGridProps) {
           <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100">
             {/* 이미지 경로가 없으면 회색박스 처리 */}
             {item.img ? (
-               <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+              <img
+                src={item.img}
+                alt={item.name}
+                className="w-full h-full object-cover"
+                draggable={false}
+              />
             ) : (
-               <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-xs">No Image</div>
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
+                No Image
+              </div>
             )}
           </div>
           <div className="flex flex-col justify-between flex-1 px-1 pb-1">

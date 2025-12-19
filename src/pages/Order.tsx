@@ -17,25 +17,52 @@ export default function Order() {
   const { cart, addToCart, removeFromCart, updateQuantity, clearCart } = useCartStore();
   const [activeCategory, setActiveCategory] = useState('추천메뉴');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [editingCartId, setEditingCartId] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showAdSlideshow, setShowAdSlideshow] = useState(false);
   const [inactivityTimer, setInactivityTimer] = useState<number | null>(null);
+  const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
 
-  // 무동작 감지 로직 (30초)
+  // 광고 닫기 핸들러 - Order 화면으로 돌아감 및 1분 타이머 초기화
+  const handleCloseAd = () => {
+    // 기존 타이머 제거
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+      setInactivityTimer(null);
+    }
+    setShowAdSlideshow(false);
+  };
+
+  // 옵션 수정 핸들러 - 장바구니에서 옵션 변경
+  const handleEditOptions = (cartId: string) => {
+    const cartItem = cart.find((item) => item.cartId === cartId);
+    if (cartItem) {
+      // 메뉴 정보 찾기
+      const menuItem = items.find((item) => item.id === cartItem.id);
+      if (menuItem) {
+        setEditingCartId(cartId);
+        setSelectedItem(menuItem);
+      }
+    }
+  };
+
+  // 무동작 감지 로직 (1분)
   useEffect(() => {
+    // 광고가 표시 중이면 이벤트 리스너 설정하지 않음
+    if (showAdSlideshow) {
+      return;
+    }
+
     const resetInactivityTimer = () => {
       // 기존 타이머 제거
       if (inactivityTimer) {
         clearTimeout(inactivityTimer);
       }
 
-      // 광고 슬라이드쇼가 표시 중이면 다시 시작하지 않음
-      if (showAdSlideshow) return;
-
-      // 새로운 30초 타이머 설정
+      // 새로운 1분 타이머 설정
       const newTimer = setTimeout(() => {
         setShowAdSlideshow(true);
-      }, 30000); // 30초
+      }, 60000); // 1분
 
       setInactivityTimer(newTimer);
     };
@@ -52,11 +79,8 @@ export default function Order() {
       window.removeEventListener('mousemove', resetInactivityTimer);
       window.removeEventListener('click', resetInactivityTimer);
       window.removeEventListener('touchstart', resetInactivityTimer);
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-      }
     };
-  }, [showAdSlideshow, inactivityTimer]);
+  }, [showAdSlideshow]);
 
   const filteredItems = useMemo(() => {
     return activeCategory === '추천메뉴'
@@ -67,7 +91,7 @@ export default function Order() {
   return (
     // 90도 회전 래퍼
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      {showAdSlideshow && <AdSlideshow onClose={() => setShowAdSlideshow(false)} />}
+      {showAdSlideshow && <AdSlideshow onClose={handleCloseAd} />}
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl">
         {/* 1. 헤더 */}
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
@@ -75,9 +99,7 @@ export default function Order() {
           <button
             onClick={() => navigate('/')}
             className="text-base text-gray-400 underline hover:text-gray-600 transition-colors flex items-center gap-1"
-          >
-            <span className="text-3xl">🏠</span> <span className="font-bold">처음으로</span>
-          </button>
+          ></button>
         </header>
 
         {/* 2. 접근성 & 카테고리 */}
@@ -180,15 +202,33 @@ export default function Order() {
         </main>
 
         {/* 4. 하단 고정 바 (BottomCart) */}
-        <BottomCart onCheckout={() => setIsCartOpen(true)} />
+        <BottomCart
+          onCheckout={() => setIsCartOpen(true)}
+          onEditOptions={handleEditOptions}
+          orderMethod={orderMethod}
+          onOrderMethodChange={setOrderMethod}
+        />
 
         {/* 5. 옵션 모달 */}
         <BeverageOptionsModal
           open={!!selectedItem}
           item={selectedItem}
-          onClose={() => setSelectedItem(null)}
+          onClose={() => {
+            setSelectedItem(null);
+            setEditingCartId(null);
+          }}
           onAdd={(item, opts, qty) => {
-            addToCart(item, opts, qty);
+            // 수정 모드인 경우
+            if (editingCartId) {
+              // 기존 항목 제거
+              removeFromCart(editingCartId);
+              // 새 옵션으로 다시 추가
+              addToCart(item, opts, qty);
+              setEditingCartId(null);
+            } else {
+              // 신규 추가 모드
+              addToCart(item, opts, qty);
+            }
             setSelectedItem(null);
           }}
         />
