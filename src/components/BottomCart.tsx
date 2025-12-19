@@ -34,10 +34,10 @@ export default function BottomCart({
   return (
     <div className="bg-white border-t border-gray-200 shadow-[0_-8px_30px_rgba(0,0,0,0.1)] z-30 flex flex-col h-[500px] shrink-0">
       {/* 1. 장바구니 헤더 */}
-      <div className="flex items-center justify-between px-6 py-5 border-b-2 border-black bg-gray-50 shrink-0">
+      <div className="flex items-center justify-between px-6 py-5 border-b-2 border-grey bg-gray-50 shrink-0">
         <div className="flex items-center gap-3 text-gray-700">
           <ShoppingCart className="w-7 h-7" />
-          <span className="font-bold text-m">주문 내역</span>
+          <span className="font-semibold text-lg">주문 내역</span>
           {cart.length > 0 && (
             <span className="bg-orange-500 text-white text-base font-bold px-3 py-1 rounded-full">
               {cart.reduce((acc, i) => acc + i.quantity, 0)}

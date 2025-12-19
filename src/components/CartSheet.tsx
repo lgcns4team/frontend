@@ -39,7 +39,7 @@ export default function CartSheet({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl flex flex-col h-[70vh]"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl flex flex-col h-[67vh]"
           >
             {/* 헤더 */}
             <div className="flex items-center justify-between px-6 py-5 border-b-2 border-black">

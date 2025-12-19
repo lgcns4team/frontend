@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query'; // 쿼리 훅 가져오기
-import { fetchMenuOptions } from '../api/MenuApi'; // API 함수 가져오기
+// import { useQuery } from '@tanstack/react-query'; // API 사용 (백엔드 준비 시 활성화)
+// import { fetchMenuOptions } from '../api/MenuApi'; // API 사용 (백엔드 준비 시 활성화)
 import type { MenuItem, Options } from '../types/OrderTypes';
 
 type Props = {
@@ -24,13 +24,13 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
     isWeak: false,
   });
 
-  // [핵심] API로 옵션 정보 가져오기
+  // [핵심] API로 옵션 정보 가져오기 (백엔드 준비 시 활성화)
   // item이 있을 때만 쿼리가 실행됩니다 (enabled: !!item)
-  const { data: optionGroups } = useQuery({
-    queryKey: ['options', item?.id],
-    queryFn: () => fetchMenuOptions(item!.id),
-    enabled: !!item && open, // 모달이 열려있고 아이템이 있을 때만 호출
-  });
+  // const { data: optionGroups } = useQuery({
+  //   queryKey: ['options', item?.id],
+  //   queryFn: () => fetchMenuOptions(item!.id),
+  //   enabled: !!item && open, // 모달이 열려있고 아이템이 있을 때만 호출
+  // });
 
   // 모달이 열릴 때 초기화
   useEffect(() => {

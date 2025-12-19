@@ -6,7 +6,7 @@ import MenuGrid from '../components/MenuGrid';
 import BeverageOptionsModal from '../components/OptionsModal';
 import BottomCart from '../components/BottomCart';
 import CartSheet from '../components/CartSheet';
-import AdSlideshow from '../components/AdSlideshow';
+// import AdSlideshow from '../components/AdSlideshow'; 광고 주석 처리
 import microphoneIcon from '../assets/icons/microphone.svg';
 import fingerIcon from '../assets/icons/finger.svg';
 import type { MenuItem } from '../types';
@@ -24,14 +24,14 @@ export default function Order() {
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
 
   // 광고 닫기 핸들러 - Order 화면으로 돌아감 및 1분 타이머 초기화
-  const handleCloseAd = () => {
-    // 기존 타이머 제거
-    if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
-      setInactivityTimer(null);
-    }
-    setShowAdSlideshow(false);
-  };
+  // const handleCloseAd = () => {
+  //   // 기존 타이머 제거
+  //   if (inactivityTimer) {
+  //     clearTimeout(inactivityTimer);
+  //     setInactivityTimer(null);
+  //   }
+  //   setShowAdSlideshow(false);
+  // };
 
   // 옵션 수정 핸들러 - 장바구니에서 옵션 변경
   const handleEditOptions = (cartId: string) => {
@@ -91,7 +91,7 @@ export default function Order() {
   return (
     // 90도 회전 래퍼
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      {showAdSlideshow && <AdSlideshow onClose={handleCloseAd} />}
+      {/* {showAdSlideshow && <AdSlideshow onClose={handleCloseAd} />} 광고 주석 처리*/}
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl">
         {/* 1. 헤더 */}
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
