@@ -51,7 +51,7 @@ export const useRecorder = (): UseRecorderReturn => {
 
           echoCancellation: true, // 스피커 소리가 다시 마이크로 들어가는 것 방지
           noiseSuppression: true, // 배경 잡음 제거 (브라우저 내장 기능)
-          autoGainControl: true,
+          autoGainControl: true, // 목소리 크기 자동 조절 (멀리서 말해도 잘 들리게)
         }
       });
       

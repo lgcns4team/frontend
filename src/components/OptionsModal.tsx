@@ -1,17 +1,20 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { MenuItem, Options } from '../types';
+import { useQuery } from '@tanstack/react-query'; // 쿼리 훅 가져오기
+import { fetchMenuOptions } from '../api/MenuApi'; // API 함수 가져오기
+import type { MenuItem, Options } from '../types/OrderTypes';
 
 type Props = {
   open: boolean;
   item: MenuItem | null;
   onClose: () => void;
-  // [유지] 수량(quantity) 분리 (에러 방지용)
   onAdd: (item: MenuItem, options: Options, quantity: number) => void;
 };
 
 export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Props) {
   const [quantity, setQuantity] = useState(1);
+
+  // 기본 옵션값 설정
   const [options, setOptions] = useState<Options>({
     temperature: 'cold',
     whip: false,
@@ -21,9 +24,19 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
     isWeak: false,
   });
 
+  // [핵심] API로 옵션 정보 가져오기
+  // item이 있을 때만 쿼리가 실행됩니다 (enabled: !!item)
+  const { data: optionGroups } = useQuery({
+    queryKey: ['options', item?.id],
+    queryFn: () => fetchMenuOptions(item!.id),
+    enabled: !!item && open, // 모달이 열려있고 아이템이 있을 때만 호출
+  });
+
+  // 모달이 열릴 때 초기화
   useEffect(() => {
     if (open) {
       setQuantity(1);
+      // 옵션 초기화 로직 유지
       setOptions({
         temperature: 'cold',
         whip: false,
@@ -35,25 +48,27 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
     }
   }, [open]);
 
-  // 옵션이 적용된 개당 가격
+  // [헬퍼 함수] 특정 옵션 그룹이 서버 응답에 있는지 확인
+  // 예: hasOption('샷') -> true면 샷 추가 화면 표시
+  const isCoffee = item?.category === '커피' || item?.category?.includes('Coffee');
+  const isTea = item?.category === '티' || item?.category?.includes('Tea');
+
+  // 가격 계산 (기본 가격 + 옵션 가격)
   const unitPrice = useMemo(() => {
     if (!item) return 0;
     let price = item.price;
     if (options.size === 'tall') price -= 500;
     if (options.size === 'venti') price += 500;
-    if (options.shot) price += options.shot * 500;
+    if (options.shot > 0) price += options.shot * 500;
     return price;
   }, [item, options]);
 
-  // 최종 표시 가격 (개당 가격 * 수량)
-  const finalPrice = useMemo(() => {
-    return unitPrice * quantity;
-  }, [unitPrice, quantity]);
+  const finalPrice = unitPrice * quantity;
 
+  // 핸들러 함수들
   const handleShotChange = (delta: number) => {
     setOptions((prev) => {
       const newShotCount = Math.max(0, prev.shot + delta);
-      // 샷을 추가하면 '연하게' 옵션을 해제합니다.
       const newIsWeak = delta > 0 && newShotCount > 0 ? false : prev.isWeak;
       return { ...prev, shot: newShotCount, isWeak: newIsWeak };
     });
@@ -64,9 +79,6 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
   };
 
   if (!open || !item) return null;
-
-  const isTea = item.name?.includes('티') || item.category === '음료';
-  const isCoffee = item.category === '커피';
 
   return (
     <AnimatePresence>
@@ -88,7 +100,7 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
           <div className="flex-grow flex overflow-hidden">
             {/* [왼쪽] 이미지 및 수량 */}
             <div className="w-2/5 p-6 flex flex-col items-center justify-center border-r">
-              <div className="w-48 h-48 bg-gray-100 rounded-full mb-4 overflow-hidden">
+              <div className="w-48 h-48 bg-gray-100 rounded-full mb-4 overflow-hidden shadow-inner">
                 {item.img ? (
                   <img
                     src={item.img}
@@ -102,22 +114,24 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                   </div>
                 )}
               </div>
-              <h3 className="font-bold text-3xl text-center">{item.name}</h3>
-              <p className="text-red-600 font-bold text-4xl my-4">
+              <h3 className="font-bold text-3xl text-center leading-tight mb-2">{item.name}</h3>
+              <p className="text-red-600 font-bold text-4xl mb-6">
                 {finalPrice.toLocaleString()}원
               </p>
+
+              {/* 수량 조절 */}
               <div className="flex items-center justify-center gap-2">
                 <div className="flex items-center gap-6 bg-white rounded-full px-6 py-3 border border-gray-200 shadow-sm">
                   <button
                     onClick={() => handleQuantityChange(-1)}
-                    className="text-3xl font-light hover:text-red-500 transition-colors"
+                    className="text-3xl font-light hover:text-red-500"
                   >
                     -
                   </button>
                   <span className="font-bold text-2xl w-10 text-center">{quantity}</span>
                   <button
                     onClick={() => handleQuantityChange(1)}
-                    className="text-3xl font-light hover:text-red-500 transition-colors"
+                    className="text-3xl font-light hover:text-red-500"
                   >
                     +
                   </button>
@@ -280,19 +294,21 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
           </div>
 
           {/* [하단 버튼] */}
-          <div className="grid grid-cols-2 gap-3 p-4 border-t">
+          <div className="grid grid-cols-2 gap-3 p-4 border-t bg-white rounded-b-2xl">
             <button
               onClick={onClose}
-              className="w-full bg-white text-red-500 border-2 border-red-500 rounded-lg py-4 font-bold text-xl"
+              className="w-full bg-white text-gray-500 border-2 border-gray-300 hover:bg-gray-50 rounded-xl py-4 font-bold text-xl transition-colors"
             >
-              이전으로
+              취소
             </button>
             <button
-              // 조정된 가격으로 아이템 전달
               onClick={() => onAdd({ ...item, price: unitPrice }, options, quantity)}
-              className="w-full bg-red-500 text-white rounded-lg py-4 font-bold text-xl"
+              className="w-full bg-gray-900 hover:bg-black text-white rounded-xl py-4 font-bold text-xl shadow-lg transition-transform active:scale-95 flex flex-col items-center justify-center leading-none gap-1"
             >
-              주문하기 (담기)
+              <span>주문 담기</span>
+              <span className="text-sm font-normal text-gray-300">
+                {finalPrice.toLocaleString()}원
+              </span>
             </button>
           </div>
         </motion.div>
