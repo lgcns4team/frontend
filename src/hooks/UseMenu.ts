@@ -2,13 +2,58 @@
 // import { fetchMenus, fetchRecommendMenus } from '../api/MenuApi';
 import type { MenuItem } from '../types/index';
 
-// 현재 시간에 맞춰서 MORNING / AFTERNOON / EVENING 반환
-const getCurrentTimeSlot = () => {
-  const hour = new Date().getHours();
-  if (hour >= 6 && hour < 11) return 'MORNING'; // 아침 6시~11시
-  if (hour >= 11 && hour < 17) return 'AFTERNOON'; // 점심 11시~17시
-  return 'EVENING'; // 저녁 17시 이후
-};
+// [임시] handlers.ts의 메뉴 데이터 직접 사용
+const tempMenuData = [
+  { id: 1, name: '아메리카노', price: 4500, category: '커피', img: '/raw/menu_ice_americano.jpg' },
+  { id: 2, name: '카페라떼', price: 5000, category: '커피', img: '/raw/menu_cafe_latte.jpg' },
+  { id: 3, name: '바닐라라떼', price: 5500, category: '커피', img: '/raw/menu_vanilla_latte.jpg' },
+  {
+    id: 4,
+    name: '딸기스무디',
+    price: 6000,
+    category: '음료',
+    img: '/raw/menu_straw_latte.jpg',
+  },
+  { id: 5, name: '캐모마일 티', price: 4800, category: '음료', img: '/raw/menu_chamomile.jpg' },
+  {
+    id: 6,
+    name: '얼그레이 티',
+    price: 4800,
+    category: '음료',
+    img: '/raw/menu_peach_ice_tea.jpg',
+  },
+  { id: 11, name: '페퍼민트 티', price: 5000, category: '음료', img: '/raw/menu_peppermint.jpg' },
+  { id: 12, name: '캐모마일 티', price: 5000, category: '음료', img: '/raw/menu_chamomile.jpg' },
+  {
+    id: 7,
+    name: '치즈케이크 디저트',
+    price: 6500,
+    category: '푸드',
+    img: '/raw/menu_cheese_cake.jpg',
+  },
+  {
+    id: 8,
+    name: '초코 브라우니 디저트',
+    price: 5800,
+    category: '푸드',
+    img: '/raw/menu_choco_cake.jpg',
+  },
+  {
+    id: 9,
+    name: '햄치즈 샌드위치',
+    price: 7200,
+    category: '푸드',
+    img: '/raw/menu_salt_bread.jpg',
+  },
+];
+
+// [API 연결 시 활성화]
+// const getCurrentTimeSlot = () => {
+//   const hour = new Date().getHours();
+//   if (hour >= 6 && hour < 11) return 'MORNING';
+//   if (hour >= 11 && hour < 17) return 'AFTERNOON';
+//   return 'EVENING';
+// };
 
 // 기본 카테고리 (API 로딩 전이나 에러 시 사용)
 export const CATEGORIES = ['추천메뉴', '커피', '음료', '디저트'];
@@ -33,40 +78,26 @@ export function useMenu() {
   // 임시 데이터 (백엔드 준비 시까지)
   const isLoading = false;
   const error = null;
-  const menuQuery = { data: [] };
-  const recommendQuery = { data: [] };
 
-  // --- 데이터 합치기 (Data Mapping) - 백엔드 연결 시 활성화 ---
+  // [임시] 메뉴 데이터를 임시로 직접 사용
+  const recommendedItems: MenuItem[] = tempMenuData.map((item) => ({
+    ...item,
+    category: '추천메뉴',
+  }));
 
-  // (A) 추천 메뉴 리스트: 카테고리를 '추천메뉴'로 강제 지정 (API 사용)
-  // const recommendedItems: MenuItem[] = (recommendQuery.data || []).map((item) => ({
-  //   ...item,
-  //   category: '추천메뉴',
-  //   img: item.imageUrl || item.img || '',
-  // }));
-
-  // (B) 일반 메뉴 리스트: 카테고리별 묶음을 풀어서 일자형 배열로 변환 (API 사용)
-  // const basicItems: MenuItem[] = (menuQuery.data || []).flatMap((category) =>
-  //   category.menus.map((menu) => ({
-  //     ...menu,
-  //     category: category.name, // 백엔드에서 온 카테고리 이름 (커피, 음료 등)
-  //     img: menu.imageUrl || menu.img || '',
-  //   }))
-  // );
-
-  // 현재 임시 사용: 빈 배열 (백엔드 준비 후 위의 주석 해제)
-  const recommendedItems: MenuItem[] = [];
-  const basicItems: MenuItem[] = [];
+  const basicItems: MenuItem[] = tempMenuData.map((item) => ({
+    ...item,
+  }));
 
   // (C) 최종 전체 리스트 (추천 + 일반)
   const allItems = [...recommendedItems, ...basicItems];
 
-  // (D) 카테고리 탭 목록 만들기 (추천메뉴 + API에서 온 카테고리들) - 백엔드 연결 시 활성화
-  // const apiCategories = menuQuery.data?.map((c) => c.name) || [];
-  // const dynamicCategories = ['추천메뉴', ...apiCategories];
-
-  // 현재 임시 사용: 기본 카테고리 사용
-  const dynamicCategories = CATEGORIES;
+  // (D) 카테고리 탭 목록 만들기
+  // 임시: 데이터에서 동적으로 카테고리 추출 (추천메뉴 + 기타)
+  const uniqueCategories = Array.from(
+    new Set(basicItems.map((item) => item.category).filter((cat) => cat !== '추천메뉴'))
+  );
+  const dynamicCategories = ['추천메뉴', ...uniqueCategories];
 
   return {
     items: allItems, // 화면에 뿌려질 최종 메뉴 리스트

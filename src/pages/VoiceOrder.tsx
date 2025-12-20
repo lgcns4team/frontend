@@ -37,7 +37,7 @@ const VoiceOrder: React.FC = () => {
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // 1. 전역 장바구니 스토어
+  // 1. 전역 장바구니 스토어 (주문확인 시에만 사용)
   const { addToCart, clearCart: clearGlobalCart, removeFromCart, updateQuantity } = useCartStore();
   const globalCart = useCartStore((state) => state.cart);
 
@@ -46,7 +46,12 @@ const VoiceOrder: React.FC = () => {
   const { isRecording, audioFile, audioLevel, startRecording, stopRecording, resetRecording } =
     useRecorder();
 
-  // 2. 음성 옵션(배열) -> 전역 옵션(객체) 변환 함수
+  // 2. VoiceOrder 페이지에 진입할 때 전역 장바구니 초기화
+  useEffect(() => {
+    clearGlobalCart();
+  }, [clearGlobalCart]);
+
+  // 3. 음성 옵션(배열) -> 전역 옵션(객체) 변환 함수
   const convertVoiceOptionsToGlobal = (voiceOptions: string[] = []): Partial<Options> => {
     const options: Partial<Options> = {};
 
@@ -75,15 +80,12 @@ const VoiceOrder: React.FC = () => {
     return options;
   };
 
-  // 3. 주문확인 핸들러 (CartSheet 표시)
+  // 4. 주문확인 핸들러 (CartSheet 표시)
   const handleCheckout = () => {
     if (cart.length === 0) {
       alert('장바구니가 비어있습니다.');
       return;
     }
-
-    // 기존 전역 장바구니 비우기 (새로운 주문 시작)
-    clearGlobalCart();
 
     // 음성 장바구니 아이템들을 전역 장바구니로 이동
     cart.forEach((voiceItem) => {
