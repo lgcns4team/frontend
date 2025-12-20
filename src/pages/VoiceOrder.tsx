@@ -15,7 +15,7 @@ import type { Options } from '../types/OrderTypes';
 // [Components]
 import RecordButton from '../components/RecordButton';
 import BottomCart from '../components/BottomCart';
-import CartSheet from '../components/CartSheet';
+import OrderConfirmModal from '../components/OrderConfirmModal';
 import AudioVisualizer from '../components/AudioVisualizer';
 
 // [Assets]
@@ -326,16 +326,15 @@ const VoiceOrder: React.FC = () => {
           onOrderMethodChange={setOrderMethod}
         />
 
-        {/* 5. 주문 확인 모달 (CartSheet) */}
-        <CartSheet
+        {/* 5. 주문 확인 모달 */}
+        <OrderConfirmModal
           isOpen={isCartOpen}
           cart={globalCart}
           onClose={() => setIsCartOpen(false)}
+          onPrevious={() => setIsCartOpen(false)}
           onCheckout={() => {
             navigate('/payment', { state: { directToMethod: true } });
           }}
-          onUpdateQuantity={updateQuantity}
-          onClearCart={clearGlobalCart}
           onRemoveItem={removeFromCart}
         />
       </div>

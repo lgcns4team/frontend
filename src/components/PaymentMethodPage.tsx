@@ -21,24 +21,26 @@ export default function PaymentMethodPage({ onSelectMethod }: PaymentMethodPageP
   ];
 
   return (
-    <div className="h-full flex flex-col items-center justify-start gap-8 p-6 pt-8 overflow-y-auto">
-      <h2 className="text-3xl font-semibold text-center">결제 수단을 선택해주세요</h2>
+    <div className="h-full flex flex-col items-center p-4 overflow-y-auto">
+      <h2 className="text-3xl font-semibold text-center pt-16 mb-2">결제 수단을 선택해주세요</h2>
 
-      <div className="grid grid-cols-2 gap-5 w-full max-w-2xl">
-        {paymentMethods.map((method) => (
-          <button
-            key={method.id}
-            onClick={() => onSelectMethod(method.type)}
-            className="bg-pink-200 hover:bg-pink-300 transition-colors p-6 rounded-2xl flex flex-col items-center justify-center gap-3 min-h-36"
-          >
-            {method.image ? (
-              <img src={method.image} alt={method.name} className="w-14 h-14 object-contain" />
-            ) : (
-              <span className="text-4xl">{method.icon}</span>
-            )}
-            <div className="text-lg font-semibold text-gray-800 text-center">{method.name}</div>
-          </button>
-        ))}
+      <div className="flex flex-1 items-center justify-center w-full">
+        <div className="grid grid-cols-2 gap-5 w-full max-w-2xl">
+          {paymentMethods.map((method) => (
+            <button
+              key={method.id}
+              onClick={() => onSelectMethod(method.type)}
+              className="bg-pink-200 hover:bg-pink-300 transition-colors p-6 rounded-2xl flex flex-col items-center justify-center gap-3 min-h-52"
+            >
+              {method.image ? (
+                <img src={method.image} alt={method.name} className="w-20 h-20 object-contain" />
+              ) : (
+                <span className="text-6xl">{method.icon}</span>
+              )}
+              <div className="text-xl font-semibold text-gray-800 text-center">{method.name}</div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

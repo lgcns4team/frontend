@@ -28,21 +28,21 @@ const tempMenuData = [
     id: 7,
     name: '치즈케이크 디저트',
     price: 6500,
-    category: '푸드',
+    category: '디저트',
     img: '/raw/menu_cheese_cake.jpg',
   },
   {
     id: 8,
     name: '초코 브라우니 디저트',
     price: 5800,
-    category: '푸드',
+    category: '디저트',
     img: '/raw/menu_choco_cake.jpg',
   },
   {
     id: 9,
     name: '햄치즈 샌드위치',
     price: 7200,
-    category: '푸드',
+    category: '디저트',
     img: '/raw/menu_salt_bread.jpg',
   },
 ];
@@ -80,27 +80,29 @@ export function useMenu() {
   const error = null;
 
   // [임시] 메뉴 데이터를 임시로 직접 사용
+  // 추천메뉴: 모든 항목을 추천메뉴로 표시 (ID 1000번대로 변경, 카테고리는 원래 유지)
   const recommendedItems: MenuItem[] = tempMenuData.map((item) => ({
     ...item,
-    category: '추천메뉴',
+    id: item.id + 1000, // ID 충돌 방지 (1000번대로)
+    // 카테고리는 원래 유지 (커피, 음료, 디저트)
   }));
 
-  const basicItems: MenuItem[] = tempMenuData.map((item) => ({
-    ...item,
-  }));
+  // 일반 메뉴: 원래 카테고리 유지
+  const basicItems: MenuItem[] = tempMenuData;
 
   // (C) 최종 전체 리스트 (추천 + 일반)
+  // 추천메뉴 탭에서는 추천 아이템들을, 다른 탭에서는 원본 메뉴들을 보여주기 위함
   const allItems = [...recommendedItems, ...basicItems];
 
   // (D) 카테고리 탭 목록 만들기
-  // 임시: 데이터에서 동적으로 카테고리 추출 (추천메뉴 + 기타)
-  const uniqueCategories = Array.from(
-    new Set(basicItems.map((item) => item.category).filter((cat) => cat !== '추천메뉴'))
-  );
+  // 추천메뉴 + 기타 카테고리들
+  const uniqueCategories = Array.from(new Set(basicItems.map((item) => item.category)));
   const dynamicCategories = ['추천메뉴', ...uniqueCategories];
 
   return {
-    items: allItems, // 화면에 뿌려질 최종 메뉴 리스트
+    items: allItems, // 화면에 뿌려질 최종 메뉴 리스트 (추천메뉴 + 일반메뉴)
+    basicItems, // 일반메뉴만 (카테고리별 필터링용)
+    recommendedItems, // 추천메뉴 (추천메뉴 탭용)
     isLoading,
     categories: dynamicCategories, // 백엔드 연결 시 동적으로 변경됨
     error,

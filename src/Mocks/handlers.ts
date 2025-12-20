@@ -28,21 +28,21 @@ const allMenus = [
     id: 7,
     name: '치즈케이크 디저트',
     price: 6500,
-    category: '푸드',
+    category: '디저트',
     img: '/raw/menu_cheese_cake.jpg',
   },
   {
     id: 8,
     name: '초코 브라우니 디저트',
     price: 5800,
-    category: '푸드',
+    category: '디저트',
     img: '/raw/menu_choco_cake.jpg',
   },
   {
     id: 9,
     name: '햄치즈 샌드위치',
     price: 7200,
-    category: '푸드',
+    category: '디저트',
     img: '/raw/menu_salt_bread.jpg', // 샌드위치 대신 빵 이미지
   },
 ];

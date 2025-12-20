@@ -38,7 +38,7 @@ export default function EasyOrder() {
       case '디저트':
       case '추천메뉴':
       case '세트메뉴':
-        return items.filter((item) => item.category === '푸드');
+        return items.filter((item) => item.category === '디저트');
       default:
         return [];
     }
