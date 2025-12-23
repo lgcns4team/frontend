@@ -1,13 +1,15 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, ShoppingCart } from 'lucide-react';
-import type { CartItem } from '../types/index';
+import { useCartStore } from '../store/UseCartStore'; // 스토어 가져오기 (총액 계산용)
+import type { CartItem } from '../types/OrderTypes';   // 정확한 타입 가져오기
 
 interface CartSheetProps {
   isOpen: boolean;
   cart: CartItem[];
   onClose: () => void;
   onCheckout: () => void;
-  onUpdateQuantity: (cartId: string, delta: number) => void;
+  // [수정] 스토어 함수 시그니처에 맞춰서 (id, quantity)로 변경
+  onUpdateQuantity: (cartId: string, quantity: number) => void;
   onClearCart: () => void;
   onRemoveItem: (cartId: string) => void;
 }
@@ -21,20 +23,40 @@ export default function CartSheet({
   onClearCart,
   onRemoveItem,
 }: CartSheetProps) {
+  // 스토어에서 정확한 총액 계산 함수 가져오기
+  const { getTotalPrice } = useCartStore();
+
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-  const renderOptions = (options?: CartItem['options']) => {
-    if (!options) return null;
-    const parts: string[] = [];
-    if (options.temperature) parts.push(`온도: ${options.temperature === 'hot' ? 'HOT' : 'ICE'}`);
-    if (options.size) parts.push(`사이즈: ${options.size.toUpperCase()}`);
-    if (options.ice) parts.push(`얼음: ${options.ice}`);
-    if (options.shot && options.shot > 0) parts.push(`샷 추가: ${options.shot}`);
-    if (options.whip) parts.push('휘핑 추가');
-    if (options.isWeak) parts.push('연하게');
+  // [핵심] 개별 아이템 가격 계산 함수 (옵션 가격 포함)
+  const getItemTotalPrice = (item: CartItem) => {
+    // 1. 옵션 추가금 합산 (샷 추가, 사이즈 업 등)
+    const optionsPrice = item.selectedBackendOptions 
+      ? item.selectedBackendOptions.reduce((acc, opt) => acc + opt.price, 0)
+      : 0;
 
-    if (parts.length === 0) return null;
-    return parts.map((part) => <div key={part}>{part}</div>);
+    // 2. (기본가 + 옵션가) * 수량
+    return (item.price + optionsPrice) * item.quantity;
+  };
+
+  // 옵션 표시 헬퍼 (백엔드 데이터 기준 or 프론트 옵션 기준)
+  const renderOptionText = (item: CartItem) => {
+    // 1순위: 백엔드용 옵션 데이터가 있으면 그걸 보여줌 (정확함)
+    if (item.selectedBackendOptions && item.selectedBackendOptions.length > 0) {
+       return item.selectedBackendOptions.map(o => o.name).join(', ');
+    }
+    
+    // 2순위: 기존 방식대로 options 객체 분석 (백엔드 데이터가 없을 경우 대비)
+    if (item.options) {
+      const parts: string[] = [];
+      if (item.options.temperature) parts.push(item.options.temperature === 'hot' ? 'HOT' : 'ICE');
+      if (item.options.size) parts.push(item.options.size.toUpperCase());
+      if (item.options.shot && item.options.shot > 0) parts.push(`샷 ${item.options.shot}추가`);
+      if (item.options.whip) parts.push('휘핑');
+      if (item.options.isWeak) parts.push('연하게');
+      return parts.join(', ');
+    }
+    return null;
   };
 
   return (
@@ -53,14 +75,14 @@ export default function CartSheet({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl flex flex-col h-[70vh]"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl flex flex-col h-[85vh]"
           >
             {/* 헤더 */}
             <div className="flex items-center justify-between px-6 py-5 border-b">
               <div className="flex items-center gap-3">
                 <ShoppingCart className="w-8 h-8 text-gray-800" />
-                <span className="text-m font-bold">주문 내역</span>
-                <span className="bg-orange-500 text-white text-sm font-bold px-3 py-1.5 rounded-full">
+                <span className="text-xl font-bold">주문 내역</span>
+                <span className="bg-orange-500 text-white text-sm font-bold px-3 py-1 rounded-full">
                   {totalItems}
                 </span>
               </div>
@@ -72,77 +94,91 @@ export default function CartSheet({
             {/* 리스트 */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
               {cart.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                  <ShoppingCart className="w-16 h-16 opacity-20 mb-3" />
-                  <span className="text-xl">비어있음</span>
+                <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-4">
+                  <ShoppingCart className="w-16 h-16 opacity-20" />
+                  <span className="text-xl font-medium">장바구니가 비어있습니다</span>
                 </div>
               ) : (
                 cart.map((item) => (
                   <div
                     key={item.cartId}
-                    className="bg-white p-3 rounded-xl border shadow-sm flex justify-between items-center"
+                    className="bg-white p-4 rounded-xl border shadow-sm flex flex-col gap-3"
                   >
-                    <div>
-                      <h4 className="font-bold text-sm mb-1">{item.name}</h4>
-                      {item.category !== '디저트' && (
-                        <p className="text-sm text-gray-400 mb-2 font-semibold">
-                          {item.options?.temperature === 'hot' ? 'HOT' : 'ICE'} /{'  '}
-                          {item.options?.size?.toUpperCase()}
-                          {item.options?.shot ? ` / 샷+${item.options.shot}` : ''}
-                        </p>
-                      )}
-                      <p className="text-gray-600 text-sm">
-                        {(item.price * item.quantity).toLocaleString()}원
-                      </p>
+                    <div className="flex justify-between items-start">
+                      <div className="flex gap-4">
+                        {/* 이미지 */}
+                        <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                           <img 
+                            src={item.img || "/images/no-image.png"} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => (e.currentTarget.src = "https://placehold.co/100?text=No+Img")}
+                           />
+                        </div>
+                        {/* 상품 정보 */}
+                        <div>
+                          <h4 className="font-bold text-lg text-gray-800">{item.name}</h4>
+                          <p className="text-sm text-gray-500 mt-1 font-medium">
+                            {renderOptionText(item)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <button onClick={() => onRemoveItem(item.cartId)} className="text-gray-300 hover:text-red-500 p-1">
+                        <X className="w-6 h-6" />
+                      </button>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-3 bg-white rounded-lg px-3 py-1.5 border border-gray-200 shadow-sm">
+
+                    <div className="flex justify-between items-end border-t pt-3 mt-1">
+                      {/* 수량 조절 버튼 (로직 수정됨) */}
+                      <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-1 border border-gray-200">
                         <button
-                          onClick={() => onUpdateQuantity(item.cartId, -1)}
-                          className="p-1 hover:bg-gray-100 rounded"
+                          onClick={() => onUpdateQuantity(item.cartId, item.quantity - 1)}
+                          className="p-1 hover:bg-gray-200 rounded text-gray-600"
                         >
-                          <Minus className="w-5 h-5 text-gray-600" />
+                          <Minus className="w-4 h-4" />
                         </button>
-                        <span className="font-bold text-lg w-7 text-center">{item.quantity}</span>
+                        <span className="font-bold text-lg w-6 text-center">{item.quantity}</span>
                         <button
-                          onClick={() => onUpdateQuantity(item.cartId, 1)}
-                          className="p-1 hover:bg-gray-100 rounded"
+                          onClick={() => onUpdateQuantity(item.cartId, item.quantity + 1)}
+                          className="p-1 hover:bg-gray-200 rounded text-gray-600"
                         >
-                          <Plus className="w-5 h-5 text-gray-600" />
+                          <Plus className="w-4 h-4" />
                         </button>
                       </div>
-                      <button onClick={() => onRemoveItem(item.cartId)} className="text-red-400">
-                        <X className="w-7 h-7" />
-                      </button>
+
+                      {/* [수정] 정확한 가격 표시 */}
+                      <p className="text-xl font-bold text-gray-900">
+                        {getItemTotalPrice(item).toLocaleString()}원
+                      </p>
                     </div>
                   </div>
                 ))
               )}
             </div>
 
-            {/* 결제 버튼 */}
-            <div className="p-3 border-t bg-white">
+            {/* 하단 결제 버튼 */}
+            <div className="p-4 border-t bg-white safe-area-bottom">
               <div className="flex gap-3">
                 <button
                   onClick={onClearCart}
-                  className="flex-1 py-3 border-2 rounded-xl font-semibold text-gray-500 text-sm"
+                  className="flex-1 py-4 border-2 border-gray-200 rounded-xl font-bold text-gray-500 hover:bg-gray-50"
                 >
                   전체 삭제
                 </button>
                 <button
                   onClick={onCheckout}
                   disabled={cart.length === 0}
-                  className="flex-[2] py-3 bg-pink-500 text-white rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 disabled:bg-gray-300"
+                  className="flex-[2] py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 disabled:bg-gray-300 transition-colors shadow-lg shadow-orange-200"
                 >
-                  <span className="text-sm font-medium text-pink-100 font-semibold">
-                    총 결제금액
-                  </span>
-                  <span className="text-lg font-extrabold">
-                    {cart
-                      .reduce((sum, item) => sum + item.price * item.quantity, 0)
-                      .toLocaleString()}
-                    원 결제하기
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-orange-100 text-sm font-medium">총 결제금액</span>
+                    {/* [수정] 스토어의 정확한 총액 사용 */}
+                    <span className="text-xl font-extrabold">
+                      {getTotalPrice().toLocaleString()}원
+                    </span>
+                  </div>
+                  <span className="text-sm opacity-90">결제하기</span>
                 </button>
               </div>
             </div>
