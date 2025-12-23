@@ -19,6 +19,7 @@ import OrderConfirmModal from '../components/OrderConfirmModal';
 import AudioVisualizer from '../components/AudioVisualizer';
 
 // [Assets]
+import microphoneIcon from '../assets/icons/microphone.svg';
 import fingerIcon from '../assets/icons/finger.svg';
 import {
   TEXT_STYLES,
@@ -179,7 +180,7 @@ const VoiceOrder: React.FC = () => {
         >
           <button
             onClick={() => navigate('/order')}
-            className="flex-1 bg-pink-50 p-3 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
+            className="flex-1 bg-pink-50 p-8 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
           >
             <style>{`
               .wave-bar {
@@ -204,14 +205,30 @@ const VoiceOrder: React.FC = () => {
                 50% { transform: scale(1.1); }
               }
             `}</style>
-            <span className="font-bold text-pink-900 text-lg">일반 주문</span>
+            <img src={microphoneIcon} alt="microphone" className="mic-icon w-10 h-10" />
+            <span className="font-bold text-pink-900 text-xl">일반 주문</span>
           </button>
 
           <button
             onClick={() => navigate('/easy')}
-            className="flex-1 bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group"
+            className="flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group easy-button"
           >
             <style>{`
+              .easy-button {
+                animation: easyButtonGlow 0.8s ease-in-out infinite;
+              }
+              @keyframes easyButtonGlow {
+                0%, 100% { 
+                  border-color: rgb(254, 208, 121);
+                  background-color: rgb(254, 245, 230);
+                  box-shadow: 0 0 0 0px rgba(217, 119, 6, 0);
+                }
+                50% { 
+                  border-color: rgb(217, 119, 6);
+                  background-color: rgb(255, 251, 235);
+                  box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3);
+                }
+              }
               .finger-icon {
                 animation: fingerWiggle 0.8s ease-in-out infinite;
                 transform-origin: bottom center;
@@ -222,8 +239,8 @@ const VoiceOrder: React.FC = () => {
                 75% { transform: rotate(8deg); }
               }
             `}</style>
-            <img src={fingerIcon} alt="finger" className="finger-icon w-8 h-8" />
-            <span className="font-bold text-orange-900 text-lg">쉬운 주문</span>
+            <img src={fingerIcon} alt="finger" className="finger-icon w-12 h-12" />
+            <span className="font-bold text-orange-900 text-xl">쉬운 주문</span>
           </button>
         </div>
 
