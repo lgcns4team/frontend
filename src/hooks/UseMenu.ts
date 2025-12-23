@@ -5,9 +5,9 @@ import type { MenuItem } from '../types/index';
 // 현재 시간에 맞춰서 MORNING / AFTERNOON / EVENING 반환
 const getCurrentTimeSlot = () => {
   const hour = new Date().getHours();
-  if (hour >= 6 && hour < 11) return 'MORNING';     // 아침 6시~11시
-  if (hour >= 11 && hour < 17) return 'AFTERNOON';  // 점심 11시~17시
-  return 'EVENING';                                 // 저녁 17시 이후
+  if (hour >= 6 && hour < 11) return 'MORNING'; // 아침 6시~11시
+  if (hour >= 11 && hour < 17) return 'AFTERNOON'; // 점심 11시~17시
+  return 'EVENING'; // 저녁 17시 이후
 };
 
 // 기본 카테고리 (API 로딩 전이나 에러 시 사용)
@@ -39,7 +39,7 @@ export function useMenu() {
   // (A) 추천 메뉴 리스트: 카테고리를 '추천메뉴'로 강제 지정
   const recommendedItems: MenuItem[] = (recommendQuery.data || []).map((item) => ({
     ...item,
-    category: '추천메뉴', 
+    category: '추천메뉴',
     img: item.imageUrl || item.img || '',
   }));
 
@@ -60,7 +60,9 @@ export function useMenu() {
   const dynamicCategories = ['추천메뉴', ...apiCategories];
 
   return {
-    items: allItems,         // 화면에 뿌려질 최종 메뉴 리스트
+    items: allItems, // 화면에 뿌려질 최종 메뉴 리스트
+    basicItems, // 일반 메뉴만 (카테고리별 필터링용)
+    recommendedItems, // 추천 메뉴만 (추천메뉴 탭용)
     isLoading,
     categories: apiCategories.length > 0 ? dynamicCategories : CATEGORIES,
     error,

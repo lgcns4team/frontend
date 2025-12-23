@@ -5,16 +5,15 @@ import { useCartStore } from '../store/UseCartStore';
 import MenuGrid from '../components/MenuGrid';
 import BeverageOptionsModal from '../components/OptionsModal';
 import BottomCart from '../components/BottomCart';
-import CartSheet from '../components/CartSheet';
-import AdSlideshow from '../components/AdSlideshow';
+import OrderConfirmModal from '../components/OrderConfirmModal';
 import microphoneIcon from '../assets/icons/microphone.svg';
 import fingerIcon from '../assets/icons/finger.svg';
 import type { MenuItem } from '../types';
 
 export default function Order() {
   const navigate = useNavigate();
-  const { items, categories, isLoading } = useMenu();
-  const { cart, addToCart, removeFromCart, updateQuantity, clearCart } = useCartStore();
+  const { items, basicItems, recommendedItems, categories, isLoading } = useMenu();
+  const { cart, addToCart, removeFromCart } = useCartStore();
   const [activeCategory, setActiveCategory] = useState('추천메뉴');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [editingCartId, setEditingCartId] = useState<string | null>(null);
@@ -22,16 +21,6 @@ export default function Order() {
   const [showAdSlideshow, setShowAdSlideshow] = useState(false);
   const [inactivityTimer, setInactivityTimer] = useState<number | null>(null);
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
-
-  // 광고 닫기 핸들러 - Order 화면으로 돌아감 및 1분 타이머 초기화
-  const handleCloseAd = () => {
-    // 기존 타이머 제거
-    if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
-      setInactivityTimer(null);
-    }
-    setShowAdSlideshow(false);
-  };
 
   // 옵션 수정 핸들러 - 장바구니에서 옵션 변경
   const handleEditOptions = (cartId: string) => {
@@ -83,15 +72,19 @@ export default function Order() {
   }, [showAdSlideshow]);
 
   const filteredItems = useMemo(() => {
-    return activeCategory === '추천메뉴'
-      ? items
-      : items.filter((item) => item.category === activeCategory);
-  }, [activeCategory, items]);
+    if (activeCategory === '추천메뉴') {
+      // 추천메뉴: 추천 아이템만 표시 (중복 제거)
+      return recommendedItems;
+    } else {
+      // 다른 카테고리: 일반 메뉴만 필터링
+      return basicItems.filter((item) => item.category === activeCategory);
+    }
+  }, [activeCategory, recommendedItems, basicItems]);
 
   return (
     // 90도 회전 래퍼
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      {showAdSlideshow && <AdSlideshow onClose={handleCloseAd} />}
+      {/* {showAdSlideshow && <AdSlideshow onClose={handleCloseAd} />} 광고 주석 처리*/}
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl">
         {/* 1. 헤더 */}
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
@@ -194,8 +187,13 @@ export default function Order() {
             <MenuGrid
               items={filteredItems}
               onItemClick={(item) => {
-                if (item.category === '커피' || item.category === '음료') setSelectedItem(item);
-                else addToCart(item);
+                // 옵션이 필요한 메뉴: 커피, 음료
+                if (item.category === '커피' || item.category === '음료') {
+                  setSelectedItem(item);
+                } else {
+                  // 옵션이 필요 없는 메뉴 (디저트 등): 바로 장바구니 추가
+                  addToCart(item);
+                }
               }}
             />
           )}
@@ -233,15 +231,14 @@ export default function Order() {
           }}
         />
 
-        <CartSheet
+        <OrderConfirmModal
           isOpen={isCartOpen}
           cart={cart}
           onClose={() => setIsCartOpen(false)}
+          onPrevious={() => setIsCartOpen(false)}
           onCheckout={() => {
             navigate('/payment', { state: { directToMethod: true } });
           }}
-          onUpdateQuantity={updateQuantity}
-          onClearCart={clearCart}
           onRemoveItem={removeFromCart}
         />
       </div>

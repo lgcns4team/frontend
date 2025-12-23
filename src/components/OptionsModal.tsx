@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query'; // 쿼리 훅 가져오기
-import { fetchMenuOptions } from '../api/MenuApi'; // API 함수 가져오기
+// import { useQuery } from '@tanstack/react-query'; // API 사용 (백엔드 준비 시 활성화)
+// import { fetchMenuOptions } from '../api/MenuApi'; // API 사용 (백엔드 준비 시 활성화)
 import type { MenuItem, Options } from '../types/OrderTypes';
 
 type Props = {
@@ -24,13 +24,13 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
     isWeak: false,
   });
 
-  // [핵심] API로 옵션 정보 가져오기
+  // [핵심] API로 옵션 정보 가져오기 (백엔드 준비 시 활성화)
   // item이 있을 때만 쿼리가 실행됩니다 (enabled: !!item)
-  const { data: optionGroups } = useQuery({
-    queryKey: ['options', item?.id],
-    queryFn: () => fetchMenuOptions(item!.id),
-    enabled: !!item && open, // 모달이 열려있고 아이템이 있을 때만 호출
-  });
+  // const { data: optionGroups } = useQuery({
+  //   queryKey: ['options', item?.id],
+  //   queryFn: () => fetchMenuOptions(item!.id),
+  //   enabled: !!item && open, // 모달이 열려있고 아이템이 있을 때만 호출
+  // });
 
   // 모달이 열릴 때 초기화
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: 'spring', damping: 20 }}
-          className="w-[44rem] max-h-[85vh] bg-white rounded-2xl shadow-2xl flex flex-col"
+          className="fixed inset-y-[20%] inset-x-[10%] z-50 bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex-grow flex overflow-hidden">
@@ -141,16 +141,16 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
 
             {/* [오른쪽] 옵션 선택 (원래 디자인 복구) */}
             <div className="w-3/5 p-6 overflow-y-auto">
-              {/* 디저트는 옵션 없음 */}
+              {/* 옵션이 필요 없는 메뉴 (디저트 등) */}
               {item.category === '디저트' ? (
                 <div className="h-full flex items-center justify-center text-gray-400">
                   <p className="text-lg">옵션이 없습니다</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* 1. 온도 */}
+                  {/* 온도 */}
                   <div className="py-4 border-b">
-                    <h4 className="font-bold text-xl mb-3">1. 온도(hot or ice)</h4>
+                    <h4 className="font-bold text-xl mb-3 text-center">온도(hot or ice)</h4>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setOptions((s) => ({ ...s, temperature: 'hot' }))}
@@ -177,9 +177,9 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                     </div>
                   </div>
 
-                  {/* 2. 사이즈 */}
+                  {/* 사이즈 */}
                   <div className="py-4 border-b">
-                    <h4 className="font-bold text-xl mb-3">2. 사이즈</h4>
+                    <h4 className="font-bold text-xl mb-3 text-center">사이즈</h4>
                     <div className="flex gap-2">
                       {['tall', 'grande', 'venti'].map((size) => (
                         <button
@@ -198,10 +198,10 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                     </div>
                   </div>
 
-                  {/* 3. 얼음 양 (아이스일 때만) */}
+                  {/* 얼음 양 (아이스일 때만) */}
                   {options.temperature === 'cold' && (
                     <div className="py-4 border-b">
-                      <h4 className="font-bold text-xl mb-3">3. 얼음 양</h4>
+                      <h4 className="font-bold text-xl mb-3 text-center">얼음 양</h4>
                       <div className="flex gap-2">
                         {['less', 'normal', 'more'].map((ice) => (
                           <button
@@ -223,10 +223,10 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                     </div>
                   )}
 
-                  {/* 4. 커피 옵션 (샷/연하게) */}
+                  {/* 커피 옵션 (샷/연하게) */}
                   {isCoffee && !isTea && (
                     <div className="py-4 border-b">
-                      <h4 className="font-bold text-xl mb-3">4. 샷 추가 (+500원)</h4>
+                      <h4 className="font-bold text-xl mb-3 text-center">샷 추가 (+500원)</h4>
                       <div className="flex items-center justify-center gap-4">
                         <button
                           onClick={() =>
@@ -262,10 +262,10 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                     </div>
                   )}
 
-                  {/* 5. 휘핑 옵션 */}
+                  {/* 휘핑 옵션 */}
                   {!isTea && (
                     <div className="py-4">
-                      <h4 className="font-bold text-xl mb-3">{isCoffee ? '5.' : '4.'} 휘핑</h4>
+                      <h4 className="font-bold text-xl mb-3 text-center">휘핑</h4>
                       <div className="flex gap-2">
                         <button
                           onClick={() => setOptions((s) => ({ ...s, whip: true }))}
@@ -294,16 +294,16 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
           </div>
 
           {/* [하단 버튼] */}
-          <div className="grid grid-cols-2 gap-3 p-4 border-t bg-white rounded-b-2xl">
+          <div className="grid grid-cols-2 gap-3 p-4 border-t bg-white">
             <button
               onClick={onClose}
-              className="w-full bg-white text-gray-500 border-2 border-gray-300 hover:bg-gray-50 rounded-xl py-4 font-bold text-xl transition-colors"
+              className="w-full bg-white text-gray-500 border-2 border-gray-300 hover:bg-gray-50 py-4 font-bold text-xl transition-colors"
             >
               취소
             </button>
             <button
               onClick={() => onAdd({ ...item, price: unitPrice }, options, quantity)}
-              className="w-full bg-gray-900 hover:bg-black text-white rounded-xl py-4 font-bold text-xl shadow-lg transition-transform active:scale-95 flex flex-col items-center justify-center leading-none gap-1"
+              className="w-full bg-gray-900 hover:bg-black text-white py-4 font-bold text-xl shadow-lg transition-transform active:scale-95 flex flex-col items-center justify-center leading-none gap-1"
             >
               <span>주문 담기</span>
               <span className="text-sm font-normal text-gray-300">

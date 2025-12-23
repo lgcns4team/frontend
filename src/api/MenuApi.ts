@@ -2,13 +2,13 @@
 import { apiClient } from '../Lib/ApiClient';
 import type { CategoryResponse, MenuItem, MenuOptionGroup } from '../types/OrderTypes';
 
-// 1. 전체 메뉴 조회
+// 1. 전체 메뉴 조회 (API 사용 - 백엔드 준비 시 활성화)
 export const fetchMenus = async (): Promise<CategoryResponse[]> => {
   const res = await apiClient.get<CategoryResponse[]>('/categories-with-menus');
   return res.data;
 };
 
-// 2. 추천 메뉴 조회
+// 2. 추천 메뉴 조회 (API 사용 - 백엔드 준비 시 활성화)
 export const fetchRecommendMenus = async (params: {
   timeSlot: string;     // 'MORNING', 'AFTERNOON', 'EVENING'
   gender?: string;      // 'MALE', 'FEMALE' (선택)
@@ -24,7 +24,7 @@ export const fetchRecommendMenus = async (params: {
   return res.data;
 };
 
-// 3. 메뉴 상세 옵션 조회
+// 3. 메뉴 상세 옵션 조회 (API 사용 - 백엔드 준비 시 활성화)
 export const fetchMenuOptions = async (menuId: number): Promise<MenuOptionGroup[]> => {
   const res = await apiClient.get<MenuOptionGroup[]>(`/menus/${menuId}/options`);
   return res.data;
