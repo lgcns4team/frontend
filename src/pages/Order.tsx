@@ -100,7 +100,7 @@ export default function Order() {
           <div className="flex gap-3 px-4 py-3">
             <button
               onClick={() => navigate('/voice')}
-              className="flex-1 bg-pink-50 p-3 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
+              className="flex-1 bg-pink-50 p-8 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
             >
               <style>{`
                 .wave-bar {
@@ -125,12 +125,12 @@ export default function Order() {
                   50% { transform: scale(1.1); }
                 }
               `}</style>
-              <img src={microphoneIcon} alt="microphone" className="mic-icon w-8 h-8" />
-              <span className="font-bold text-pink-900 text-lg">음성 주문</span>
+              <img src={microphoneIcon} alt="microphone" className="mic-icon w-10 h-10" />
+              <span className="font-bold text-pink-900 text-xl">음성 주문</span>
             </button>
             <button
               onClick={() => navigate('/easy')}
-              className="flex-1 bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group easy-button"
+              className="flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group easy-button"
             >
               <style>{`
                 .easy-button {
@@ -158,8 +158,8 @@ export default function Order() {
                   75% { transform: rotate(8deg); }
                 }
               `}</style>
-              <img src={fingerIcon} alt="finger" className="finger-icon w-8 h-8" />
-              <span className="font-bold text-orange-900 text-lg">쉬운 주문</span>
+              <img src={fingerIcon} alt="finger" className="finger-icon w-12 h-12" />
+              <span className="font-bold text-orange-900 text-xl">쉬운 주문</span>
             </button>
           </div>
           <div className="flex gap-2 overflow-x-auto px-4 py-2 no-scrollbar">

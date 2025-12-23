@@ -43,9 +43,9 @@ export default function Payment() {
             <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
             <button
               onClick={() => navigate('/order')}
-              className="text-base text-gray-400 underline hover:text-gray-600 transition-colors flex items-center gap-1"
+              className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
             >
-             <Home className="w-8 h-8" /> <span className="font-bold">주문으로</span>
+             <Home className="w-8 h-8" /> <span className="font-semibold text-xl">주문으로</span>
             </button>
           </header>
 

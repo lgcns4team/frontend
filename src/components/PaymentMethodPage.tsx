@@ -2,6 +2,8 @@ interface PaymentMethodPageProps {
   onSelectMethod: (method: 'card' | 'mobile' | 'voucher' | 'nfc') => void;
 }
 
+import { motion } from 'framer-motion';
+
 interface PaymentMethod {
   id: string;
   name: string;
@@ -22,24 +24,54 @@ export default function PaymentMethodPage({ onSelectMethod }: PaymentMethodPageP
 
   return (
     <div className="h-full flex flex-col items-center p-4 overflow-y-auto">
-      <h2 className="text-3xl font-semibold text-center pt-16 mb-2">결제 수단을 선택해주세요</h2>
+      <h2 className="text-4xl font-semibold text-center pt-12 mb-2">결제 수단을 선택해주세요</h2>
 
-      <div className="flex flex-1 items-center justify-center w-full">
-        <div className="grid grid-cols-2 gap-5 w-full max-w-2xl">
-          {paymentMethods.map((method) => (
-            <button
-              key={method.id}
-              onClick={() => onSelectMethod(method.type)}
-              className="bg-pink-200 hover:bg-pink-300 transition-colors p-6 rounded-2xl flex flex-col items-center justify-center gap-3 min-h-52"
-            >
-              {method.image ? (
-                <img src={method.image} alt={method.name} className="w-20 h-20 object-contain" />
-              ) : (
-                <span className="text-6xl">{method.icon}</span>
-              )}
-              <div className="text-xl font-semibold text-gray-800 text-center">{method.name}</div>
-            </button>
-          ))}
+      <div className="flex flex-1 items-start justify-center w-full pt-10">
+        {/* 위치 조절은 여기 translate-y 값만 수정하면 됩니다. */}
+        <div className="w-full max-w-2xl relative translate-y-[150px]">
+          <div className="grid grid-cols-2 gap-5 w-full">
+            {paymentMethods.map((method) => (
+              <motion.button
+                key={method.id}
+                onClick={() => onSelectMethod(method.type)}
+                whileTap={{ scale: 0.95 }}
+                className="bg-white border-2 border-pink-200 transition-colors p-6 rounded-2xl flex flex-col items-center justify-center min-h-52 select-none"
+              >
+                <div className="w-28 h-28 flex items-center justify-center">
+                  {method.image ? (
+                    <img
+                      src={method.image}
+                      alt={method.name}
+                      draggable={false}
+                      className={
+                        method.id === 'naver'
+                          ? 'block w-full h-full object-contain shrink-0 scale-110'
+                          : method.id === 'kakao'
+                          ? 'block w-full h-full object-contain shrink-0 scale-90'
+                          : 'block w-full h-full object-contain shrink-0'
+                      }
+                    />
+                  ) : (
+                    <span
+                      className={
+                        method.id === 'card'
+                          ? 'block text-[100px] leading-none -translate-y-2 select-none'
+                          : method.id === 'gift'
+                          ? 'block text-[72px] leading-none select-none'
+                          : 'block text-[72px] leading-none select-none'
+                      }
+                    >
+                      {method.icon}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-3 text-xl font-semibold text-gray-800 text-center leading-tight">
+                  {method.name}
+                </div>
+              </motion.button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
