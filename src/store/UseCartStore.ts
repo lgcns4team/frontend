@@ -3,41 +3,52 @@ import type { CartItem, MenuItem, Options } from '../types/OrderTypes';
 
 interface CartState {
   cart: CartItem[];
-  
-  // 장바구니 추가 (백엔드 옵션 데이터 포함)
   addToCart: (
     item: MenuItem, 
     options?: Partial<Options>, 
     quantity?: number,
-    // 백엔드 전송용 옵션 데이터 (선택 사항)
     backendOptions?: { optionItemId: number; quantity: number; price: number; name: string }[] 
   ) => void;
-
-  // 장바구니 삭제
   removeFromCart: (cartId: string) => void;
-
-  // [수정] 수량 변경 함수 (이게 없어서 에러가 났습니다!)
   updateQuantity: (cartId: string, quantity: number) => void;
-
-  // 장바구니 비우기
   clearCart: () => void;
-
-  // 총 금액 계산
   getTotalPrice: () => number;
 }
+
+// 옵션 비교 헬퍼 함수 (두 옵션 배열이 같은지 확인)
+const areOptionsEqual = (opts1: any[], opts2: any[]) => {
+  if (opts1.length !== opts2.length) return false;
+  // ID 순서대로 정렬해서 문자열로 비교
+  const sorted1 = [...opts1].sort((a, b) => a.optionItemId - b.optionItemId);
+  const sorted2 = [...opts2].sort((a, b) => a.optionItemId - b.optionItemId);
+  return JSON.stringify(sorted1) === JSON.stringify(sorted2);
+};
 
 export const useCartStore = create<CartState>((set, get) => ({
   cart: [],
 
   addToCart: (item, options, quantity = 1, backendOptions = []) => {
     set((state) => {
+      // 1. 이미 장바구니에 같은 메뉴 + 같은 옵션이 있는지 찾기
+      const existingItemIndex = state.cart.findIndex(
+        (cartItem) => 
+          cartItem.id === item.id && 
+          areOptionsEqual(cartItem.selectedBackendOptions, backendOptions)
+      );
+
+      // 2. 있다면 수량만 증가
+      if (existingItemIndex !== -1) {
+        const newCart = [...state.cart];
+        newCart[existingItemIndex].quantity += quantity;
+        return { cart: newCart };
+      }
+
+      // 3. 없다면 새로 추가
       const newItem: CartItem = {
         ...item,
-        // 고유 ID 생성
-        cartId: Math.random().toString(36).substr(2, 9), 
+        cartId: Math.random().toString(36).substr(2, 9),
         quantity,
         options,
-        // 백엔드 전송용 데이터 저장
         selectedBackendOptions: backendOptions, 
       };
 
@@ -50,12 +61,11 @@ export const useCartStore = create<CartState>((set, get) => ({
       cart: state.cart.filter((item) => item.cartId !== cartId),
     })),
 
-  // [추가됨] 수량 업데이트 로직
   updateQuantity: (cartId, quantity) =>
     set((state) => ({
       cart: state.cart.map((item) =>
         item.cartId === cartId
-          ? { ...item, quantity: Math.max(1, quantity) } // 1개 미만으로 내려가지 않게 방지
+          ? { ...item, quantity: Math.max(1, quantity) }
           : item
       ),
     })),
@@ -65,12 +75,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   getTotalPrice: () => {
     const { cart } = get();
     return cart.reduce((total, item) => {
-      // 옵션 가격 총합
-      const optionsPrice = item.selectedBackendOptions 
-        ? item.selectedBackendOptions.reduce((acc, opt) => acc + opt.price, 0)
-        : 0;
-        
-      // (기본가격 + 옵션가격) * 수량
+      const optionsPrice = item.selectedBackendOptions.reduce((acc, opt) => acc + opt.price, 0);
       return total + (item.price + optionsPrice) * item.quantity;
     }, 0);
   },

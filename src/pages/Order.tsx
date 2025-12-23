@@ -11,16 +11,24 @@ import type { MenuItem } from '../types';
 export default function Order() {
   const navigate = useNavigate();
   const { items, categories, isLoading } = useMenu();
-  console.log('범인확인:', categories);
   const { cart, addToCart, removeFromCart, updateQuantity, clearCart } = useCartStore();
   const [activeCategory, setActiveCategory] = useState('추천메뉴');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const filteredItems = useMemo(() => {
+    if (!items) return [];
     // 모든 탭(추천메뉴 포함)에 대해 필터링을 수행해야 중복 아이템이 표시되지 않습니다.
     return items.filter((item) => item.category === activeCategory);
   }, [activeCategory, items]);
+
+  const isOptionMenu = (item: MenuItem) => {
+    // 1. 카테고리가 커피/음료인 경우
+    if (['커피', '음료'].includes(item.category)) return true;
+    // 2. 추천메뉴인데, 원래 카테고리가 커피/음료인 경우
+    if (item.category === '추천메뉴' && item.originalCategory && ['커피', '음료'].includes(item.originalCategory)) return true;
+    return false;
+  };
 
   return (
     // 90도 회전 래퍼
@@ -133,8 +141,11 @@ export default function Order() {
             <MenuGrid
               items={filteredItems}
               onItemClick={(item) => {
-                if (item.category === '커피' || item.category === '음료') setSelectedItem(item);
-                else addToCart(item);
+                if (isOptionMenu(item)) {
+                  setSelectedItem(item);
+                } else { 
+                  addToCart(item);
+                }
               }}
             />
           )}
@@ -148,8 +159,8 @@ export default function Order() {
           open={!!selectedItem}
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
-          onAdd={(item, opts, qty) => {
-            addToCart(item, opts, qty);
+          onAdd={(item, opts, qty, backendOptions) => {
+            addToCart(item, opts, qty, backendOptions);
             setSelectedItem(null);
           }}
         />

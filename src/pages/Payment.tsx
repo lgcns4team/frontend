@@ -53,7 +53,7 @@ export default function Payment() {
       // 2. 최종 요청 데이터 생성
       const requestData: CreateOrderRequest = {
         storeId: 1,              // 가게 ID (고정값)
-        sessionId: Math.floor(Math.random() * 100000), // 임의 세션 ID
+        //sessionId: Math.floor(Math.random() * 100000), // 임의 세션 ID
         
         // 결제 수단 매핑 (card -> CARD)
         paymentMethod: paymentMethod ? paymentMethod.toUpperCase() : "CARD", 
