@@ -1,14 +1,13 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, ShoppingCart } from 'lucide-react';
-import { useCartStore } from '../store/UseCartStore'; // 스토어 가져오기 (총액 계산용)
-import type { CartItem } from '../types/OrderTypes';   // 정확한 타입 가져오기
+import { useCartStore } from '../store/UseCartStore';
+import type { CartItem } from '../types/OrderTypes';
 
 interface CartSheetProps {
   isOpen: boolean;
   cart: CartItem[];
   onClose: () => void;
   onCheckout: () => void;
-  // [수정] 스토어 함수 시그니처에 맞춰서 (id, quantity)로 변경
   onUpdateQuantity: (cartId: string, quantity: number) => void;
   onClearCart: () => void;
   onRemoveItem: (cartId: string) => void;
@@ -23,30 +22,25 @@ export default function CartSheet({
   onClearCart,
   onRemoveItem,
 }: CartSheetProps) {
-  // 스토어에서 정확한 총액 계산 함수 가져오기
   const { getTotalPrice } = useCartStore();
-
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-  // [핵심] 개별 아이템 가격 계산 함수 (옵션 가격 포함)
+  // [수정 핵심] 개별 메뉴 가격 계산 (옵션 수량 반영)
   const getItemTotalPrice = (item: CartItem) => {
-    // 1. 옵션 추가금 합산 (샷 추가, 사이즈 업 등)
     const optionsPrice = item.selectedBackendOptions 
-      ? item.selectedBackendOptions.reduce((acc, opt) => acc + opt.price, 0)
+      ? item.selectedBackendOptions.reduce(
+          (acc, opt) => acc + (opt.price * opt.quantity), // 여기서 곱셈 추가!
+          0
+        )
       : 0;
 
-    // 2. (기본가 + 옵션가) * 수량
     return (item.price + optionsPrice) * item.quantity;
   };
 
-  // 옵션 표시 헬퍼 (백엔드 데이터 기준 or 프론트 옵션 기준)
   const renderOptionText = (item: CartItem) => {
-    // 1순위: 백엔드용 옵션 데이터가 있으면 그걸 보여줌 (정확함)
     if (item.selectedBackendOptions && item.selectedBackendOptions.length > 0) {
        return item.selectedBackendOptions.map(o => o.name).join(', ');
     }
-    
-    // 2순위: 기존 방식대로 options 객체 분석 (백엔드 데이터가 없을 경우 대비)
     if (item.options) {
       const parts: string[] = [];
       if (item.options.temperature) parts.push(item.options.temperature === 'hot' ? 'HOT' : 'ICE');
@@ -106,7 +100,6 @@ export default function CartSheet({
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex gap-4">
-                        {/* 이미지 */}
                         <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden shrink-0">
                            <img 
                             src={item.img || "/images/no-image.png"} 
@@ -115,7 +108,6 @@ export default function CartSheet({
                             onError={(e) => (e.currentTarget.src = "https://placehold.co/100?text=No+Img")}
                            />
                         </div>
-                        {/* 상품 정보 */}
                         <div>
                           <h4 className="font-bold text-lg text-gray-800">{item.name}</h4>
                           <p className="text-sm text-gray-500 mt-1 font-medium">
@@ -130,7 +122,6 @@ export default function CartSheet({
                     </div>
 
                     <div className="flex justify-between items-end border-t pt-3 mt-1">
-                      {/* 수량 조절 버튼 (로직 수정됨) */}
                       <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-1 border border-gray-200">
                         <button
                           onClick={() => onUpdateQuantity(item.cartId, item.quantity - 1)}
@@ -147,7 +138,6 @@ export default function CartSheet({
                         </button>
                       </div>
 
-                      {/* [수정] 정확한 가격 표시 */}
                       <p className="text-xl font-bold text-gray-900">
                         {getItemTotalPrice(item).toLocaleString()}원
                       </p>
@@ -173,7 +163,6 @@ export default function CartSheet({
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-orange-100 text-sm font-medium">총 결제금액</span>
-                    {/* [수정] 스토어의 정확한 총액 사용 */}
                     <span className="text-xl font-extrabold">
                       {getTotalPrice().toLocaleString()}원
                     </span>

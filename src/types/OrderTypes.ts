@@ -1,4 +1,4 @@
-// src/types/OrderTypes.ts
+
 
 // ----------------------------------------------------------------------
 // 1. 프론트엔드 내부용 (화면 표시용)
@@ -9,8 +9,7 @@ export interface MenuItem {
   price: number;
   category: string; // 화면용 카테고리명 (백엔드 categoryName을 매핑)
   img: string;      // 화면용 이미지 주소 (백엔드 imageUrl을 매핑)
-  
-  // 선택적 속성들
+  originalCategory?: string;
   description?: string;
   isSoldOut?: boolean;
 }
@@ -18,7 +17,14 @@ export interface MenuItem {
 export type CartItem = MenuItem & {
   cartId: string;
   quantity: number;
-  options?: Partial<Options>;
+
+  selectedBackendOptions: { 
+    optionItemId: number; 
+    quantity: number; 
+    price: number;
+    name: string;
+  }[];
+  options?: any;
 };
 
 // ----------------------------------------------------------------------
@@ -53,12 +59,13 @@ export interface BackendOptionItem {
 
 // 2. 옵션 그룹 (온도, 사이즈 등)
 export interface BackendOptionGroup {
-  optionGroupId: number;  // 프론트는 id
+  optionGroupId: number;
   name: string;
-  isRequired: boolean;    // 프론트는 minSelect로 변환 필요
-  selectionType: string;  // 프론트는 maxSelect로 변환 필요 (예: "SINGLE", "MULTIPLE")
+  isRequired: boolean;
+  selectionType: 'SINGLE' | 'MULTI'; // Swagger: selectionType
   options: BackendOptionItem[];
 }
+
 
 // 3. 옵션 API 전체 응답 (껍데기)
 export interface MenuOptionsResponse {
@@ -109,5 +116,39 @@ export interface RecommendResponse {
 }
 
 
+// ==========================================================
+//  주문 생성 API (POST /api/orders) 관련 타입
+// ==========================================================
 
-// (주의) 기존에 있던 중복된 CategoryResponse 인터페이스들은 모두 삭제되었습니다.
+// 1. 주문 요청 시 선택한 옵션 구조
+export interface OrderOptionRequest {
+  optionItemId: number; // 옵션 ID (필수)
+  quantity: number;     // 수량
+}
+
+// 2. 주문 요청 시 개별 메뉴 구조
+export interface OrderItemRequest {
+  menuId: number;       // 메뉴 ID (필수)
+  quantity: number;     // 수량
+  selectedOptions: OrderOptionRequest[]; // 선택된 옵션 리스트
+}
+
+// 3. 주문 생성 요청 전체 Body (Swagger Request Body)
+export interface CreateOrderRequest {
+  sessionId?: number;     // 세션 ID (키오스크 식별용, 선택)
+  storeId: number;        // 가게 ID
+  orderItems: OrderItemRequest[]; // 주문 메뉴 리스트
+  paymentMethod: string;  // 결제 수단 (예: "CARD")
+  pgTransactionId?: string; // PG사 결제 고유 번호
+  totalAmount: number;    // 총 결제 금액
+}
+
+// 4. 주문 생성 성공 응답 (Swagger Response)
+export interface OrderResponse {
+  orderId: number;
+  orderNo: number;       // 주문 번호 (대기번호)
+  totalAmount: number;
+ 
+  status: string;        // 주문 상태
+  // 필요한 경우 orderItems 응답 타입도 추가 가능
+}
