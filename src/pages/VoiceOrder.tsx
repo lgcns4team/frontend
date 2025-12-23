@@ -38,7 +38,7 @@ const VoiceOrder: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   // 1. 전역 장바구니 스토어 (주문확인 시에만 사용)
-  const { addToCart, clearCart: clearGlobalCart, removeFromCart, updateQuantity } = useCartStore();
+  const { addToCart, clearCart: clearGlobalCart, removeFromCart } = useCartStore();
   const globalCart = useCartStore((state) => state.cart);
 
   const { items, isLoading } = useMenu();
@@ -230,7 +230,7 @@ const VoiceOrder: React.FC = () => {
         {/* 3. 메인 컨텐츠 영역 */}
         <main className="flex-1 flex flex-col overflow-hidden relative bg-gray-50">
           {/* [A] 메뉴 리스트 (참고용) */}
-          <section className={LAYOUT_STYLES.mainContainer}>
+          <section className="flex-1 overflow-y-auto p-4 bg-gray-50">
             <h2 className="text-lg font-bold text-gray-800 mb-4 pl-2 border-l-4 border-gray-800">
               📋 전체 메뉴
             </h2>

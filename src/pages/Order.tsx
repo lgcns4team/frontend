@@ -6,7 +6,6 @@ import MenuGrid from '../components/MenuGrid';
 import BeverageOptionsModal from '../components/OptionsModal';
 import BottomCart from '../components/BottomCart';
 import OrderConfirmModal from '../components/OrderConfirmModal';
-// import AdSlideshow from '../components/AdSlideshow'; 광고 주석 처리
 import microphoneIcon from '../assets/icons/microphone.svg';
 import fingerIcon from '../assets/icons/finger.svg';
 import type { MenuItem } from '../types';
@@ -14,7 +13,7 @@ import type { MenuItem } from '../types';
 export default function Order() {
   const navigate = useNavigate();
   const { items, basicItems, recommendedItems, categories, isLoading } = useMenu();
-  const { cart, addToCart, removeFromCart, updateQuantity, clearCart } = useCartStore();
+  const { cart, addToCart, removeFromCart } = useCartStore();
   const [activeCategory, setActiveCategory] = useState('추천메뉴');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [editingCartId, setEditingCartId] = useState<string | null>(null);
@@ -22,16 +21,6 @@ export default function Order() {
   const [showAdSlideshow, setShowAdSlideshow] = useState(false);
   const [inactivityTimer, setInactivityTimer] = useState<number | null>(null);
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
-
-  // 광고 닫기 핸들러 - Order 화면으로 돌아감 및 1분 타이머 초기화
-  // const handleCloseAd = () => {
-  //   // 기존 타이머 제거
-  //   if (inactivityTimer) {
-  //     clearTimeout(inactivityTimer);
-  //     setInactivityTimer(null);
-  //   }
-  //   setShowAdSlideshow(false);
-  // };
 
   // 옵션 수정 핸들러 - 장바구니에서 옵션 변경
   const handleEditOptions = (cartId: string) => {
