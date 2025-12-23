@@ -9,7 +9,7 @@ interface Props {
 
 export default function BottomCart({ onCheckout }: Props) {
   // Zustand Store에서 상태와 함수들을 가져옵니다.
-  const { cart, updateQuantity, clearCart, getCartTotalPrice } = useCartStore();
+  const { cart, updateQuantity, clearCart, getTotalPrice } = useCartStore();
 
   // 옵션 글자 렌더링 헬퍼 함수
   const renderOptions = (options?: Partial<Options>, category?: string) => {
@@ -104,7 +104,7 @@ export default function BottomCart({ onCheckout }: Props) {
         <div className="flex-1 bg-gray-900 text-white rounded-3xl flex flex-col justify-center px-8 shadow-lg">
           <span className="text-gray-400 text-sm font-medium mb-1">총 결제금액</span>
           <span className="text-2xl font-extrabold tracking-tight">
-            {getCartTotalPrice().toLocaleString()}
+            {getTotalPrice().toLocaleString()}
             <span className="text-xl ml-1 font-bold text-gray-400">원</span>
           </span>
         </div>

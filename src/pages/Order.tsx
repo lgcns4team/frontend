@@ -11,14 +11,15 @@ import type { MenuItem } from '../types';
 export default function Order() {
   const navigate = useNavigate();
   const { items, categories, isLoading } = useMenu();
+  console.log('범인확인:', categories);
   const { cart, addToCart, removeFromCart, updateQuantity, clearCart } = useCartStore();
   const [activeCategory, setActiveCategory] = useState('추천메뉴');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
   const filteredItems = useMemo(() => {
-    return activeCategory === '추천메뉴'
-      ? items
-      : items.filter((item) => item.category === activeCategory);
+    // 모든 탭(추천메뉴 포함)에 대해 필터링을 수행해야 중복 아이템이 표시되지 않습니다.
+    return items.filter((item) => item.category === activeCategory);
   }, [activeCategory, items]);
 
   return (
