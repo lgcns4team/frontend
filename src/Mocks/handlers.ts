@@ -47,4 +47,57 @@ const allMenus = [
   },
 ];
 
-export const handlers = [http.get('/api/menus', () => HttpResponse.json(allMenus))];
+// --- Advertisement mocks ---
+// NOTE: This endpoint matches the backend schema used by the front-end:
+// { ads: Ad[], totalCount: number }
+const mockAds = [
+  {
+    adId: 101,
+    title: 'Kiosk Ad #1',
+    mediaType: 'IMAGE' as const,
+    mediaUrl: '/ads/ad-1.jpg',
+    startDate: '2025-01-01',
+    endDate: '2026-12-31',
+    isActive: true,
+  },
+  {
+    adId: 102,
+    title: 'Kiosk Ad #2',
+    mediaType: 'IMAGE' as const,
+    mediaUrl: '/ads/ad-2.jpg',
+    startDate: '2025-01-01',
+    endDate: '2026-12-31',
+    isActive: true,
+  },
+  {
+    adId: 103,
+    title: 'Kiosk Ad #3',
+    mediaType: 'IMAGE' as const,
+    mediaUrl: '/ads/ad-3.jpg',
+    startDate: '2025-01-01',
+    endDate: '2026-12-31',
+    isActive: true,
+  },
+];
+
+export const handlers = [
+  http.get('/api/menus', () => HttpResponse.json(allMenus)),
+  http.get('/api/ads', () => {
+    return HttpResponse.json({
+      ads: mockAds,
+      totalCount: mockAds.length,
+    });
+  }),
+  http.post('/api/ads/display-log', async ({ request }) => {
+    // Keep minimal validation; backend-like behavior is OK for dev.
+    // Body example: { adId, displayedAt: 'YYYY-MM-DDTHH:mm:ss', durationMs }
+    try {
+      const body = await request.json();
+      // eslint-disable-next-line no-console
+      console.log('[MSW] ad display log:', body);
+    } catch {
+      // ignore
+    }
+    return new HttpResponse(null, { status: 204 });
+  }),
+];
