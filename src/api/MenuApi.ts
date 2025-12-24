@@ -1,35 +1,26 @@
-// src/api/MenuApi.ts
 import { apiClient } from '../Lib/ApiClient';
 import type { CategoryResponse, MenuItem, MenuOptionGroup } from '../types/OrderTypes';
 import { tempMockCategories, tempMockRecommendMenus, tempMockOptions } from './tempmock';
-// import { mpMock';
 
-// 전체 메뉴
+const USE_MOCK = true; // 나중에 false로 바꾸면 API 사용
+
 export const fetchMenus = async (): Promise<CategoryResponse[]> => {
-  try {
-    const res = await apiClient.get<CategoryResponse[]>('/categories-with-menus');
-    return res.data;
-  } catch {
-    return tempMockCategories;
-  }
+  if (USE_MOCK) return tempMockCategories;
+
+  const res = await apiClient.get<CategoryResponse[]>('/categories-with-menus');
+  return res.data;
 };
 
-// 추천 메뉴
 export const fetchRecommendMenus = async (): Promise<MenuItem[]> => {
-  try {
-    const res = await apiClient.get<MenuItem[]>('/menus/recommend');
-    return res.data;
-  } catch {
-    return tempMockRecommendMenus();
-  }
+  if (USE_MOCK) return tempMockRecommendMenus;
+
+  const res = await apiClient.get<MenuItem[]>('/recommend-menus');
+  return res.data;
 };
 
-// 메뉴 옵션
-export const fetchMenuOptions = async (): Promise<MenuOptionGroup[]> => {
-  try {
-    const res = await apiClient.get<MenuOptionGroup[]>('/menus/1/options');
-    return res.data;
-  } catch {
-    return tempMockOptions();
-  }
+export const fetchOptions = async (): Promise<MenuOptionGroup[]> => {
+  if (USE_MOCK) return tempMockOptions;
+
+  const res = await apiClient.get<MenuOptionGroup[]>('/menu-options');
+  return res.data;
 };

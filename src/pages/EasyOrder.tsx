@@ -36,16 +36,16 @@ export default function EasyOrder() {
   const [selectedCategory, setSelectedCategory] = useState<EasyCategory | null>(null);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
-  //  CategoryResponse[] (tempmock) -> MenuItem[] (Easy 화면용) 변환
+  //  CategoryResponse[] (tempmock) -> MenuItem[] (Easy 화면용) 변환`
   useEffect(() => {
     setIsLoading(true);
 
     // tempMockCategories 구조:
     // [{ categoryName, menus: [{ id, name, price, imageUrl ...}] }]
-    const flat: MenuItem[] = tempMockCategories.flatMap((cat) =>
+    const flat: MenuItem[] = tempMockCategories.flatMap((cat: any) =>
       (cat.menus ?? []).map((m: any) => ({
         //  EasyOrder에서 쓰는 MenuItem 필드에 맞춰 매핑
-        id: String(m.id),
+        id: Number(m.id),
         name: m.name,
         price: m.price,
 
@@ -73,12 +73,8 @@ export default function EasyOrder() {
       case '커피':
         return items.filter((item) => item.category === '커피');
 
-<<<<<<< HEAD
       // "다른음료"는 원본 category가 "음료"인 것들을 보여줌
-      case '다른음료':
-=======
       case '다른 음료':
->>>>>>> 0273dde (feat: easy order UI mock data 연결 및 화면 수정)
         return items.filter((item) => item.category === '음료');
 
       case '차': {
@@ -121,25 +117,13 @@ export default function EasyOrder() {
     setSelectedItem(null);
   };
 
-<<<<<<< HEAD
   // 카테고리 화면에서는 cart 있을 때만 BottomCart 보이게
   const shouldShowBottomCart = !selectedCategory ? cart.length > 0 : true;
-=======
-  const handleEditOptions = () => {
-    // EasyOrder에서는 옵션 수정 기능을 사용하지 않음
-  };
-
-  const shouldShowBottomCart = selectedCategory ? true : cart.length > 0;
->>>>>>> 0273dde (feat: easy order UI mock data 연결 및 화면 수정)
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-white flex flex-col shadow-2xl">
-<<<<<<< HEAD
         {/* 메인(Order) 페이지와 동일한 헤더 */}
-=======
-        {/* 헤더 */}
->>>>>>> 0273dde (feat: easy order UI mock data 연결 및 화면 수정)
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
 
@@ -171,18 +155,12 @@ export default function EasyOrder() {
                         onClick={() => setSelectedCategory(cat.name)}
                         className="bg-gray-100 rounded-3xl p-10 flex flex-col items-center justify-center aspect-square hover:bg-orange-100 hover:border-orange-400 border-6 border-transparent transition-all duration-200"
                       >
-<<<<<<< HEAD
                         {/* 이모지: '커피 외 음료'만 위로 */}
-=======
->>>>>>> 0273dde (feat: easy order UI mock data 연결 및 화면 수정)
                         <span className={`text-[10rem] mb-6 ${isOtherBeverage ? '-mt-6' : ''}`}>
                           {cat.emoji}
                         </span>
 
-<<<<<<< HEAD
                         {/* 텍스트: '커피 외 음료'만 3줄로 */}
-=======
->>>>>>> 0273dde (feat: easy order UI mock data 연결 및 화면 수정)
                         {isOtherBeverage ? (
                           <span className="text-6xl font-extrabold leading-[1.05] text-center">
                             <span className="block">다른</span>
@@ -227,18 +205,14 @@ export default function EasyOrder() {
         </main>
 
         {/* 하단 장바구니 */}
-<<<<<<< HEAD
-        {shouldShowBottomCart && <BottomCart onCheckout={() => navigate('/easy/confirm')} />}
-=======
         {shouldShowBottomCart && (
           <BottomCart
             onCheckout={() => navigate('/easy/confirm')}
-            onEditOptions={handleEditOptions}
+            onEditOptions={() => {}}
             orderMethod={orderMethod}
             onOrderMethodChange={setOrderMethod}
           />
         )}
->>>>>>> 0273dde (feat: easy order UI mock data 연결 및 화면 수정)
 
         {/* 옵션 모달 */}
         <EasyBeverageOptionsModal
