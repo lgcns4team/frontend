@@ -5,9 +5,9 @@ export type MenuItem = {
   name: string;
   price: number;
   category: string; // 프론트엔드 분류용
-  img: string;      // 화면 표시용 이미지
+  img: string; // 화면 표시용 이미지
   // 백엔드에서 올 수 있는 추가 필드들 (선택사항)
-  imageUrl?: string; 
+  imageUrl?: string;
   description?: string;
   isSoldOut?: boolean;
 };
@@ -30,9 +30,9 @@ export interface MenuOptionGroup {
 
 // ... 기존 Options, CartItem, CategoryResponse 타입 유지 ...
 export type Options = {
-  temperature: "hot" | "cold";
-  size: "tall" | "grande" | "venti";
-  ice: "less" | "normal" | "more";
+  temperature: 'hot' | 'cold';
+  size: 'tall' | 'grande' | 'venti';
+  ice: 'less' | 'normal' | 'more';
   shot: number;
   whip: boolean;
   isWeak: boolean;
@@ -48,18 +48,4 @@ export interface CategoryResponse {
   id: number;
   name: string;
   menus: MenuItem[];
-}
-
-
-// [추가] 백엔드 API 응답용 인터페이스
-export interface CategoryResponse {
-  id: number;
-  name: string;      // 카테고리명 (예: "커피")
-  menus: MenuItem[]; // 해당 카테고리의 메뉴 리스트
-}
-
-export interface CategoryResponse {
-  id: number;
-  name: string;      // 예: "커피"
-  menus: MenuItem[]; // 해당 카테고리의 메뉴들
 }

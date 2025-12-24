@@ -1,7 +1,7 @@
 // src/pages/EasyConfirm.tsx
 import { useNavigate } from 'react-router-dom';
-import { Home } from 'lucide-react';
 import { useCartStore } from '../store/UseCartStore';
+import { Home } from 'lucide-react';
 
 export default function EasyConfirm() {
   const navigate = useNavigate();
@@ -27,106 +27,99 @@ export default function EasyConfirm() {
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
       {/* 90도 회전된 전체 캔버스 */}
-      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-pink-50 flex flex-col shadow-2xl relative">
+      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-pink-50 flex flex-col shadow-2xl relative overflow-hidden">
         {/* 헤더 */}
-        <header className="flex items-center justify-between px-8 py-5">
-          <h1 className="text-3xl font-extrabold">주문 확인</h1>
+        <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
+          <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
+
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-2xl font-bold"
+            className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
           >
-            <Home className="w-7 h-7" />
+            <Home className="w-8 h-8" />
             <span>처음으로</span>
           </button>
         </header>
 
-        {/* 🔹 상단 고정 안내 문구 (카드 밖, 핑크 배경 위에 고정) */}
+        {/* 상단 고정 안내 문구 */}
         <div className="absolute left-1/2 top-28 -translate-x-1/2 text-center pointer-events-none z-10">
-          <p className="text-6xl font-extrabold text-gray-900 leading-tight whitespace-nowrap">
+          <p className="text-[46px] font-extrabold text-gray-900 leading-tight whitespace-nowrap tracking-tight">
             주문 내역을 확인해주세요
           </p>
         </div>
 
-        {/* 메인: 주문 내역 카드만 담당 */}
-        <main className="flex-1 flex items-center justify-center px-6 pb-10 pt-32">
+        {/* 메인 */}
+        <main className="flex-1 flex items-center justify-center px-6 pb-10 pt-32 overflow-hidden">
           {/* 주문 내역 카드 */}
-
-          <div className="w-full max-w-[900px] bg-white/95 rounded-3xl p-10 shadow-2xl min-h-[1000px]">
-            <div className="mb-20">
-              <div className="border-b border-gray-300 pb-6 mb-10">
-                <div className="text-5xl font-extrabold">주문 내역</div>
+          <div className="w-full max-w-[900px] bg-white/95 rounded-3xl p-10 shadow-2xl h-[980px] flex flex-col overflow-hidden">
+            {/* 제목 */}
+            <div className="mb-8 shrink-0">
+              <div className="border-b border-gray-300 pb-4">
+                <div className="text-[40px] font-extrabold">주문내역</div>
               </div>
             </div>
-            {/* 리스트 영역: 최대 4개 정도까지 보이고 이후는 스크롤 */}
-            <div className="max-h-[1000px] overflow-y-auto pr-2 -mr-2">
-              <ul className="space-y-8 text-4xl">
+
+            {/* ✅ 리스트 영역: 기본 4개 보이도록 높이를 제한 + 세로 스크롤 */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2">
+              <ul className="space-y-6">
                 {cart.map((item) => (
                   <li
                     key={item.cartId}
-                    className="flex items-center gap-10 pb-8 border-b last:border-b-0"
+                    className="flex items-center gap-8 pb-8 border-b last:border-b-0 w-full min-w-0 overflow-x-hidden"
                   >
-                    {/*  왼쪽 영역: 이미지 + 가격 + 메뉴명 */}
-                    <div className="flex flex-col flex-[2] gap-4">
-                      {/* 이미지 + 가격 한 줄 */}
-                      <div className="flex items-center gap-6">
-                        {/* 이미지 */}
-                        <div className="w-[140px] h-[140px] rounded-3xl overflow-hidden bg-white shadow-lg shrink-0">
-                          <img
-                            src={item.img}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-
-                        {/* 가격 */}
-                        <div className="text-4xl md:text-5xl font-extrabold text-gray-900 whitespace-nowrap">
-                          {(item.price * item.quantity).toLocaleString()}원
-                        </div>
+                    {/* 왼쪽: 이미지 + 이름/옵션 */}
+                    <div className="flex items-center gap-6 flex-1 min-w-0">
+                      <div className="w-[140px] h-[140px] rounded-3xl overflow-hidden bg-white shadow-lg shrink-0">
+                        <img
+                          src={item.img}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
 
-                      {/* 메뉴명 + 온도 옵션 */}
-                      <div className="text-3xl md:text-4xl font-extrabold text-gray-800 leading-snug">
-                        {item.name}
+                      <div className="min-w-0">
+                        <div className="text-4xl font-extrabold text-gray-800 truncate">
+                          {item.name}
+                        </div>
                         {item.options?.temperature && (
-                          <span className="text-3xl font-bold text-gray-600 ml-3">
+                          <div className="text-2xl font-bold text-gray-600 whitespace-nowrap mt-1">
                             ({item.options.temperature === 'hot' ? '뜨겁게' : '차갑게'})
-                          </span>
+                          </div>
                         )}
                       </div>
                     </div>
 
-                    {/* 🔹 오른쪽 영역: 수량 조절 + 삭제 */}
-                    <div className="flex items-center gap-6 flex-[1] justify-end">
-                      {/* - 버튼 */}
+                    {/* 가운데: 가격 (항상 가로) */}
+                    <div className="shrink-0 text-4xl font-extrabold text-gray-900 whitespace-nowrap">
+                      {(item.price * item.quantity).toLocaleString()}원
+                    </div>
+
+                    {/* 오른쪽: 수량 + 삭제 (항상 가로, 절대 줄바꿈 금지) */}
+                    <div className="shrink-0 flex items-center gap-4 whitespace-nowrap">
                       <button
                         type="button"
-                        onClick={() => {
-                          if (item.quantity <= 1) return;
-                          updateQuantity(item.cartId, -1);
-                        }}
-                        className="w-[56px] h-[56px] rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-4xl font-bold"
+                        onClick={() => item.quantity > 1 && updateQuantity(item.cartId, -1)}
+                        className="w-[40px] h-[40px] rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-3xl font-bold"
                       >
                         -
                       </button>
 
-                      <span className="text-5xl font-extrabold w-[70px] text-center">
+                      <span className="text-4xl font-extrabold w-[20px] text-center">
                         {item.quantity}
                       </span>
 
-                      {/* + 버튼 */}
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.cartId, 1)}
-                        className="w-[56px] h-[56px] rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-4xl font-bold"
+                        className="w-[40px] h-[40px] rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-3xl font-bold"
                       >
                         +
                       </button>
 
-                      {/* 삭제 버튼 */}
                       <button
                         type="button"
                         onClick={() => removeFromCart(item.cartId)}
-                        className="ml-4 px-6 py-4 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-3xl font-bold whitespace-nowrap"
+                        className="ml-2 w-[100px] h-[64px] rounded-2xl bg-red-500 hover:bg-red-600 text-white text-2xl font-extrabold flex items-center justify-center"
                       >
                         삭제
                       </button>
@@ -136,31 +129,29 @@ export default function EasyConfirm() {
               </ul>
             </div>
 
-            {/* 합계 */}
-            <div className="border-t border-gray-300 mt-10 pt-10 text-right text-5xl font-extrabold">
+            {/* 합계 (고정) */}
+            <div className="border-t border-gray-300 mt-3 pt-3 text-right text-[32px] font-extrabold shrink-0">
               합계 {total.toLocaleString()}원
             </div>
           </div>
         </main>
 
-        {/* 🔹 하단 고정 버튼 영역 (카드와 완전히 분리) */}
-        <footer className="w-full flex justify-center px-6 pb-10">
+        {/* 하단 고정 버튼 */}
+        <footer className="w-full flex justify-center px-6 pb-10 shrink-0">
           <div className="w-full max-w-[900px] flex flex-col gap-6">
-            {/* 이전으로 */}
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="w-full bg-gray-300 hover:bg-gray-400 text-gray-900 py-8 text-3xl font-extrabold rounded-3xl"
+              className="w-full bg-gray-300 hover:bg-gray-400 text-gray-900 py-7 text-3xl font-extrabold rounded-3xl"
             >
               이전으로
             </button>
 
-            {/* 추가 주문하기 / 결제하기 */}
             <div className="flex gap-6">
               <button
                 type="button"
                 onClick={() => navigate('/easy')}
-                className="flex-1 bg-pink-200 hover:bg-pink-300 text-gray-900 py-8 text-4xl font-extrabold rounded-3xl"
+                className="flex-1 bg-pink-200 hover:bg-pink-300 text-gray-900 py-7 text-4xl font-extrabold rounded-3xl"
               >
                 추가 주문하기
               </button>
@@ -168,7 +159,7 @@ export default function EasyConfirm() {
               <button
                 type="button"
                 onClick={() => navigate('/payment')}
-                className="flex-1 bg-pink-400 hover:bg-pink-500 text-white py-8 text-4xl font-extrabold rounded-3xl"
+                className="flex-1 bg-pink-400 hover:bg-pink-500 text-white py-7 text-4xl font-extrabold rounded-3xl"
               >
                 결제하기
               </button>
