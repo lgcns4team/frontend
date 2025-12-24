@@ -122,30 +122,30 @@ export default function PaymentProgressModal({
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-transparent flex flex-col items-center justify-center">
-        <div className="bg-white rounded-3xl p-12 w-full max-w-2xl shadow-2xl text-center">
-          <h2 className="text-3xl font-bold mb-8">{content.title}</h2>
+        <div className="bg-white rounded-3xl p-12 w-[95%] h-[90%] shadow-2xl text-center flex flex-col items-center justify-center overflow-hidden">
+          <h2 className="text-4xl font-bold mb-12">{content.title}</h2>
 
           {isProcessing ? (
             <>
               {/* 애니메이션 또는 아이콘 */}
               {(content as any).useAnimation ? (
-                <div className="h-80 mb-8">
+                <div className="h-[22rem] mb-8">
                   <InsertCardAnimation />
                 </div>
               ) : (content as any).animationType === 'qr' ? (
                 <div className="mb-8">
-                  <QrScanAnimation size={280} loop={true} />
+                  <QrScanAnimation size={380} loop={true} />
                 </div>
               ) : (content as any).animationType === 'voucher' ? (
                 <div className="mb-8">
-                  <BarcodeScanAnimation size={280} loop={true} />
+                  <BarcodeScanAnimation size={380} loop={true} />
                 </div>
               ) : (content as any).animationType === 'nfc' ? (
                 <div className="mb-8">
-                  <NfcPayAnimation size={320} loop={true} />
+                  <NfcPayAnimation size={420} loop={true} />
                 </div>
               ) : (
-                <div className="text-7xl mb-6">{(content as any).icon}</div>
+                <div className="text-8xl mb-6">{(content as any).icon}</div>
               )}
 
               <div className="flex justify-center mb-8">
@@ -169,7 +169,7 @@ export default function PaymentProgressModal({
                 <p className="text-gray-600 text-lg">{countdown}초 후 주문화면으로 돌아갑니다</p>
               </div>
               {adImage && (
-                <div className="w-full max-w-xs mx-auto mb-8">
+                <div className="w-full max-w-lg mx-auto mb-8">
                   <img
                     src={adImage}
                     alt="advertisement"

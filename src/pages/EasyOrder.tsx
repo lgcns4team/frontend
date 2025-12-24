@@ -1,30 +1,70 @@
 // src/pages/EasyOrder.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { useMenu } from '../hooks/UseMenu';
+import { ArrowLeft, Home } from 'lucide-react';
 import { useCartStore } from '../store/UseCartStore';
 import BottomCart from '../components/BottomCart';
 import EasyMenuGrid from '../components/EasyMenuGrid';
 import EasyBeverageOptionsModal from '../components/EasyOptionsModal';
 import type { MenuItem, Options } from '../types';
 
+//  목업 가져오기 (경로 확인: src/api/tempmock.ts 맞지?)
+import { tempMockCategories } from '../api/tempmock';
+// (옵션 목업은 지금 EasyOrder에서는 안 씀. 옵션 모달에서 필요하면 그쪽에서 쓰면 됨)
+// import { tempMockOptions } from '../api/tempmock';
+
 const EASY_CATEGORIES = [
   { name: '커피', emoji: '☕️' },
   { name: '차', emoji: '🫖' },
-  { name: '다른음료', emoji: '🥤' },
+  { name: '다른 음료', emoji: '🥤' }, // 여기 통일
   { name: '디저트', emoji: '🍰' },
   { name: '추천메뉴', emoji: '🍊' },
   { name: '세트메뉴', emoji: '🍽️' },
-];
+] as const;
+
+type EasyCategory = (typeof EASY_CATEGORIES)[number]['name'];
 
 export default function EasyOrder() {
   const navigate = useNavigate();
-  const { items, isLoading } = useMenu();
   const { cart, addToCart } = useCartStore();
+  const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
 
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  //  목업 기반 items / loading
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [selectedCategory, setSelectedCategory] = useState<EasyCategory | null>(null);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+
+  //  CategoryResponse[] (tempmock) -> MenuItem[] (Easy 화면용) 변환`
+  useEffect(() => {
+    setIsLoading(true);
+
+    // tempMockCategories 구조:
+    // [{ categoryName, menus: [{ id, name, price, imageUrl ...}] }]
+    const flat: MenuItem[] = tempMockCategories.flatMap((cat: any) =>
+      (cat.menus ?? []).map((m: any) => ({
+        //  EasyOrder에서 쓰는 MenuItem 필드에 맞춰 매핑
+        id: Number(m.id),
+        name: m.name,
+        price: m.price,
+
+        // EasyMenuGrid는 item.img 사용 중이었지? -> 여기서 채워줌
+        // imageUrl이 비어있으면 그냥 ''로 두면 빈 이미지로 뜸.
+        img: m.imageUrl ?? '',
+
+        // EasyOrder에서 category 필터링 하니까 category를 꼭 넣어야 함
+        category: cat.categoryName,
+
+        // 나머지는 프로젝트 타입에 따라 있을 수도/없을 수도
+        isSoldOut: m.isSoldOut ?? false,
+        isActive: m.isActive ?? true,
+      }))
+    );
+
+    setItems(flat);
+    setIsLoading(false);
+  }, []);
 
   const filteredItems = useMemo(() => {
     if (!selectedCategory) return [];
@@ -34,16 +74,26 @@ export default function EasyOrder() {
         return items.filter((item) => item.category === '커피');
 
       // "다른음료"는 원본 category가 "음료"인 것들을 보여줌
-      case '다른음료':
+      case '다른 음료':
         return items.filter((item) => item.category === '음료');
 
-      case '차':
+      case '차': {
+        const byCategory = items.filter((item) => item.category === '차');
+        if (byCategory.length > 0) return byCategory;
         return items.filter((item) => item.name.includes('티'));
+      }
 
       case '디저트':
+        return items.filter((item) => item.category === '디저트');
+
       case '추천메뉴':
+        return items.slice(0, 8);
+
       case '세트메뉴':
-        return items.filter((item) => item.category === '푸드');
+        // 목업에 세트 없으면 디저트 일부라도 보여주게
+        return items.filter((item) => item.category === '세트').length
+          ? items.filter((item) => item.category === '세트')
+          : items.filter((item) => item.category === '디저트').slice(0, 8);
 
       default:
         return [];
@@ -53,9 +103,9 @@ export default function EasyOrder() {
   const handleItemClick = (item: MenuItem) => {
     if (item.category === '커피' || item.category === '음료') {
       setSelectedItem(item);
-    } else {
-      addToCart(item);
+      return;
     }
+    addToCart(item);
   };
 
   const handleAddWithOptions = (
@@ -76,11 +126,13 @@ export default function EasyOrder() {
         {/* 메인(Order) 페이지와 동일한 헤더 */}
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
+
           <button
             onClick={() => navigate('/')}
-            className="text-base text-gray-400 underline hover:text-gray-600 transition-colors"
+            className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
           >
-            홈으로
+            <Home className="w-8 h-8" />
+            <span>처음으로</span>
           </button>
         </header>
 
@@ -95,7 +147,7 @@ export default function EasyOrder() {
               <div className="flex-1 flex justify-center overflow-y-auto">
                 <div className="grid grid-cols-2 gap-8 w-full max-w-4xl pb-8">
                   {EASY_CATEGORIES.map((cat) => {
-                    const isOtherBeverage = cat.name === '커피 외 음료';
+                    const isOtherBeverage = cat.name === '다른 음료';
 
                     return (
                       <button
@@ -111,8 +163,7 @@ export default function EasyOrder() {
                         {/* 텍스트: '커피 외 음료'만 3줄로 */}
                         {isOtherBeverage ? (
                           <span className="text-6xl font-extrabold leading-[1.05] text-center">
-                            <span className="block">커피</span>
-                            <span className="block">외</span>
+                            <span className="block">다른</span>
                             <span className="block">음료</span>
                           </span>
                         ) : (
@@ -154,7 +205,14 @@ export default function EasyOrder() {
         </main>
 
         {/* 하단 장바구니 */}
-        {shouldShowBottomCart && <BottomCart onCheckout={() => navigate('/easy/confirm')} />}
+        {shouldShowBottomCart && (
+          <BottomCart
+            onCheckout={() => navigate('/easy/confirm')}
+            onEditOptions={() => {}}
+            orderMethod={orderMethod}
+            onOrderMethodChange={setOrderMethod}
+          />
+        )}
 
         {/* 옵션 모달 */}
         <EasyBeverageOptionsModal
