@@ -33,8 +33,8 @@ export default function EasyOrder() {
       case '커피':
         return items.filter((item) => item.category === '커피');
 
-      // "커피 외 음료"는 원본 category가 "음료"인 것들을 보여줌
-      case '커피 외 음료':
+      // "다른음료"는 원본 category가 "음료"인 것들을 보여줌
+      case '다른음료':
         return items.filter((item) => item.category === '음료');
 
       case '차':
@@ -66,13 +66,13 @@ export default function EasyOrder() {
     setSelectedItem(null);
   };
 
-  // ✅ 카테고리 화면에서는 cart 있을 때만 BottomCart 보이게
+  // 카테고리 화면에서는 cart 있을 때만 BottomCart 보이게
   const shouldShowBottomCart = !selectedCategory ? cart.length > 0 : true;
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-white flex flex-col shadow-2xl">
-        {/* ✅ 메인(Order) 페이지와 동일한 헤더 */}
+        {/* 메인(Order) 페이지와 동일한 헤더 */}
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
           <button
@@ -102,12 +102,12 @@ export default function EasyOrder() {
                         onClick={() => setSelectedCategory(cat.name)}
                         className="bg-gray-100 rounded-3xl p-10 flex flex-col items-center justify-center aspect-square hover:bg-orange-100 hover:border-orange-400 border-6 border-transparent transition-all duration-200"
                       >
-                        {/* ✅ 이모지: '커피 외 음료'만 위로 */}
+                        {/* 이모지: '커피 외 음료'만 위로 */}
                         <span className={`text-[10rem] mb-6 ${isOtherBeverage ? '-mt-6' : ''}`}>
                           {cat.emoji}
                         </span>
 
-                        {/* ✅ 텍스트: '커피 외 음료'만 3줄로 */}
+                        {/* 텍스트: '커피 외 음료'만 3줄로 */}
                         {isOtherBeverage ? (
                           <span className="text-6xl font-extrabold leading-[1.05] text-center">
                             <span className="block">커피</span>
@@ -152,10 +152,10 @@ export default function EasyOrder() {
           )}
         </main>
 
-        {/* ✅ 하단 장바구니 */}
+        {/* 하단 장바구니 */}
         {shouldShowBottomCart && <BottomCart onCheckout={() => navigate('/easy/confirm')} />}
 
-        {/* ✅ 옵션 모달 */}
+        {/* 옵션 모달 */}
         <EasyBeverageOptionsModal
           open={!!selectedItem}
           item={selectedItem}
