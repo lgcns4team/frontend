@@ -4,25 +4,21 @@ export default {
   theme: {
     extend: {
       keyframes: {
-        pulseGlow: {
-          '0%': { boxShadow: '0 0 0px rgba(255, 87, 34, 0.5)' },
-          '50%': { boxShadow: '0 0 12px rgba(255, 87, 34, 0.9)' },
-          '100%': { boxShadow: '0 0 0px rgba(255, 87, 34, 0.5)' },
-        },
-        micPulse: {
-          '0%, 100%': { transform: 'scale(1)' },
-          '50%': { transform: 'scale(1.2)' },
-        },
-        fingerTap: {
-          '0%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-4px)' },
-          '100%': { transform: 'translateY(0)' },
+        easyButtonGlow: {
+          '0%, 100%': {
+            borderColor: 'rgb(254, 208, 121)',
+            backgroundColor: 'rgb(254, 245, 230)',
+            boxShadow: '0 0 0 0px rgba(217, 119, 6, 0)',
+          },
+          '50%': {
+            borderColor: 'rgb(217, 119, 6)',
+            backgroundColor: 'rgb(255, 251, 235)',
+            boxShadow: '0 0 12px 2px rgba(217, 119, 6, 0.3)',
+          },
         },
       },
       animation: {
-        pulseGlow: 'pulseGlow 2s ease-in-out infinite',
-        micScale: 'micPulse 0.8s ease-in-out infinite',
-        fingerTap: 'fingerTap 2s ease-in-out infinite',
+        easyButtonGlow: 'easyButtonGlow 0.8s ease-in-out infinite',
       },
     },
   },

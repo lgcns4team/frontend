@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Home } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentMethodPage from '../components/PaymentMethodPage';
 import PaymentProgressModal from '../components/PaymentProgressModal';
@@ -11,17 +12,24 @@ type PaymentStep = 'initial' | 'method' | 'processing';
 export default function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
+<<<<<<< HEAD
   const { cart, getTotalPrice, clearCart } = useCartStore();
   
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [step, setStep] = useState<PaymentStep>('initial');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'mobile' | 'voucher' | 'nfc' | null>(null);
 
+=======
+  const { clearCart } = useCartStore();
+  const [step, setStep] = useState<PaymentStep>('method');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'mobile' | 'voucher' | 'nfc' | null>(
+    null
+  );
+
+  // 초기 step 설정 - 항상 결제 수단 선택 화면으로 시작
+>>>>>>> origin/dev
   useEffect(() => {
-    const state = location.state as { directToMethod?: boolean } | null;
-    if (state?.directToMethod) {
-      setStep('method');
-    }
+    setStep('method');
   }, [location.state]);
 
   // 주문 처리 로직
@@ -84,10 +92,13 @@ export default function Payment() {
     }
   };
 
+<<<<<<< HEAD
   const handlePaymentComplete = () => {
     processOrder();
   };
 
+=======
+>>>>>>> origin/dev
   const handleSelectMethod = (method: 'card' | 'mobile' | 'voucher' | 'nfc') => {
     setPaymentMethod(method);
     setStep('processing');
@@ -104,9 +115,9 @@ export default function Payment() {
             <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
             <button
               onClick={() => navigate('/order')}
-              className="text-base text-gray-400 underline hover:text-gray-600 transition-colors flex items-center gap-1"
+              className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
             >
-              <span className="text-3xl">🏠</span> <span className="font-bold">주문으로</span>
+             <Home className="w-8 h-8" /> <span className="font-semibold text-xl">주문으로</span>
             </button>
           </header>
 
@@ -114,6 +125,7 @@ export default function Payment() {
           <main className="flex-1 flex flex-col overflow-hidden">
             {step === 'initial' && (
               <div className="flex-1 flex flex-col items-center justify-center gap-12 p-8">
+<<<<<<< HEAD
                 <div className="text-center">
                   <h1 className="text-4xl font-bold mb-4">결제</h1>
                   <p className="text-3xl font-semibold text-orange-600">
@@ -121,6 +133,8 @@ export default function Payment() {
                   </p>
                 </div>
 
+=======
+>>>>>>> origin/dev
                 <button
                   onClick={() => setStep('method')}
                   className="bg-orange-500 hover:bg-orange-600 transition-colors text-white px-12 py-6 rounded-xl text-2xl font-bold shadow-lg animate-bounce"

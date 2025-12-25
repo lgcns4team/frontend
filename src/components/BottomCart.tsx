@@ -5,9 +5,17 @@ import type { Options } from '../types';
 
 interface Props {
   onCheckout: () => void;
+  onEditOptions?: (cartId: string) => void;
+  orderMethod?: 'dine-in' | 'takeout';
+  onOrderMethodChange?: (method: 'dine-in' | 'takeout') => void;
 }
 
-export default function BottomCart({ onCheckout }: Props) {
+export default function BottomCart({
+  onCheckout,
+  onEditOptions,
+  orderMethod = 'dine-in',
+  onOrderMethodChange,
+}: Props) {
   // Zustand Store에서 상태와 함수들을 가져옵니다.
   const { cart, updateQuantity, clearCart, getTotalPrice } = useCartStore();
 
@@ -26,28 +34,56 @@ export default function BottomCart({ onCheckout }: Props) {
   return (
     <div className="bg-white border-t border-gray-200 shadow-[0_-8px_30px_rgba(0,0,0,0.1)] z-30 flex flex-col h-[500px] shrink-0">
       {/* 1. 장바구니 헤더 */}
-      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-gray-50 shrink-0">
+      <div className="flex items-center justify-between px-6 py-5 border-b-2 border-grey bg-gray-50 shrink-0">
         <div className="flex items-center gap-3 text-gray-700">
           <ShoppingCart className="w-7 h-7" />
-          <span className="font-bold text-m">주문 내역</span>
+          <span className="font-semibold text-lg">주문 내역</span>
           {cart.length > 0 && (
             <span className="bg-orange-500 text-white text-base font-bold px-3 py-1 rounded-full">
               {cart.reduce((acc, i) => acc + i.quantity, 0)}
             </span>
           )}
         </div>
-        {cart.length > 0 && (
+
+        {/* 중앙: 주문방법 선택 */}
+        <div className="flex gap-8">
           <button
-            onClick={clearCart}
-            className="text-base text-gray-400 underline hover:text-red-500 text-sm font-semibold transition-colors"
+            onClick={() => onOrderMethodChange?.('dine-in')}
+            className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors ${
+              orderMethod === 'dine-in'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+            }`}
           >
-            전체 삭제
+            매장
           </button>
-        )}
+          <button
+            onClick={() => onOrderMethodChange?.('takeout')}
+            className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors ${
+              orderMethod === 'takeout'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+            }`}
+          >
+            포장
+          </button>
+        </div>
+
+        {/* 오른쪽: 전체 삭제 */}
+        <div className="w-16 text-center">
+          {cart.length > 0 && (
+            <button
+              onClick={clearCart}
+              className="text-base text-gray-400 underline hover:text-red-500 text-sm font-semibold transition-colors"
+            >
+              전체 삭제
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 2. 장바구니 리스트 (스크롤 영역) */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 scrollbar scrollbar-thumb-gray-400 scrollbar-track-gray-200">
         <AnimatePresence>
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-300 space-y-2">
@@ -64,7 +100,7 @@ export default function BottomCart({ onCheckout }: Props) {
                 key={item.cartId}
                 className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100"
               >
-                <div className="flex flex-col">
+                <div className="flex flex-col flex-1">
                   <span className="font-bold text-gray-800 text-m">{item.name}</span>
                   {/* 옵션 표시 */}
                   {item.options && (
@@ -77,20 +113,33 @@ export default function BottomCart({ onCheckout }: Props) {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 bg-white rounded-lg px-3 py-1.5 border border-gray-200 shadow-sm">
-                  <button
-                    onClick={() => updateQuantity(item.cartId, -1)}
-                    className="p-1 hover:bg-gray-100 rounded"
-                  >
-                    <Minus className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <span className="font-bold text-lg w-7 text-center">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(item.cartId, 1)}
-                    className="p-1 hover:bg-gray-100 rounded"
-                  >
-                    <Plus className="w-4 h-4 text-gray-600" />
-                  </button>
+                <div className="flex items-center gap-2">
+                  {/* 옵션 수정 버튼 - 디저트는 제외 */}
+                  {item.category && item.category !== '디저트' && item.category !== 'Dessert' && (
+                    <button
+                      onClick={() => onEditOptions?.(item.cartId)}
+                      className="h-9 flex items-center px-6 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-colors whitespace-nowrap"
+                    >
+                      옵션 변경
+                    </button>
+                  )}
+
+                  {/* 수량 버튼 */}
+                  <div className="h-9 flex items-center gap-3 bg-white rounded-lg px-3 border border-gray-200 shadow-sm">
+                    <button
+                      onClick={() => updateQuantity(item.cartId, -1)}
+                      className="p-1 hover:bg-gray-100 rounded"
+                    >
+                      <Minus className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <span className="font-bold text-lg w-7 text-center">{item.quantity}</span>
+                    <button
+                      onClick={() => updateQuantity(item.cartId, 1)}
+                      className="p-1 hover:bg-gray-100 rounded"
+                    >
+                      <Plus className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))
