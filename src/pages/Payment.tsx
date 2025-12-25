@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentMethodPage from '../components/PaymentMethodPage';
 import PaymentProgressModal from '../components/PaymentProgressModal';
 import { useCartStore } from '../store/UseCartStore';
-import { createOrder } from '../api/OrderApi';
+import { createOrder, verifyOrder } from '../api/OrderApi';
 import type { CreateOrderRequest, OrderItemRequest } from '../types/OrderTypes';
 
 type PaymentStep = 'initial' | 'method' | 'processing';
@@ -12,22 +12,12 @@ type PaymentStep = 'initial' | 'method' | 'processing';
 export default function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
-<<<<<<< HEAD
   const { cart, getTotalPrice, clearCart } = useCartStore();
   
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [step, setStep] = useState<PaymentStep>('initial');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'mobile' | 'voucher' | 'nfc' | null>(null);
 
-=======
-  const { clearCart } = useCartStore();
-  const [step, setStep] = useState<PaymentStep>('method');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'mobile' | 'voucher' | 'nfc' | null>(
-    null
-  );
-
-  // 초기 step 설정 - 항상 결제 수단 선택 화면으로 시작
->>>>>>> origin/dev
   useEffect(() => {
     setStep('method');
   }, [location.state]);
@@ -67,10 +57,10 @@ export default function Payment() {
       if (verification.totalAmount !== requestData.totalAmount) {
       console.error(`금액 불일치! 프론트(${requestData.totalAmount}) vs 백엔드(${verification.totalAmount})`);
       alert("장바구니 금액 정보가 변경되었습니다. 장바구니를 갱신합니다.");
-      
+
       // (선택) 여기서 장바구니를 비우거나, 백엔드 금액으로 강제 업데이트 하는 로직 추가 가능
-      // clearCart(); 
-      // navigate('/order');
+      clearCart();
+      navigate('/order');
       return; // 결제 중단
     }
 
@@ -92,13 +82,10 @@ export default function Payment() {
     }
   };
 
-<<<<<<< HEAD
   const handlePaymentComplete = () => {
     processOrder();
   };
 
-=======
->>>>>>> origin/dev
   const handleSelectMethod = (method: 'card' | 'mobile' | 'voucher' | 'nfc') => {
     setPaymentMethod(method);
     setStep('processing');
@@ -125,7 +112,6 @@ export default function Payment() {
           <main className="flex-1 flex flex-col overflow-hidden">
             {step === 'initial' && (
               <div className="flex-1 flex flex-col items-center justify-center gap-12 p-8">
-<<<<<<< HEAD
                 <div className="text-center">
                   <h1 className="text-4xl font-bold mb-4">결제</h1>
                   <p className="text-3xl font-semibold text-orange-600">
@@ -133,8 +119,6 @@ export default function Payment() {
                   </p>
                 </div>
 
-=======
->>>>>>> origin/dev
                 <button
                   onClick={() => setStep('method')}
                   className="bg-orange-500 hover:bg-orange-600 transition-colors text-white px-12 py-6 rounded-xl text-2xl font-bold shadow-lg animate-bounce"
