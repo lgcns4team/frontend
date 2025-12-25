@@ -53,11 +53,27 @@ export default function Payment() {
         orderItems: orderItems,
       };
 
+      console.log("🔍 주문 검증 요청 중...");
+      const verification = await verifyOrder(requestData);
+
+      if (verification.totalAmount !== requestData.totalAmount) {
+      console.error(`금액 불일치! 프론트(${requestData.totalAmount}) vs 백엔드(${verification.totalAmount})`);
+      alert("장바구니 금액 정보가 변경되었습니다. 장바구니를 갱신합니다.");
+      
+      // (선택) 여기서 장바구니를 비우거나, 백엔드 금액으로 강제 업데이트 하는 로직 추가 가능
+      // clearCart(); 
+      // navigate('/order');
+      return; // 결제 중단
+    }
+
+    console.log("✅ 검증 완료! 결제 진행");
+
       await createOrder(requestData);
       
       clearCart();
       setPaymentMethod(null);
       setStep('initial');
+      alert("주문이 정상적으로 완료되었습니다!");
       navigate('/'); 
 
     } catch (error) {
