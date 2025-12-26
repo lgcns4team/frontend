@@ -1,7 +1,7 @@
 // src/pages/EasyOrder.tsx
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Home } from 'lucide-react';
 import { useMenu } from '../hooks/UseMenu';
 import { useCartStore } from '../store/UseCartStore';
 import BottomCart from '../components/BottomCart';
@@ -77,9 +77,10 @@ export default function EasyOrder() {
           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
           <button
             onClick={() => navigate('/')}
-            className="text-base text-gray-400 underline hover:text-gray-600 transition-colors"
+            className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
           >
-            홈으로
+            <Home className="w-8 h-8" />
+            <span>처음으로</span>
           </button>
         </header>
 

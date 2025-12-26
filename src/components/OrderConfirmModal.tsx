@@ -21,7 +21,30 @@ export default function OrderConfirmModal({
   onRemoveItem,
 }: OrderConfirmModalProps) {
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalPrice = cart.reduce((sum, item) => {
+    const optionsPrice = item.selectedBackendOptions?.reduce((acc, opt) => acc + (opt.price * opt.quantity), 0) || 0;
+    return sum + (item.price + optionsPrice) * item.quantity;
+  }, 0);
+
+  // [수정] 옵션 렌더링 헬퍼 함수
+  const renderOptions = (item: CartItem) => {
+    if (item.category === '디저트' || item.category === 'Dessert') return null;
+    
+    // selectedBackendOptions 사용
+    if (item.selectedBackendOptions && item.selectedBackendOptions.length > 0) {
+      return item.selectedBackendOptions.map(opt => {
+        // 수량이 2개 이상이면 '샷추가(2)' 형태로 표시
+        return opt.quantity > 1 ? `${opt.name}(${opt.quantity})` : opt.name;
+      }).join(' / ');
+    }
+    return null;
+  };
+
+  // [수정] 개별 아이템 가격 계산 헬퍼
+  const getItemTotalPrice = (item: CartItem) => {
+    const optionsPrice = item.selectedBackendOptions?.reduce((acc, opt) => acc + (opt.price * opt.quantity), 0) || 0;
+    return (item.price + optionsPrice) * item.quantity;
+  };
 
   // Body 스크롤 막기
   useEffect(() => {
@@ -84,16 +107,15 @@ export default function OrderConfirmModal({
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
                         <h3 className="font-bold text-lg text-gray-900 mb-2">{item.name}</h3>
-                        {item.category !== '디저트' && (
-                          <p className="text-sm text-gray-500 mb-2 font-medium">
-                            {item.options?.temperature === 'hot' ? '🔥 HOT' : '❄️ ICE'} ·{' '}
-                            {item.options?.size?.toUpperCase() || 'GRANDE'}
-                            {item.options?.shot ? ` · 샷+${item.options.shot}` : ''}
-                          </p>
-                        )}
+
+                        <p className="text-sm text-gray-500 mb-2 font-medium">
+                           {renderOptions(item)}
+                        </p>
+
                         <p className="text-sm text-gray-600 mb-2">수량: {item.quantity}개</p>
                         <p className="text-lg font-bold text-orange-600">
-                          {(item.price * item.quantity).toLocaleString()}원
+                          {/* [수정] 가격 표시 교체 */}
+                          {getItemTotalPrice(item).toLocaleString()}원
                         </p>
                       </div>
 

@@ -1,34 +1,104 @@
-// src/types/OrderTypes.ts
 
-export type MenuItem = {
-  id: number;
+
+// ----------------------------------------------------------------------
+// 1. 프론트엔드 내부용 (화면 표시용)
+// ----------------------------------------------------------------------
+export interface MenuItem {
+  id: number;       // 화면용 ID (백엔드 menuId를 매핑)
   name: string;
   price: number;
-  category: string; // 프론트엔드 분류용
-  img: string;      // 화면 표시용 이미지
-  // 백엔드에서 올 수 있는 추가 필드들 (선택사항)
-  imageUrl?: string; 
+  category: string; // 화면용 카테고리명 (백엔드 categoryName을 매핑)
+  img: string;      // 화면용 이미지 주소 (백엔드 imageUrl을 매핑)
+  originalCategory?: string;
   description?: string;
   isSoldOut?: boolean;
+}
+
+export type CartItem = MenuItem & {
+  cartId: string;
+  quantity: number;
+
+  selectedBackendOptions: { 
+    optionItemId: number; 
+    quantity: number; 
+    price: number;
+    name: string;
+  }[];
+  options?: any;
 };
 
-// [신규] 옵션 상세 정보 (예: "샷 추가", "바닐라 시럽")
+// ----------------------------------------------------------------------
+// 2. 백엔드 API 응답용 (실제 서버 데이터 모양)
+// ----------------------------------------------------------------------
+
+// 메뉴 1개 데이터 (백엔드 모양)
+export interface BackendMenu {
+  menuId: number;        // 백엔드는 menuId를 씀
+  categoryId: number;
+  categoryName: string;
+  name: string;
+  price: number;
+  isActive: boolean;
+  imageUrl: string;      // 백엔드는 imageUrl을 씀
+}
+
+// 카테고리 1개 데이터 (백엔드 모양)
+export interface BackendCategory {
+  categoryId: number;    // 백엔드는 categoryId를 씀
+  categoryName: string;  // 백엔드는 categoryName을 씀
+  displayOrder: number;
+  menus: BackendMenu[];
+  menuCount: number;
+}
+
+export interface BackendOptionItem {
+  optionItemId: number;   // 프론트는 id
+  name: string;
+  optionPrice: number;    // 프론트는 price
+}
+
+// 2. 옵션 그룹 (온도, 사이즈 등)
+export interface BackendOptionGroup {
+  optionGroupId: number;
+  name: string;
+  isRequired: boolean;
+  selectionType: 'SINGLE' | 'MULTI'; // Swagger: selectionType
+  options: BackendOptionItem[];
+}
+
+
+// 3. 옵션 API 전체 응답 (껍데기)
+export interface MenuOptionsResponse {
+  menuId: number;
+  menuName: string;
+  basePrice: number;
+  optionGroups: BackendOptionGroup[];
+}
+
+// API 전체 응답 (껍데기)
+export interface MenuApiResponse {
+  categories: BackendCategory[];
+  totalCategories: number;
+  maxMenusPerCategory: number;
+}
+
+// ----------------------------------------------------------------------
+// 3. 옵션 관련 타입 (기존 유지)
+// ----------------------------------------------------------------------
 export interface MenuOptionDetail {
   id: number;
   name: string;
-  price: number; // 추가 금액
+  price: number;
 }
 
-// [신규] 옵션 그룹 정보 (예: "온도", "사이즈", "샷")
 export interface MenuOptionGroup {
   id: number;
-  name: string; // 그룹명 (이걸로 화면 표시 여부 결정)
-  minSelect: number; // 최소 선택 개수 (필수 여부 체크용)
-  maxSelect: number; // 최대 선택 개수
-  options: MenuOptionDetail[]; // 선택지 리스트
+  name: string;
+  minSelect: number;
+  maxSelect: number;
+  options: MenuOptionDetail[];
 }
 
-// ... 기존 Options, CartItem, CategoryResponse 타입 유지 ...
 export type Options = {
   temperature: "hot" | "cold";
   size: "tall" | "grande" | "venti";
@@ -38,28 +108,47 @@ export type Options = {
   isWeak: boolean;
 };
 
-export type CartItem = MenuItem & {
-  cartId: string;
-  quantity: number;
-  options?: Partial<Options>;
-};
-
-export interface CategoryResponse {
-  id: number;
-  name: string;
-  menus: MenuItem[];
+export interface RecommendResponse {
+  timeSlot: string;
+  recommendType: string;
+  totalCount: number;
+  recommendedMenus: BackendMenu[]; // 여기가 핵심! 메뉴들이 이 안에 들어있음
 }
 
 
-// [추가] 백엔드 API 응답용 인터페이스
-export interface CategoryResponse {
-  id: number;
-  name: string;      // 카테고리명 (예: "커피")
-  menus: MenuItem[]; // 해당 카테고리의 메뉴 리스트
+// ==========================================================
+//  주문 생성 API (POST /api/orders) 관련 타입
+// ==========================================================
+
+// 1. 주문 요청 시 선택한 옵션 구조
+export interface OrderOptionRequest {
+  optionItemId: number; // 옵션 ID (필수)
+  quantity: number;     // 수량
 }
 
-export interface CategoryResponse {
-  id: number;
-  name: string;      // 예: "커피"
-  menus: MenuItem[]; // 해당 카테고리의 메뉴들
+// 2. 주문 요청 시 개별 메뉴 구조
+export interface OrderItemRequest {
+  menuId: number;       // 메뉴 ID (필수)
+  quantity: number;     // 수량
+  selectedOptions: OrderOptionRequest[]; // 선택된 옵션 리스트
+}
+
+// 3. 주문 생성 요청 전체 Body (Swagger Request Body)
+export interface CreateOrderRequest {
+  sessionId?: number;     // 세션 ID (키오스크 식별용, 선택)
+  storeId: number;        // 가게 ID
+  orderItems: OrderItemRequest[]; // 주문 메뉴 리스트
+  paymentMethod: string;  // 결제 수단 (예: "CARD")
+  pgTransactionId?: string; // PG사 결제 고유 번호
+  totalAmount: number;    // 총 결제 금액
+}
+
+// 4. 주문 생성 성공 응답 (Swagger Response)
+export interface OrderResponse {
+  orderId: number;
+  orderNo: number;       // 주문 번호 (대기번호)
+  totalAmount: number;
+ 
+  status: string;        // 주문 상태
+  // 필요한 경우 orderItems 응답 타입도 추가 가능
 }
