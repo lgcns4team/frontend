@@ -59,7 +59,7 @@ export default function EasyConfirm() {
               </div>
             </div>
 
-            {/* ✅ 리스트 영역: 기본 4개 보이도록 높이를 제한 + 세로 스크롤 */}
+            {/*  리스트 영역: 기본 4개 보이도록 높이를 제한 + 세로 스크롤 */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2">
               <ul className="space-y-6">
                 {cart.map((item) => (
@@ -82,7 +82,7 @@ export default function EasyConfirm() {
                           {item.name}
                         </div>
                         {item.options?.temperature && (
-                          <div className="text-2xl font-bold text-gray-600 whitespace-nowrap mt-1">
+                          <div className="text-2xl font-bold text-gray-600 whitespace-nowrap mt-16">
                             ({item.options.temperature === 'hot' ? '뜨겁게' : '차갑게'})
                           </div>
                         )}
@@ -158,7 +158,7 @@ export default function EasyConfirm() {
 
               <button
                 type="button"
-                onClick={() => navigate('/payment')}
+                onClick={() => navigate('/easy-payment')}
                 className="flex-1 bg-pink-400 hover:bg-pink-500 text-white py-7 text-4xl font-extrabold rounded-3xl"
               >
                 결제하기

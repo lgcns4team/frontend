@@ -3,9 +3,9 @@ import Order from './pages/Order';
 import Payment from './pages/Payment';
 import EasyOrder from './pages/EasyOrder';
 import EasyConfirm from './pages/EasyConfirm';
-import VoiceOrder from "./pages/VoiceOrder";
+import VoiceOrder from './pages/VoiceOrder';
 import './index.css';
-
+import EasyPayment from './pages/EasyPayment';
 
 function App() {
   return (
@@ -18,6 +18,7 @@ function App() {
         <Route path="/easy/confirm" element={<EasyConfirm />} />
         {/* 추후 추가 */}
         <Route path="/voice" element={<VoiceOrder />} />
+        <Route path="/easy-payment" element={<EasyPayment />} />
       </Routes>
     </BrowserRouter>
   );

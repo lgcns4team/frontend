@@ -1,129 +1,68 @@
 // src/pages/EasyOrder.tsx
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Home } from 'lucide-react';
+import { Home } from 'lucide-react';
+
+import { useMenu } from '../hooks/UseMenu';
 import { useCartStore } from '../store/UseCartStore';
-import BottomCart from '../components/BottomCart';
+
 import EasyMenuGrid from '../components/EasyMenuGrid';
 import EasyBeverageOptionsModal from '../components/EasyOptionsModal';
-import type { MenuItem, Options } from '../types';
+import BottomCart from '../components/BottomCart'; //  추가
 
-//  목업 가져오기 (경로 확인: src/api/tempmock.ts 맞지?)
-import { tempMockCategories } from '../api/tempmock';
-// (옵션 목업은 지금 EasyOrder에서는 안 씀. 옵션 모달에서 필요하면 그쪽에서 쓰면 됨)
-// import { tempMockOptions } from '../api/tempmock';
+// 네가 Order/VoiceOrder에서 쓰던 아이콘 그대로
+import microphoneIcon from '../assets/icons/microphone.svg';
+import fingerIcon from '../assets/icons/finger.svg';
 
-const EASY_CATEGORIES = [
+import type { MenuItem, Options } from '../types'; // 네 프로젝트 타입 경로에 맞춰 조정
+
+type EasyCategory = {
+  name: string;
+  emoji: string;
+  // 필요하면 category 매핑 키 추가 가능
+};
+
+const EASY_CATEGORIES: EasyCategory[] = [
   { name: '커피', emoji: '☕️' },
-  { name: '차', emoji: '🫖' },
-  { name: '다른 음료', emoji: '🥤' }, // 여기 통일
+  { name: '차', emoji: '🍵' },
+  { name: '다른 음료', emoji: '🥤' },
   { name: '디저트', emoji: '🍰' },
-  { name: '추천메뉴', emoji: '🍊' },
-  { name: '세트메뉴', emoji: '🍽️' },
-] as const;
-
-type EasyCategory = (typeof EASY_CATEGORIES)[number]['name'];
+  { name: '추천메뉴', emoji: '⭐️' },
+  { name: '세트메뉴', emoji: '🍿' },
+];
 
 export default function EasyOrder() {
   const navigate = useNavigate();
+  const { items, basicItems, recommendedItems, categories, isLoading } = useMenu();
   const { cart, addToCart } = useCartStore();
-  const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
 
-  //  목업 기반 items / loading
-  const [items, setItems] = useState<MenuItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const [selectedCategory, setSelectedCategory] = useState<EasyCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
-  //  CategoryResponse[] (tempmock) -> MenuItem[] (Easy 화면용) 변환`
-  useEffect(() => {
-    setIsLoading(true);
+  //  BottomCart에서 쓰는 주문방법 상태 (Order/VoiceOrder랑 동일)
+  const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
 
-    // tempMockCategories 구조:
-    // [{ categoryName, menus: [{ id, name, price, imageUrl ...}] }]
-    const flat: MenuItem[] = tempMockCategories.flatMap((cat: any) =>
-      (cat.menus ?? []).map((m: any) => ({
-        //  EasyOrder에서 쓰는 MenuItem 필드에 맞춰 매핑
-        id: Number(m.id),
-        name: m.name,
-        price: m.price,
-
-        // EasyMenuGrid는 item.img 사용 중이었지? -> 여기서 채워줌
-        // imageUrl이 비어있으면 그냥 ''로 두면 빈 이미지로 뜸.
-        img: m.imageUrl ?? '',
-
-        // EasyOrder에서 category 필터링 하니까 category를 꼭 넣어야 함
-        category: cat.categoryName,
-
-        // 나머지는 프로젝트 타입에 따라 있을 수도/없을 수도
-        isSoldOut: m.isSoldOut ?? false,
-        isActive: m.isActive ?? true,
-      }))
-    );
-
-    setItems(flat);
-    setIsLoading(false);
-  }, []);
+  // 쉬운주문에서 “다른 음료”를 기존 데이터의 어떤 카테고리로 볼지 정리(프로젝트마다 다름)
+  const mappedCategory = useMemo(() => {
+    if (!selectedCategory) return null;
+    if (selectedCategory === '다른 음료') return '음료';
+    return selectedCategory;
+  }, [selectedCategory]);
 
   const filteredItems = useMemo(() => {
-    if (!selectedCategory) return [];
+    if (!mappedCategory) return [];
 
-    switch (selectedCategory) {
-      case '커피':
-        return items.filter((item) => item.category === '커피');
+    // 추천메뉴는 recommendedItems 사용
+    if (mappedCategory === '추천메뉴') return recommendedItems;
 
-      // "다른음료"는 원본 category가 "음료"인 것들을 보여줌
-      case '다른 음료':
-        return items.filter((item) => item.category === '음료');
-
-      case '차': {
-        const byCategory = items.filter((item) => item.category === '차');
-        if (byCategory.length > 0) return byCategory;
-        return items.filter((item) => item.name.includes('티'));
-      }
-
-      case '디저트':
-        return items.filter((item) => item.category === '디저트');
-
-      case '추천메뉴':
-        return items.slice(0, 8);
-
-      case '세트메뉴':
-        // 목업에 세트 없으면 디저트 일부라도 보여주게
-        return items.filter((item) => item.category === '세트').length
-          ? items.filter((item) => item.category === '세트')
-          : items.filter((item) => item.category === '디저트').slice(0, 8);
-
-      default:
-        return [];
-    }
-  }, [selectedCategory, items]);
-
-  const handleItemClick = (item: MenuItem) => {
-    if (item.category === '커피' || item.category === '음료') {
-      setSelectedItem(item);
-      return;
-    }
-    addToCart(item);
-  };
-
-  const handleAddWithOptions = (
-    item: MenuItem,
-    options: Pick<Options, 'temperature'>,
-    quantity: number
-  ) => {
-    addToCart(item, options, quantity);
-    setSelectedItem(null);
-  };
-
-  // 카테고리 화면에서는 cart 있을 때만 BottomCart 보이게
-  const shouldShowBottomCart = !selectedCategory ? cart.length > 0 : true;
+    // 그 외는 basicItems에서 category로 필터
+    return basicItems.filter((it) => it.category === mappedCategory);
+  }, [mappedCategory, recommendedItems, basicItems]);
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-white flex flex-col shadow-2xl">
-        {/* 메인(Order) 페이지와 동일한 헤더 */}
+        {/* 1) 헤더 (너가 쓰던 그대로) */}
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
 
@@ -136,7 +75,75 @@ export default function EasyOrder() {
           </button>
         </header>
 
-        {/* 메인 컨텐츠 */}
+        {/*  2) 상단 네비 버튼 영역 (Order/VoiceOrder 방식 그대로) */}
+        <div className="bg-white pb-2 shadow-sm z-10 shrink-0">
+          <div className="flex gap-3 px-4 py-3">
+            {/* 일반 주문 */}
+            <button
+              onClick={() => navigate('/order')}
+              className="flex-1 bg-pink-50 p-8 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
+            >
+              <style>{`
+                .wave-bar {
+                  animation: wave 1s linear infinite;
+                  animation-delay: calc(1s - var(--delay));
+                  opacity: 0.7;
+                  transition: opacity 0.3s ease;
+                }
+                .group:hover .wave-bar { opacity: 1; }
+                @keyframes wave {
+                  0% { transform: scale(0); }
+                  50% { transform: scale(1); }
+                  100% { transform: scale(0); }
+                }
+                .mic-icon { animation: micPulse 1.5s ease-in-out infinite; }
+                @keyframes micPulse {
+                  0%, 100% { transform: scale(1); }
+                  50% { transform: scale(1.1); }
+                }
+              `}</style>
+
+              <img src={microphoneIcon} alt="microphone" className="mic-icon w-10 h-10" />
+              <span className="font-bold text-pink-900 text-xl">일반 주문</span>
+            </button>
+
+            {/* 음성 주문 */}
+            <button
+              onClick={() => navigate('/voice')}
+              className="flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group easy-button"
+            >
+              <style>{`
+                .easy-button { animation: easyButtonGlow 0.8s ease-in-out infinite; }
+                @keyframes easyButtonGlow {
+                  0%, 100% { 
+                    border-color: rgb(254, 208, 121);
+                    background-color: rgb(254, 245, 230);
+                    box-shadow: 0 0 0 0px rgba(217, 119, 6, 0);
+                  }
+                  50% { 
+                    border-color: rgb(217, 119, 6);
+                    background-color: rgb(255, 251, 235);
+                    box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3);
+                  }
+                }
+                .finger-icon {
+                  animation: fingerWiggle 0.8s ease-in-out infinite;
+                  transform-origin: bottom center;
+                }
+                @keyframes fingerWiggle {
+                  0%, 100% { transform: rotate(0deg); }
+                  25% { transform: rotate(-8deg); }
+                  75% { transform: rotate(8deg); }
+                }
+              `}</style>
+
+              <img src={fingerIcon} alt="finger" className="finger-icon w-12 h-12" />
+              <span className="font-bold text-orange-900 text-xl">음성 주문</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 3) 메인 컨텐츠 */}
         <main className="flex-1 flex flex-col p-10 overflow-hidden">
           {!selectedCategory ? (
             <>
@@ -155,12 +162,10 @@ export default function EasyOrder() {
                         onClick={() => setSelectedCategory(cat.name)}
                         className="bg-gray-100 rounded-3xl p-10 flex flex-col items-center justify-center aspect-square hover:bg-orange-100 hover:border-orange-400 border-6 border-transparent transition-all duration-200"
                       >
-                        {/* 이모지: '커피 외 음료'만 위로 */}
                         <span className={`text-[10rem] mb-6 ${isOtherBeverage ? '-mt-6' : ''}`}>
                           {cat.emoji}
                         </span>
 
-                        {/* 텍스트: '커피 외 음료'만 3줄로 */}
                         {isOtherBeverage ? (
                           <span className="text-6xl font-extrabold leading-[1.05] text-center">
                             <span className="block">다른</span>
@@ -181,45 +186,63 @@ export default function EasyOrder() {
               </div>
             </>
           ) : (
-            <div className="flex-1 overflow-y-auto">
+            <>
               <div className="flex items-center justify-between mb-8">
                 <button
                   onClick={() => setSelectedCategory(null)}
-                  className="flex items-center gap-2 text-2xl font-bold text-gray-700"
+                  className="text-3xl font-extrabold bg-gray-200 hover:bg-gray-300 px-8 py-4 rounded-2xl"
                 >
-                  <ArrowLeft className="w-8 h-8" />
-                  <span>뒤로가기</span>
+                  ← 뒤로
                 </button>
 
-                <h2 className="text-5xl font-bold text-center flex-1">{selectedCategory}</h2>
-                <div className="w-[140px]" />
+                <div className="text-5xl font-extrabold">{selectedCategory}</div>
+
+                <button
+                  onClick={() => navigate('/easy/confirm')}
+                  className="text-3xl font-extrabold bg-pink-400 hover:bg-pink-500 text-white px-8 py-4 rounded-2xl"
+                >
+                  주문확인 →
+                </button>
               </div>
 
               {isLoading ? (
-                <div className="text-center text-2xl">메뉴를 불러오는 중입니다...</div>
+                <div className="h-full flex items-center justify-center text-3xl font-bold">
+                  메뉴 불러오는 중...
+                </div>
               ) : (
-                <EasyMenuGrid items={filteredItems} onItemClick={handleItemClick} />
+                <div className="flex-1 overflow-y-auto pb-6">
+                  <EasyMenuGrid
+                    items={filteredItems}
+                    onItemClick={(item) => {
+                      // 커피/음료만 옵션 모달 띄우고, 그 외는 바로 담기
+                      if (item.category === '커피' || item.category === '음료') {
+                        setSelectedItem(item);
+                      } else {
+                        addToCart(item);
+                      }
+                    }}
+                  />
+                </div>
               )}
-            </div>
+            </>
           )}
         </main>
-
-        {/* 하단 장바구니 */}
-        {shouldShowBottomCart && (
+        {cart.length > 0 && (
           <BottomCart
             onCheckout={() => navigate('/easy/confirm')}
-            onEditOptions={() => {}}
-            orderMethod={orderMethod}
-            onOrderMethodChange={setOrderMethod}
+            orderMethod="dine-in"
+            onOrderMethodChange={() => {}}
           />
         )}
-
-        {/* 옵션 모달 */}
+        {/* 5) 옵션 모달 */}
         <EasyBeverageOptionsModal
           open={!!selectedItem}
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
-          onAdd={handleAddWithOptions}
+          onAdd={(item, opts: Pick<Options, 'temperature'>, qty) => {
+            addToCart(item, opts, qty);
+            setSelectedItem(null);
+          }}
         />
       </div>
     </div>
