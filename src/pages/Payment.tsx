@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentMethodPage from '../components/PaymentMethodPage';
 import PaymentProgressModal from '../components/PaymentProgressModal';
 import { useCartStore } from '../store/UseCartStore';
-import { createOrder, verifyOrder } from '../api/OrderApi';
+import { createOrder } from '../api/OrderApi';
 import type { CreateOrderRequest, OrderItemRequest } from '../types/OrderTypes';
 
 type PaymentStep = 'initial' | 'method' | 'processing';
@@ -13,10 +13,12 @@ export default function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
   const { cart, getTotalPrice, clearCart } = useCartStore();
-  
+
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [step, setStep] = useState<PaymentStep>('initial');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'mobile' | 'voucher' | 'nfc' | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'mobile' | 'voucher' | 'nfc' | null>(
+    null
+  );
 
   useEffect(() => {
     setStep('method');
@@ -25,7 +27,7 @@ export default function Payment() {
   // 주문 처리 로직
   const processOrder = async () => {
     if (cart.length === 0) {
-      alert("장바구니가 비어있습니다.");
+      alert('장바구니가 비어있습니다.');
       navigate('/order');
       return;
     }
@@ -45,38 +47,31 @@ export default function Payment() {
 
       const requestData: CreateOrderRequest = {
         storeId: 1,
-        paymentMethod: paymentMethod ? paymentMethod.toUpperCase() : "CARD",
-        pgTransactionId: "PG_TEST_" + Date.now(),
+        paymentMethod: paymentMethod ? paymentMethod.toUpperCase() : 'CARD',
+        pgTransactionId: 'PG_TEST_' + Date.now(),
         totalAmount: getTotalPrice(),
         orderItems: orderItems,
       };
 
-      console.log("🔍 주문 검증 요청 중...");
-      const verification = await verifyOrder(requestData);
-
-      if (verification.totalAmount !== requestData.totalAmount) {
-      console.error(`금액 불일치! 프론트(${requestData.totalAmount}) vs 백엔드(${verification.totalAmount})`);
-      alert("장바구니 금액 정보가 변경되었습니다. 장바구니를 갱신합니다.");
-
-      // (선택) 여기서 장바구니를 비우거나, 백엔드 금액으로 강제 업데이트 하는 로직 추가 가능
-      clearCart();
-      navigate('/order');
-      return; // 결제 중단
-    }
-
-    console.log("✅ 검증 완료! 결제 진행");
+      // NOTE: (나중에 사용) 백엔드에 주문 검증 엔드포인트가 준비되면 아래 로직을 복구해서 사용하세요.
+      // const verification = await verifyOrder(requestData);
+      // if (verification.totalAmount !== requestData.totalAmount) {
+      //   alert("장바구니 금액 정보가 변경되었습니다. 장바구니를 갱신합니다.");
+      //   clearCart();
+      //   navigate('/order');
+      //   return;
+      // }
 
       await createOrder(requestData);
-      
+
       clearCart();
       setPaymentMethod(null);
       setStep('initial');
-      alert("주문이 정상적으로 완료되었습니다!");
-      navigate('/'); 
-
+      alert('주문이 정상적으로 완료되었습니다!');
+      navigate('/');
     } catch (error) {
-      console.error("주문 실패:", error);
-      alert("주문 처리에 실패했습니다.");
+      console.error('주문 실패:', error);
+      alert('주문 처리에 실패했습니다.');
     } finally {
       setIsApiLoading(false);
     }
@@ -96,7 +91,6 @@ export default function Payment() {
       {/* [디자인 복구] 90도 회전된 키오스크 전체 레이아웃 */}
       <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
         <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl">
-          
           {/* 헤더 */}
           <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
             <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
@@ -104,7 +98,7 @@ export default function Payment() {
               onClick={() => navigate('/order')}
               className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
             >
-             <Home className="w-8 h-8" /> <span className="font-semibold text-xl">주문으로</span>
+              <Home className="w-8 h-8" /> <span className="font-semibold text-xl">주문으로</span>
             </button>
           </header>
 
@@ -128,25 +122,18 @@ export default function Payment() {
               </div>
             )}
 
-            {step === 'method' && (
-              <PaymentMethodPage onSelectMethod={handleSelectMethod} />
-            )}
+            {step === 'method' && <PaymentMethodPage onSelectMethod={handleSelectMethod} />}
           </main>
         </div>
       </div>
 
       {step === 'processing' && paymentMethod && (
-        <PaymentProgressModal 
-          paymentMethod={paymentMethod} 
-          onClose={handlePaymentComplete} 
-        />
+        <PaymentProgressModal paymentMethod={paymentMethod} onClose={handlePaymentComplete} />
       )}
-      
+
       {isApiLoading && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
-          <div className="text-white text-2xl font-bold animate-pulse">
-            주문 생성 중...
-          </div>
+          <div className="text-white text-2xl font-bold animate-pulse">주문 생성 중...</div>
         </div>
       )}
     </>

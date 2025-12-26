@@ -9,7 +9,15 @@ const ROTATE_INTERVAL_MS = 10_000;
 const TRANSITION_DURATION_MS = 550; // 400~700ms 범위
 const EXIT_GUARD_MS = 400; // 300~500ms 범위
 
-function renderAd(ad: Ad) {
+const NEXT_MEDIA_MAX_WAIT_MS = 5_000;
+const NEXT_MEDIA_RETRY_MS = 300;
+
+type MediaMarkHandlers = {
+  onReady?: () => void;
+  onError?: () => void;
+};
+
+function renderAd(ad: Ad, handlers?: MediaMarkHandlers) {
   if (ad.mediaType === 'VIDEO') {
     return (
       <video
@@ -19,6 +27,9 @@ function renderAd(ad: Ad) {
         muted
         playsInline
         preload="auto"
+        onLoadedData={handlers?.onReady}
+        onCanPlay={handlers?.onReady}
+        onError={handlers?.onError}
       />
     );
   }
@@ -29,6 +40,8 @@ function renderAd(ad: Ad) {
       src={ad.mediaUrl}
       alt={ad.title}
       draggable={false}
+      onLoad={handlers?.onReady}
+      onError={handlers?.onError}
     />
   );
 }
@@ -51,6 +64,11 @@ export default function Advertisement() {
   const ignoreInputUntilRef = useRef<number>(0);
   const finalizedRef = useRef(false);
   const transitionEndHandledRef = useRef(false);
+
+  const mediaReadyUrlsRef = useRef<Set<string>>(new Set());
+  const mediaFailedUrlsRef = useRef<Set<string>>(new Set());
+  const mediaPreloadVideoRef = useRef<Map<string, HTMLVideoElement>>(new Map());
+  const waitingForNextSincePerfRef = useRef<number | null>(null);
 
   // Current ad timing refs
   const displayedAtRef = useRef<string>('');
@@ -104,35 +122,163 @@ export default function Advertisement() {
     void adImpressionQueue.flush();
   }, []);
 
-  const startRotateTimer = useCallback(() => {
-    clearRotateTimer();
+  const preloadNext = useCallback((ad: Ad | null) => {
+    if (!ad) return;
 
+    const url = ad.mediaUrl;
+    if (!url) return;
+    if (mediaReadyUrlsRef.current.has(url) || mediaFailedUrlsRef.current.has(url)) return;
+
+    if (ad.mediaType === 'IMAGE') {
+      const img = new Image();
+      img.onload = () => {
+        mediaReadyUrlsRef.current.add(url);
+      };
+      img.onerror = () => {
+        mediaFailedUrlsRef.current.add(url);
+      };
+      img.src = url;
+      return;
+    }
+
+    const existing = mediaPreloadVideoRef.current.get(url);
+    if (existing) return;
+
+    const v = document.createElement('video');
+    v.preload = 'auto';
+    v.muted = true;
+    v.playsInline = true;
+    v.src = url;
+
+    const markReady = () => {
+      mediaReadyUrlsRef.current.add(url);
+      mediaPreloadVideoRef.current.delete(url);
+      v.removeEventListener('loadeddata', markReady);
+      v.removeEventListener('canplay', markReady);
+      v.removeEventListener('error', markFailed);
+    };
+
+    const markFailed = () => {
+      mediaFailedUrlsRef.current.add(url);
+      mediaPreloadVideoRef.current.delete(url);
+      v.removeEventListener('loadeddata', markReady);
+      v.removeEventListener('canplay', markReady);
+      v.removeEventListener('error', markFailed);
+    };
+
+    v.addEventListener('loadeddata', markReady);
+    v.addEventListener('canplay', markReady);
+    v.addEventListener('error', markFailed);
+    mediaPreloadVideoRef.current.set(url, v);
+
+    try {
+      v.load();
+    } catch {
+      markFailed();
+    }
+  }, []);
+
+  const isMediaReady = useCallback((ad: Ad | null) => {
+    if (!ad) return false;
+    const url = ad.mediaUrl;
+    if (!url) return false;
+    return mediaReadyUrlsRef.current.has(url);
+  }, []);
+
+  const isMediaFailed = useCallback((ad: Ad | null) => {
+    if (!ad) return false;
+    const url = ad.mediaUrl;
+    if (!url) return true;
+    return mediaFailedUrlsRef.current.has(url);
+  }, []);
+
+  const advanceToNextPlayable = useCallback(() => {
     if (ads.length <= 1) return;
 
-    rotateTimerIdRef.current = window.setTimeout(() => {
-      // Prevent overlapping transitions (use functional update to avoid stale closures)
-      transitionEndHandledRef.current = false;
-      setIsTransitioning((prev) => (prev ? prev : true));
-    }, ROTATE_INTERVAL_MS);
-  }, [ads.length, clearRotateTimer]);
+    // End current impression immediately.
+    finalizeCurrentImpression();
+
+    setIsTransitioning(false);
+    waitingForNextSincePerfRef.current = null;
+
+    setCurrentIndex((prev) => {
+      if (ads.length <= 1) return prev;
+
+      for (let i = 1; i <= ads.length; i += 1) {
+        const idx = (prev + i) % ads.length;
+        const candidate = ads[idx];
+        if (!candidate) continue;
+
+        const url = candidate.mediaUrl;
+        if (!url) continue;
+        if (!mediaFailedUrlsRef.current.has(url)) return idx;
+      }
+
+      return prev;
+    });
+  }, [ads, finalizeCurrentImpression]);
+
+  const startRotateTimer = useCallback(
+    (delayMs: number = ROTATE_INTERVAL_MS) => {
+      clearRotateTimer();
+
+      if (ads.length <= 1) return;
+
+      rotateTimerIdRef.current = window.setTimeout(() => {
+        if (!nextAd) return;
+
+        // Keep next warmed.
+        preloadNext(nextAd);
+
+        const ready = isMediaReady(nextAd);
+        const failed = isMediaFailed(nextAd);
+
+        if (failed) {
+          advanceToNextPlayable();
+          return;
+        }
+
+        if (ready) {
+          waitingForNextSincePerfRef.current = null;
+          transitionEndHandledRef.current = false;
+          setIsTransitioning((prev) => (prev ? prev : true));
+          return;
+        }
+
+        const now = performance.now();
+        if (waitingForNextSincePerfRef.current == null) {
+          waitingForNextSincePerfRef.current = now;
+        }
+
+        const waited = now - (waitingForNextSincePerfRef.current ?? now);
+        if (waited >= NEXT_MEDIA_MAX_WAIT_MS) {
+          const url = nextAd.mediaUrl;
+          if (url) {
+            mediaFailedUrlsRef.current.add(url);
+          }
+          advanceToNextPlayable();
+          return;
+        }
+
+        // Retry soon.
+        startRotateTimer(NEXT_MEDIA_RETRY_MS);
+      }, delayMs);
+    },
+    [
+      ads.length,
+      advanceToNextPlayable,
+      clearRotateTimer,
+      isMediaFailed,
+      isMediaReady,
+      nextAd,
+      preloadNext,
+    ]
+  );
 
   // Only animate while actually transitioning; otherwise snap instantly.
   const transitionCss = isTransitioning
     ? `transform ${TRANSITION_DURATION_MS}ms ease-in-out`
     : 'none';
-
-  const preloadNext = useCallback((ad: Ad | null) => {
-    if (!ad) return;
-
-    if (ad.mediaType === 'IMAGE') {
-      const img = new Image();
-      img.src = ad.mediaUrl;
-      return;
-    }
-
-    // For video, preload="auto" on the rendered <video> covers the typical preload behavior.
-    // We avoid creating hidden <video> elements to keep things simple.
-  }, []);
 
   const exitToOrder = useCallback(async () => {
     if (finalizedRef.current) return;
@@ -209,6 +355,28 @@ export default function Advertisement() {
     };
   }, [exitToOrder]);
 
+  const handleMediaReady = useCallback((ad: Ad) => {
+    const url = ad.mediaUrl;
+    if (!url) return;
+    mediaReadyUrlsRef.current.add(url);
+  }, []);
+
+  const handleMediaError = useCallback(
+    (ad: Ad) => {
+      const url = ad.mediaUrl;
+      if (url) {
+        mediaFailedUrlsRef.current.add(url);
+      }
+
+      // If the currently visible ad fails, skip immediately.
+      if (currentAd?.adId === ad.adId) {
+        clearRotateTimer();
+        advanceToNextPlayable();
+      }
+    },
+    [advanceToNextPlayable, clearRotateTimer, currentAd?.adId]
+  );
+
   const onTransitionEnd = useCallback(
     (e: TransitionEvent<HTMLDivElement>) => {
       if (e.propertyName !== 'transform') return;
@@ -253,7 +421,10 @@ export default function Advertisement() {
               transition: transitionCss,
             }}
           >
-            {renderAd(currentAd)}
+            {renderAd(currentAd, {
+              onReady: () => handleMediaReady(currentAd),
+              onError: () => handleMediaError(currentAd),
+            })}
           </div>
 
           {/* Next */}
@@ -266,7 +437,10 @@ export default function Advertisement() {
               }}
               onTransitionEnd={onTransitionEnd}
             >
-              {renderAd(nextAd)}
+              {renderAd(nextAd, {
+                onReady: () => handleMediaReady(nextAd),
+                onError: () => handleMediaError(nextAd),
+              })}
             </div>
           )}
         </div>

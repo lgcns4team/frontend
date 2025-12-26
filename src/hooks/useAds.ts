@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api, resolveMediaUrl } from '../Lib/api';
-import type { Ad, GetAdsResponse } from '../types/ad';
+import { resolveMediaUrl } from '../Lib/api';
+import { ADS } from '../config/ads';
+import type { Ad } from '../types/ad';
 
 type UseAdsResult = {
   ads: Ad[];
@@ -13,15 +14,32 @@ const TTL_MS = 60_000;
 let cache: { at: number; ads: Ad[] } | null = null;
 let inflight: Promise<Ad[]> | null = null;
 
-async function fetchAds(): Promise<Ad[]> {
-  const res = await api.get<GetAdsResponse>('/api/ads');
-  const ads = res.data.ads ?? [];
-
-  // Normalize mediaUrl based on VITE_API_BASE_URL rules.
-  return ads.map((ad) => ({
-    ...ad,
-    mediaUrl: resolveMediaUrl(ad.mediaUrl),
+function getLocalAds(): Ad[] {
+  return ADS.map((a) => ({
+    adId: a.id,
+    title: `ad-${a.id}`,
+    mediaType: 'IMAGE',
+    mediaUrl: resolveMediaUrl(a.image),
+    startDate: '1970-01-01',
+    endDate: '2999-12-31',
+    isActive: true,
   }));
+}
+
+async function fetchAds(): Promise<Ad[]> {
+  // NOTE: 백엔드에서 광고 데이터가 준비되면 아래 코드를 복구해서 사용하세요.
+  // (현재는 프론트 `public/ads`의 로컬 이미지(1~3번)를 광고로 사용)
+  //
+  // const res = await api.get<GetAdsResponse>('/api/ads');
+  // const ads = res.data.ads ?? [];
+  //
+  // // Normalize mediaUrl based on VITE_API_BASE_URL rules.
+  // return ads.map((ad) => ({
+  //   ...ad,
+  //   mediaUrl: resolveMediaUrl(ad.mediaUrl),
+  // }));
+
+  return getLocalAds();
 }
 
 /**

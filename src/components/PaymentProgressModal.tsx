@@ -65,19 +65,21 @@ export default function PaymentProgressModal({
   useEffect(() => {
     if (!isProcessing) {
       const countdownTimer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(countdownTimer);
-            onClose();
-            return 0;
-          }
-          return prev - 1;
-        });
+        setCountdown((prev) => Math.max(0, prev - 1));
       }, 1000);
 
       return () => clearInterval(countdownTimer);
     }
   }, [isProcessing, onClose]);
+
+  // countdown이 0이 되면 모달을 닫습니다.
+  // (주의) setState updater 내부에서 onClose()를 호출하면
+  // React가 렌더 중 updater를 실행할 때 "Cannot update a component while rendering" 경고가 날 수 있습니다.
+  useEffect(() => {
+    if (isProcessing) return;
+    if (countdown !== 0) return;
+    onClose();
+  }, [countdown, isProcessing, onClose]);
 
   const getContent = () => {
     if (paymentMethod === 'card') {

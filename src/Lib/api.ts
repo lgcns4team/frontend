@@ -38,6 +38,11 @@ export function joinUrl(baseUrl: string, path: string): string {
  */
 export function resolveMediaUrl(mediaUrl: string): string {
   if (/^https?:\/\//i.test(mediaUrl)) return mediaUrl;
+
+  // Assets under Vite `public/` should remain same-origin (served by the frontend).
+  // If we prefix these with VITE_API_BASE_URL, requests may go to the backend and 404.
+  if (mediaUrl.startsWith('/ads/') || mediaUrl.startsWith('/raw/')) return mediaUrl;
+
   if (!rawBaseUrl) return mediaUrl;
   if (!mediaUrl.startsWith('/')) return mediaUrl;
   return joinUrl(rawBaseUrl, mediaUrl);
