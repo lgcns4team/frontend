@@ -147,18 +147,12 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
     onClose();
   };
 
+  // ✅ (수정1) 아이콘: HOT/ICE만 나오게
   const getIcon = (name: string) => {
     const n = name.toLowerCase();
     if (n.includes('hot') || n.includes('따뜻')) return '🔥';
     if (n.includes('ice') || n.includes('얼음')) return '❄️';
-    if (n.includes('tall') || n.includes('regular')) return '🥤';
-    if (n.includes('large') || n.includes('grande')) return '🥤+';
-    if (n.includes('venti')) return '🥤++';
-    if (n.includes('shot') || n.includes('샷')) return '☕';
-    if (n.includes('whip') || n.includes('휘핑')) return '🍦';
-    if (n.includes('less') || n.includes('적게')) return '📉';
-    if (n.includes('more') || n.includes('많이')) return '📈';
-    return '🥄';
+    return '';
   };
 
   if (!open || !item) return null;
@@ -227,9 +221,6 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                     if (groupNameLower.includes('샷') || groupNameLower.includes('shot')) {
                       return (
                         <div key={group.optionGroupId} className="py-4 border-b last:border-0">
-                          <h4 className="font-bold text-xl mb-3 text-center">
-                            {group.name} (+500원)
-                          </h4>
                           <div className="flex flex-col gap-3 px-8">
                             {group.options.map((opt) => {
                               const qty = selections[group.optionGroupId]?.[opt.optionItemId] || 0;
@@ -241,6 +232,7 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                                   <span className="text-lg font-bold text-gray-700">
                                     {opt.name}
                                   </span>
+
                                   <div className="flex items-center gap-5 bg-white rounded-full px-5 py-3 border border-gray-200 shadow-sm">
                                     <button
                                       onClick={() => handleOptionDecrement(group, opt)}
@@ -249,6 +241,7 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                                       {' '}
                                       -{' '}
                                     </button>
+
                                     <span className="font-bold text-2xl w-8 text-center">
                                       {qty}
                                     </span>
@@ -264,11 +257,17 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                               );
                             })}
                           </div>
+                          <h4
+                            className="text-gray-700 text-10 mb-3 mt-2
+                            text-center"
+                          >
+                            {group.name} (+500원)
+                          </h4>
                         </div>
                       );
                     }
 
-                    // 2. 일반 옵션 (버튼형 UI)
+                    //  (수정2) 일반 옵션 (버튼형 UI) - 가운데정렬 + 2줄 라벨
                     return (
                       <div key={group.optionGroupId} className="py-4 border-b last:border-0">
                         <h4 className="font-bold text-xl mb-3 text-center">{group.name}</h4>
@@ -277,19 +276,40 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                             const qty = selections[group.optionGroupId]?.[opt.optionItemId] || 0;
                             const isSelected = qty > 0;
 
-                            // [Dev 디자인] 선택 시 빨간색 테두리/배경
+                            const prettyLabel = (() => {
+                              // 1) 휘핑크림: 공백이 있든 없든 무조건 "휘핑크림\n추가/없음"으로
+                              if (opt.name.includes('휘핑크림')) {
+                                const suffix = opt.name.replace('휘핑크림', '').trim(); // "추가" or "없음" or "있음"
+                                return `휘핑크림\n${suffix || ''}`.trim();
+                              }
+
+                              // 2) 괄호가 있으면 "(" 앞에서 줄바꿈: "톨(Tall)" -> "톨\n(Tall)"
+                              if (opt.name.includes('(')) {
+                                return opt.name.replace('(', '\n(');
+                              }
+
+                              // 3) 그 외는 그대로
+                              return opt.name;
+                            })();
+
                             return (
                               <button
                                 key={opt.optionItemId}
                                 onClick={() => handleOptionClick(group, opt)}
-                                className={`flex-1 min-w-[30%] flex flex-col items-center p-3 rounded-lg border-2 transition-all ${
-                                  isSelected
-                                    ? 'border-red-500 bg-red-50 text-black'
-                                    : 'border-gray-200 bg-white text-gray-600'
-                                }`}
+                                className={`flex-1 min-w-[30%] h-[110px]
+                                  flex flex-col items-center justify-center text-center
+                                  p-3 rounded-lg border-2 transition-all ${
+                                    isSelected
+                                      ? 'border-red-500 bg-red-50 text-black'
+                                      : 'border-gray-200 bg-white text-gray-600'
+                                  }`}
                               >
                                 <span className="text-3xl mb-1">{getIcon(opt.name)}</span>
-                                <span className="text-lg font-semibold">{opt.name}</span>
+
+                                <span className="text-lg font-semibold whitespace-pre-line leading-tight">
+                                  {prettyLabel}
+                                </span>
+
                                 {opt.optionPrice > 0 && (
                                   <span className="text-xs mt-1 text-red-500">
                                     +{opt.optionPrice}원
