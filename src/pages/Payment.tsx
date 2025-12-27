@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Home } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PaymentMethodPage from '../components/PaymentMethodPage';
 import PaymentProgressModal from '../components/PaymentProgressModal';
 import { useCartStore } from '../store/UseCartStore';
-import { createOrder, verifyOrder } from '../api/OrderApi';
-import type { CreateOrderRequest, OrderItemRequest } from '../types/OrderTypes';
+import { createOrder } from '../api/OrderApi'; 
+import type { OrderItemRequest } from '../types/OrderTypes';
 
 type PaymentStep = 'initial' | 'method' | 'processing';
 
@@ -14,7 +14,9 @@ export default function Payment() {
   const location = useLocation();
   const { cart, getTotalPrice, clearCart } = useCartStore();
   
-  const [isApiLoading, setIsApiLoading] = useState(false);
+  // [신규] 중복 요청 방지용 Ref (새로고침 전까지 유지됨)
+  const isProcessingRef = useRef(false);
+  
   const [step, setStep] = useState<PaymentStep>('initial');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'mobile' | 'voucher' | 'nfc' | null>(null);
 
@@ -22,18 +24,26 @@ export default function Payment() {
     setStep('method');
   }, [location.state]);
 
-  // 주문 처리 로직
-  const processOrder = async () => {
-    if (cart.length === 0) {
-      alert("장바구니가 비어있습니다.");
-      navigate('/order');
-      return;
+  const getMappedPaymentMethod = (method: string | null): string => {
+    switch (method) {
+      case 'card': return '카드결제';
+      case 'mobile': return '네이버페이';
+      case 'voucher': return '쿠폰결제';
+      case 'nfc': return 'NFC결제';
+      default: return '카드결제';
     }
+  };
 
-    setIsApiLoading(true);
+  const getMappedOrderType = (method: string): string => {
+    return method === 'takeout' ? 'takeout' : 'dine-in';
+  };
+
+  const processOrder = async () => {
+    // [중복 방지] 이미 처리 중이면 함수 종료 (로그 두 번 찍힘 방지)
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
 
     try {
-      // 장바구니 데이터를 서버 포맷으로 변환
       const orderItems: OrderItemRequest[] = cart.map((item) => ({
         menuId: item.id,
         quantity: item.quantity,
@@ -43,42 +53,39 @@ export default function Payment() {
         })),
       }));
 
-      const requestData: CreateOrderRequest = {
-        storeId: 1,
-        paymentMethod: paymentMethod ? paymentMethod.toUpperCase() : "CARD",
+      const currentOrderMethod = location.state?.orderMethod || 'dine-in';
+
+      // 500 에러 방지를 위한 데이터 조립
+      const requestData: any = {
+        storeId: 1,      
+        sessionId: 1,    
+        
+        orderType: getMappedOrderType(currentOrderMethod),
+        paymentMethod: getMappedPaymentMethod(paymentMethod),
+        
         pgTransactionId: "PG_TEST_" + Date.now(),
         totalAmount: getTotalPrice(),
+        
         orderItems: orderItems,
       };
 
-      console.log("🔍 주문 검증 요청 중...");
-      const verification = await verifyOrder(requestData);
-
-      if (verification.totalAmount !== requestData.totalAmount) {
-      console.error(`금액 불일치! 프론트(${requestData.totalAmount}) vs 백엔드(${verification.totalAmount})`);
-      alert("장바구니 금액 정보가 변경되었습니다. 장바구니를 갱신합니다.");
-
-      // (선택) 여기서 장바구니를 비우거나, 백엔드 금액으로 강제 업데이트 하는 로직 추가 가능
-      clearCart();
-      navigate('/order');
-      return; // 결제 중단
-    }
-
-    console.log("✅ 검증 완료! 결제 진행");
-
+      console.log("🚀 결제 요청 데이터:", requestData);
+      
       await createOrder(requestData);
       
       clearCart();
       setPaymentMethod(null);
       setStep('initial');
-      alert("주문이 정상적으로 완료되었습니다!");
+      
       navigate('/'); 
 
     } catch (error) {
       console.error("주문 실패:", error);
-      alert("주문 처리에 실패했습니다.");
+      alert("주문 접수 중 오류가 발생했습니다.");
+      navigate('/');
     } finally {
-      setIsApiLoading(false);
+      // (선택) 실패하거나 완료 후에도 Lock을 풀지 않고 홈으로 이동시킴
+      // 만약 페이지에 머무른다면 isProcessingRef.current = false; 가 필요함
     }
   };
 
@@ -93,11 +100,9 @@ export default function Payment() {
 
   return (
     <>
-      {/* [디자인 복구] 90도 회전된 키오스크 전체 레이아웃 */}
       <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
         <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl">
           
-          {/* 헤더 */}
           <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
             <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
             <button
@@ -108,7 +113,6 @@ export default function Payment() {
             </button>
           </header>
 
-          {/* 메인 콘텐츠 */}
           <main className="flex-1 flex flex-col overflow-hidden">
             {step === 'initial' && (
               <div className="flex-1 flex flex-col items-center justify-center gap-12 p-8">
@@ -140,14 +144,6 @@ export default function Payment() {
           paymentMethod={paymentMethod} 
           onClose={handlePaymentComplete} 
         />
-      )}
-      
-      {isApiLoading && (
-        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
-          <div className="text-white text-2xl font-bold animate-pulse">
-            주문 생성 중...
-          </div>
-        </div>
       )}
     </>
   );

@@ -135,20 +135,39 @@ export interface OrderItemRequest {
 
 // 3. 주문 생성 요청 전체 Body (Swagger Request Body)
 export interface CreateOrderRequest {
-  sessionId?: number;     // 세션 ID (키오스크 식별용, 선택)
-  storeId: number;        // 가게 ID
-  orderItems: OrderItemRequest[]; // 주문 메뉴 리스트
-  paymentMethod: string;  // 결제 수단 (예: "CARD")
-  pgTransactionId?: string; // PG사 결제 고유 번호
-  totalAmount: number;    // 총 결제 금액
+  storeId: number;
+  orderItems: OrderItemRequest[];
+  
+  orderType: string;       // DB: 'dine-in' | 'takeout'
+  paymentMethod: string;   // DB: '카드결제' | '네이버페이' ...
+  pgTransactionId: string;
+  totalAmount: number;
+  
+  // 스웨거에는 있고 DB에는 없을 수 있지만, API 규격상 필요하다면 유지
+  ageGroup?: string;
+  gender?: string;
+  isSeniorMode?: boolean;
 }
 
 // 4. 주문 생성 성공 응답 (Swagger Response)
 export interface OrderResponse {
   orderId: number;
-  orderNo: number;       // 주문 번호 (대기번호)
+  sessionId: number;
+  orderNo: number;
+  orderType: string;
   totalAmount: number;
- 
-  status: string;        // 주문 상태
-  // 필요한 경우 orderItems 응답 타입도 추가 가능
+  orderedAt: string;       // ISO Date String
+  paidAt: string;          // ISO Date String
+  paymentMethod: string;
+  status: string;
+  
+  // 응답에 포함된 아이템 상세 정보
+  orderItems: {
+    orderItemId: number;
+    menuName: string;
+    quantity: number;
+    unitPrice: number;
+    lineAmount: number;
+    optionNames: string[];
+  }[];
 }

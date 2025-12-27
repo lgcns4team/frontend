@@ -10,29 +10,20 @@ interface PaymentProgressModalProps {
   onClose: () => void;
 }
 
-// 오늘 날짜 기반 주문 번호 관리
 const getOrderNumber = (): number => {
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
+  const today = new Date().toISOString().split('T')[0];
   const storedData = localStorage.getItem('orderData');
 
   if (storedData) {
     const { date, orderNumber } = JSON.parse(storedData);
-
-    // 날짜가 같으면 주문 번호 +1, 다르면 1로 초기화
     if (date === today) {
       const nextNumber = orderNumber + 1;
       localStorage.setItem('orderData', JSON.stringify({ date: today, orderNumber: nextNumber }));
       return nextNumber;
-    } else {
-      // 새로운 날짜이면 1로 초기화
-      localStorage.setItem('orderData', JSON.stringify({ date: today, orderNumber: 1 }));
-      return 1;
     }
-  } else {
-    // 처음이면 1로 시작
-    localStorage.setItem('orderData', JSON.stringify({ date: today, orderNumber: 1 }));
-    return 1;
   }
+  localStorage.setItem('orderData', JSON.stringify({ date: today, orderNumber: 1 }));
+  return 1;
 };
 
 export default function PaymentProgressModal({
@@ -44,16 +35,15 @@ export default function PaymentProgressModal({
   const [orderNumber, setOrderNumber] = useState<number>(0);
   const [adImage, setAdImage] = useState<string>('');
 
+  // 1. 5초 후 처리 완료 상태로 변경
   useEffect(() => {
-    // 5초 후 결제 완료
     const processingTimer = setTimeout(() => {
       setIsProcessing(false);
     }, 5000);
-
     return () => clearTimeout(processingTimer);
   }, []);
 
-  // 완료 상태가 되었을 때 주문 번호 생성
+  // 2. 완료 시 주문번호 생성
   useEffect(() => {
     if (!isProcessing) {
       setOrderNumber(getOrderNumber());
@@ -61,23 +51,22 @@ export default function PaymentProgressModal({
     }
   }, [isProcessing]);
 
-  // 완료 후 5초 카운트다운
+  // 3. [수정됨] 카운트다운 타이머 (숫자만 줄임)
   useEffect(() => {
-    if (!isProcessing) {
-      const countdownTimer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(countdownTimer);
-            onClose();
-            return 0;
-          }
-          return prev - 1;
-        });
+    if (!isProcessing && countdown > 0) {
+      const timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
       }, 1000);
-
-      return () => clearInterval(countdownTimer);
+      return () => clearInterval(timer);
     }
-  }, [isProcessing, onClose]);
+  }, [isProcessing, countdown]);
+
+  // 4. [신규] 카운트다운이 0이 되면 onClose 호출 (중복 실행 방지)
+  useEffect(() => {
+    if (!isProcessing && countdown === 0) {
+      onClose();
+    }
+  }, [isProcessing, countdown, onClose]);
 
   const getContent = () => {
     if (paymentMethod === 'card') {
@@ -127,7 +116,6 @@ export default function PaymentProgressModal({
 
           {isProcessing ? (
             <>
-              {/* 애니메이션 또는 아이콘 */}
               {(content as any).useAnimation ? (
                 <div className="h-[22rem] mb-8">
                   <InsertCardAnimation />
@@ -157,7 +145,6 @@ export default function PaymentProgressModal({
                   {(content as any).instruction}
                 </p>
               )}
-
               <p className="text-md text-gray-500">{content.processingMessage}</p>
             </>
           ) : (
