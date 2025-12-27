@@ -68,7 +68,7 @@ export default function Payment() {
       setPaymentMethod(null);
       setStep('initial');
       alert('주문이 정상적으로 완료되었습니다!');
-      navigate('/');
+      navigate('/advertisement');
     } catch (error) {
       console.error('주문 실패:', error);
       alert('주문 처리에 실패했습니다.');

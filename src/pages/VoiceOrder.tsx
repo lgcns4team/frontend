@@ -30,6 +30,7 @@ import {
   LAYOUT_STYLES,
   SIZES,
 } from '../styles/designTokens';
+import { useAnalysisStore } from '../store/analysisStore';
 
 const VoiceOrder: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ const VoiceOrder: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const isSenior = useAnalysisStore((s) => s.isSenior);
 
   // 1. 전역 장바구니 스토어 (주문확인 시에만 사용)
   const { addToCart, clearCart: clearGlobalCart, removeFromCart } = useCartStore();
@@ -211,35 +213,43 @@ const VoiceOrder: React.FC = () => {
 
           <button
             onClick={() => navigate('/easy')}
-            className="flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group easy-button"
+            className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group ${
+              isSenior ? 'easy-button' : ''
+            }`}
           >
-            <style>{`
-              .easy-button {
-                animation: easyButtonGlow 0.8s ease-in-out infinite;
-              }
-              @keyframes easyButtonGlow {
-                0%, 100% { 
-                  border-color: rgb(254, 208, 121);
-                  background-color: rgb(254, 245, 230);
-                  box-shadow: 0 0 0 0px rgba(217, 119, 6, 0);
+            {isSenior && (
+              <style>{`
+                .easy-button {
+                  animation: easyButtonGlow 0.8s ease-in-out infinite;
                 }
-                50% { 
-                  border-color: rgb(217, 119, 6);
-                  background-color: rgb(255, 251, 235);
-                  box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3);
+                @keyframes easyButtonGlow {
+                  0%, 100% { 
+                    border-color: rgb(254, 208, 121);
+                    background-color: rgb(254, 245, 230);
+                    box-shadow: 0 0 0 0px rgba(217, 119, 6, 0);
+                  }
+                  50% { 
+                    border-color: rgb(217, 119, 6);
+                    background-color: rgb(255, 251, 235);
+                    box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3);
+                  }
                 }
-              }
-              .finger-icon {
-                animation: fingerWiggle 0.8s ease-in-out infinite;
-                transform-origin: bottom center;
-              }
-              @keyframes fingerWiggle {
-                0%, 100% { transform: rotate(0deg); }
-                25% { transform: rotate(-8deg); }
-                75% { transform: rotate(8deg); }
-              }
-            `}</style>
-            <img src={fingerIcon} alt="finger" className="finger-icon w-12 h-12" />
+                .finger-icon {
+                  animation: fingerWiggle 0.8s ease-in-out infinite;
+                  transform-origin: bottom center;
+                }
+                @keyframes fingerWiggle {
+                  0%, 100% { transform: rotate(0deg); }
+                  25% { transform: rotate(-8deg); }
+                  75% { transform: rotate(8deg); }
+                }
+              `}</style>
+            )}
+            <img
+              src={fingerIcon}
+              alt="finger"
+              className={`${isSenior ? 'finger-icon ' : ''}w-12 h-12`}
+            />
             <span className="font-bold text-orange-900 text-xl">쉬운 주문</span>
           </button>
         </div>
