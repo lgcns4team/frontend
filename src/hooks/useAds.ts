@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, resolveMediaUrl } from '../Lib/api';
-import type { Ad, GetAdsResponse } from '../types/ad';
+import type { Ad, GetAdsResponse } from '../types/AdTypes';
 
 type UseAdsResult = {
   ads: Ad[];

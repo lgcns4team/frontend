@@ -13,10 +13,10 @@ import { useCartStore } from '../store/UseCartStore';
 import type { Options } from '../types/OrderTypes';
 
 // [Components]
-import RecordButton from '../components/RecordButton';
+import RecordButton from '../components/VoiceMode/RecordButton';
 import BottomCart from '../components/BottomCart';
 import OrderConfirmModal from '../components/OrderConfirmModal';
-import AudioVisualizer from '../components/AudioVisualizer';
+import AudioVisualizer from '../components/VoiceMode/AudioVisualizer';
 
 // [Assets]
 import microphoneIcon from '../assets/icons/microphone.svg';

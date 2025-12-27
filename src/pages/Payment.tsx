@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Home } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import PaymentMethodPage from '../components/PaymentMethodPage';
-import PaymentProgressModal from '../components/PaymentProgressModal';
+import PaymentMethodPage from '../components/PayMent/PaymentMethodPage';
+import PaymentProgressModal from '../components/PayMent/PaymentProgressModal';
 import { useCartStore } from '../store/UseCartStore';
 import { createOrder, verifyOrder } from '../api/OrderApi'; 
 // [수정] 새로 만든 타입들을 불러옵니다.

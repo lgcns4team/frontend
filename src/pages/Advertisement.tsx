@@ -1,7 +1,7 @@
 import { type TransitionEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAds } from '../hooks/useAds';
-import type { Ad } from '../types/ad';
+import type { Ad } from '../types/AdTypes';
 import { toLocalDateTimeString } from '../utils/localDateTime';
 import { adImpressionQueue } from '../utils/adImpressionQueue';
 

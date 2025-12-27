@@ -3,7 +3,7 @@ import InsertCardAnimation from './InsertCardAnimation';
 import QrScanAnimation from './QrScanAnimation';
 import BarcodeScanAnimation from './BarcodeScanAnimation';
 import NfcPayAnimation from './NfcPayAnimation';
-import { getRandomAd } from '../config/ads';
+import { getRandomAd } from '../../config/ads';
 
 interface PaymentProgressModalProps {
   paymentMethod: 'card' | 'kakaopay' | 'naverpay' | 'samsungpay' | 'applepay' | 'gifticon';

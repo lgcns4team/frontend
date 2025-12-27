@@ -1,7 +1,7 @@
 // src/components/EasyBeverageOptionsModal.tsx
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { MenuItem, Options } from '../types';
+import type { MenuItem, Options } from '../../types';
 
 type Props = {
   open: boolean;
