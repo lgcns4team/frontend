@@ -11,7 +11,7 @@ import type { MenuOptionsResponse, BackendOptionGroup } from '../types/OptionTyp
 
 // 1. 전체 메뉴 조회
 export const fetchMenus = async (): Promise<BackendCategory[]> => {
-  const res = await apiClient.get<MenuApiResponse>('/api/categories-with-menus');
+  const res = await apiClient.get<MenuApiResponse>('/categories-with-menus');
   return res.data?.categories || [];
 };
 
@@ -23,7 +23,7 @@ export const fetchRecommendMenus = async (params: {
   limit?: number;
 }): Promise<BackendMenu[]> => {
   // RecommendResponse 타입으로 응답을 받습니다.
-  const res = await apiClient.get<RecommendResponse>('/api/menus/recommend', {
+  const res = await apiClient.get<RecommendResponse>('/menus/recommend', {
     params: {
       ...params,
       limit: params.limit || 10,
@@ -36,7 +36,7 @@ export const fetchRecommendMenus = async (params: {
 
 // 3. 메뉴 상세 옵션 조회
 export const fetchMenuOptions = async (menuId: number): Promise<BackendOptionGroup[]> => {
-  const res = await apiClient.get<MenuOptionsResponse>(`/api/menus/${menuId}/options`);
+  const res = await apiClient.get<MenuOptionsResponse>(`/menus/${menuId}/options`);
   // 변환 없이 백엔드 그룹 배열을 바로 리턴
   return res.data?.optionGroups || [];
 };

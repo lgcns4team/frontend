@@ -257,9 +257,9 @@ const VoiceOrder: React.FC = () => {
               </div>
             ) : (
               <div className={LAYOUT_STYLES.menuGrid}>
-                {items.map((item) => (
+                {items.map((item, index) => (
                   <button
-                    key={item.id}
+                    key={`menu-${item.id}-${index}`} 
                     className={`${CARD_STYLES.menuCard} ${SIZES.menuCardHeight}`}
                     onClick={() => alert(`"${item.name}"\n음성으로 주문하시면 편리합니다!`)}
                   >

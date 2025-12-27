@@ -33,7 +33,7 @@ const RecordButton: React.FC<RecordButtonProps> = ({ isRecording, onStart, onSto
       className={`${baseStyle} bg-red-500 hover:bg-red-600 animate-pulse ring-4 ring-red-300 ring-offset-2`}
     >
       <span className="text-4xl mb-1">⏹️</span>
-      <span className="text-lg">다 했어요</span>
+      <span className="text-lg">주문 완료</span>
     </button>
   );
 };
