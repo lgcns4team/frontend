@@ -1,5 +1,5 @@
 interface PaymentMethodPageProps {
-  onSelectMethod: (method: 'card' | 'mobile' | 'voucher' | 'nfc') => void;
+  onSelectMethod: (method: 'card' | 'kakaopay' | 'naverpay' | 'samsungpay' | 'applepay' | 'gifticon') => void;
 }
 
 import { motion } from 'framer-motion';
@@ -9,17 +9,17 @@ interface PaymentMethod {
   name: string;
   icon?: string;
   image?: string;
-  type: 'card' | 'mobile' | 'voucher' | 'nfc';
+  type: 'card' | 'kakaopay' | 'naverpay' | 'samsungpay' | 'applepay' | 'gifticon';
 }
 
 export default function PaymentMethodPage({ onSelectMethod }: PaymentMethodPageProps) {
   const paymentMethods: PaymentMethod[] = [
     { id: 'card', name: '카드결제', icon: '💳', type: 'card' },
-    { id: 'kakao', name: '카카오페이', image: '/raw/kakao-pay.png', type: 'mobile' },
-    { id: 'naver', name: '네이버페이', image: '/raw/naver-pay.png', type: 'mobile' },
-    { id: 'samsung', name: '삼성페이', image: '/raw/samsung-pay.png', type: 'nfc' },
-    { id: 'apple', name: '애플페이', image: '/raw/apple-pay.png', type: 'nfc' },
-    { id: 'gift', name: '기프티콘', icon: '🎁', type: 'voucher' },
+    { id: 'kakao', name: '카카오페이', image: '/raw/kakao-pay.png', type: 'kakaopay' },
+    { id: 'naver', name: '네이버페이', image: '/raw/naver-pay.png', type: 'naverpay' },
+    { id: 'samsung', name: '삼성페이', image: '/raw/samsung-pay.png', type: 'samsungpay' },
+    { id: 'apple', name: '애플페이', image: '/raw/apple-pay.png', type: 'applepay' },
+    { id: 'gift', name: '기프티콘', icon: '🎁', type: 'gifticon' },
   ];
 
   return (

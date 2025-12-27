@@ -6,7 +6,7 @@ import NfcPayAnimation from './NfcPayAnimation';
 import { getRandomAd } from '../config/ads';
 
 interface PaymentProgressModalProps {
-  paymentMethod: 'card' | 'mobile' | 'voucher' | 'nfc';
+  paymentMethod: 'card' | 'kakaopay' | 'naverpay' | 'samsungpay' | 'applepay' | 'gifticon';
   onClose: () => void;
 }
 
@@ -76,7 +76,7 @@ export default function PaymentProgressModal({
         completeMessage: '결제가 완료되었습니다!',
         useAnimation: true,
       };
-    } else if (paymentMethod === 'voucher') {
+    } else if (paymentMethod === 'gifticon') {
       return {
         title: '기프티콘 결제',
         instruction: '바코드를 스캔해주세요',
@@ -85,7 +85,7 @@ export default function PaymentProgressModal({
         useAnimation: false,
         animationType: 'voucher',
       };
-    } else if (paymentMethod === 'nfc') {
+    } else if (paymentMethod === 'samsungpay' || paymentMethod === 'applepay') {
       return {
         title: '휴대폰 결제',
         instruction: '리더기에 휴대폰을 대주세요',

@@ -136,12 +136,16 @@ export interface OrderItemRequest {
 // 3. 주문 생성 요청 전체 Body (Swagger Request Body)
 export interface CreateOrderRequest {
   storeId: number;
+  sessionId: number;
+
   orderItems: OrderItemRequest[];
   
   orderType: string;       // DB: 'dine-in' | 'takeout'
   paymentMethod: string;   // DB: '카드결제' | '네이버페이' ...
   pgTransactionId: string;
+
   totalAmount: number;
+  expectedTotalAmount?: number; // 백엔드 검증용 필드
   
   // 스웨거에는 있고 DB에는 없을 수 있지만, API 규격상 필요하다면 유지
   ageGroup?: string;
@@ -149,25 +153,47 @@ export interface CreateOrderRequest {
   isSeniorMode?: boolean;
 }
 
-// 4. 주문 생성 성공 응답 (Swagger Response)
+// 4. [신규] 주문 검증 응답 타입 (verifyOrder 응답)
+export interface OrderVerificationResponse {
+  isValid: boolean;
+  calculatedTotalAmount: number;
+  expectedTotalAmount: number | null;
+  priceDifference: number;
+  errorMessage?: string;
+}
+
+// 5. [수정됨] 주문 생성 성공 응답 (백엔드 JSON 양식 반영)
+export interface OrderResponseOption {
+  optionName: string;
+  extraPrice: number;
+  quantity: number;
+  totalPrice: number;
+}
+
+export interface OrderResponseItem {
+  orderItemId: number;
+  menuName: string;
+  quantity: number;
+  unitPrice: number;
+  lineAmount: number;
+  options: OrderResponseOption[]; // 기존 string[]에서 상세 객체 배열로 변경
+}
+
+// 5. 주문 생성 성공 응답 (Swagger Response)
 export interface OrderResponse {
   orderId: number;
-  sessionId: number;
   orderNo: number;
   orderType: string;
   totalAmount: number;
-  orderedAt: string;       // ISO Date String
-  paidAt: string;          // ISO Date String
+  orderedAt: string;
+  paidAt: string;
   paymentMethod: string;
-  status: string;
+  paymentStatus: string;  // [신규]
+  status: number;         // [변경] string -> number (예시가 0이므로)
   
-  // 응답에 포함된 아이템 상세 정보
-  orderItems: {
-    orderItemId: number;
-    menuName: string;
-    quantity: number;
-    unitPrice: number;
-    lineAmount: number;
-    optionNames: string[];
-  }[];
+  ageGroup: string;       // [신규]
+  gender: string;         // [신규]
+  timeSlot: string;       // [신규]
+  
+  orderItems: OrderResponseItem[];
 }
