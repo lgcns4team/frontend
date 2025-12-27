@@ -1,16 +1,13 @@
 // src/api/MenuApi.ts
-import { apiClient } from './ApiClient';
-import type { 
-  MenuApiResponse, 
-  BackendCategory, 
-  BackendMenu, 
+import { apiClient } from './ApiClient.ts';
+import type {
+  MenuApiResponse,
+  BackendCategory,
+  BackendMenu,
   RecommendResponse, // [추가] 위에서 만든 타입
 } from '../types/OrderTypes';
 
-import type { 
-  MenuOptionsResponse, 
-  BackendOptionGroup 
-} from '../types/OptionTypes';
+import type { MenuOptionsResponse, BackendOptionGroup } from '../types/OptionTypes';
 
 // 1. 전체 메뉴 조회
 export const fetchMenus = async (): Promise<BackendCategory[]> => {
@@ -32,7 +29,7 @@ export const fetchRecommendMenus = async (params: {
       limit: params.limit || 10,
     },
   });
-  
+
   // [핵심] 껍데기 안의 'recommendedMenus' 배열을 꺼내서 반환합니다.
   return res.data?.recommendedMenus || [];
 };

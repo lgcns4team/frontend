@@ -5,8 +5,8 @@ import { ArrowLeft, Home } from 'lucide-react';
 import { useMenu } from '../hooks/UseMenu';
 import { useCartStore } from '../store/UseCartStore';
 import BottomCart from '../components/BottomCart';
-import EasyMenuGrid from '../components/EasyMenuGrid';
-import EasyBeverageOptionsModal from '../components/EeayMode/EasyOptionsModal';
+import EasyMenuGrid from '../components/EasyMode/EasyMenuGrid';
+import EasyBeverageOptionsModal from '../components/EasyMode/EasyOptionsModal';
 import type { MenuItem, Options } from '../types';
 
 const EASY_CATEGORIES = [
