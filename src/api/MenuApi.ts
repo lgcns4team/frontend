@@ -1,45 +1,26 @@
-// src/api/MenuApi.ts
-import { apiClient } from './ApiClient';
-import type { 
-  MenuApiResponse, 
-  BackendCategory, 
-  BackendMenu, 
-  RecommendResponse, // [추가] 위에서 만든 타입
-} from '../types/OrderTypes';
+import { apiClient } from '../Lib/ApiClient';
+import type { CategoryResponse, MenuItem, MenuOptionGroup } from '../types/OrderTypes';
+import { tempMockCategories, tempMockRecommendMenus, tempMockOptions } from './tempmock';
 
-import type { 
-  MenuOptionsResponse, 
-  BackendOptionGroup 
-} from '../types/OptionTypes';
+const USE_MOCK = true; // 나중에 false로 바꾸면 API 사용
 
-// 1. 전체 메뉴 조회
-export const fetchMenus = async (): Promise<BackendCategory[]> => {
-  const res = await apiClient.get<MenuApiResponse>('/categories-with-menus');
-  return res.data?.categories || [];
+export const fetchMenus = async (): Promise<CategoryResponse[]> => {
+  if (USE_MOCK) return tempMockCategories;
+
+  const res = await apiClient.get<CategoryResponse[]>('/categories-with-menus');
+  return res.data;
 };
 
-// 2. 추천 메뉴 조회 (수정 완료)
-export const fetchRecommendMenus = async (params: {
-  timeSlot: string;
-  gender?: string;
-  ageGroup?: string;
-  limit?: number;
-}): Promise<BackendMenu[]> => {
-  // RecommendResponse 타입으로 응답을 받습니다.
-  const res = await apiClient.get<RecommendResponse>('/menus/recommend', {
-    params: {
-      ...params,
-      limit: params.limit || 10,
-    },
-  });
-  
-  // [핵심] 껍데기 안의 'recommendedMenus' 배열을 꺼내서 반환합니다.
-  return res.data?.recommendedMenus || [];
+export const fetchRecommendMenus = async (): Promise<MenuItem[]> => {
+  if (USE_MOCK) return tempMockRecommendMenus;
+
+  const res = await apiClient.get<MenuItem[]>('/recommend-menus');
+  return res.data;
 };
 
-// 3. 메뉴 상세 옵션 조회
-export const fetchMenuOptions = async (menuId: number): Promise<BackendOptionGroup[]> => {
-  const res = await apiClient.get<MenuOptionsResponse>(`/menus/${menuId}/options`);
-  // 변환 없이 백엔드 그룹 배열을 바로 리턴
-  return res.data?.optionGroups || [];
+export const fetchOptions = async (): Promise<MenuOptionGroup[]> => {
+  if (USE_MOCK) return tempMockOptions;
+
+  const res = await apiClient.get<MenuOptionGroup[]>('/menu-options');
+  return res.data;
 };

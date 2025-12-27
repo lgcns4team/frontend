@@ -1,0 +1,5 @@
+  dev                         [m eb3b697 [[34morigin/dev[m: ahead 1] feat: easy order UI mock data 연결 및 화면 수정
+* [32measy-order-ui               [m eb3b697 [[34morigin/easy-order-ui[m] feat: easy order UI mock data 연결 및 화면 수정
+  feature/easy-mode           [m ff508b8 [[34morigin/feature/easy-mode[m] Merge branch 'feature/menu-react-query-msw' of https://github.com/lgcns4team/frontend into feature/easy-mode
+  feature/easy-order-ui       [m bf6c3a6 [[34morigin/feature/easy-order-ui[m] fix: easy 화면 미세 조정까지 완
+  feature/menu-react-query-msw[m ad53d61 [[34morigin/feature/menu-react-query-msw[m] feat: 이지모드 글자 비율 수정
