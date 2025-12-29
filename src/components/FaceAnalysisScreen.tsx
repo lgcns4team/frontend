@@ -16,8 +16,10 @@ interface SystemStatus {
   face_detected?: boolean;
 }
 
-const API_BASE_URL =
-  (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5000';
+const AI_CORE_BASE_URL =
+  (import.meta.env.VITE_AI_CORE_URL as string | undefined) ??
+  (import.meta.env.VITE_API_URL as string | undefined) ??
+  'http://127.0.0.1:8000';
 
 export default function FaceAnalysisScreen() {
   const setAnalysis = useAnalysisStore((s) => s.setAnalysis);
@@ -44,7 +46,7 @@ export default function FaceAnalysisScreen() {
 
   const checkStatusOnce = useCallback(async (): Promise<void> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/status`);
+      const response = await fetch(`${AI_CORE_BASE_URL}/api/status`);
       if (!response.ok) return;
       const data: SystemStatus = await response.json();
       setSystemStatus(data);
@@ -65,7 +67,7 @@ export default function FaceAnalysisScreen() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/analysis`);
+      const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`);
 
       if (response.ok) {
         const data: AnalysisData = await response.json();
@@ -78,17 +80,17 @@ export default function FaceAnalysisScreen() {
 
       setError('아직 분석된 데이터가 없습니다. 카메라 앞에서 잠시 기다려주세요.');
     } catch (err) {
-      setError('서버 연결 실패. 백엔드가 실행 중인지 확인하세요.');
+      setError('서버 연결 실패. ai-core(DeepFace)가 실행 중인지 확인하세요.');
       console.error('데이터 가져오기 실패:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setAnalysis]);
 
   const connectSSE = useCallback((): void => {
     disconnectSSE();
 
-    const eventSource = new EventSource(`${API_BASE_URL}/api/stream/status`);
+    const eventSource = new EventSource(`${AI_CORE_BASE_URL}/api/stream/status`);
 
     eventSource.onmessage = (event: MessageEvent<string>) => {
       try {
@@ -122,7 +124,7 @@ export default function FaceAnalysisScreen() {
 
   const returnToWaiting = useCallback(async (): Promise<void> => {
     try {
-      await fetch(`${API_BASE_URL}/api/analysis`, { method: 'DELETE' });
+      await fetch(`${AI_CORE_BASE_URL}/api/analysis`, { method: 'DELETE' });
     } catch (err) {
       console.error('데이터 초기화 실패:', err);
     }
