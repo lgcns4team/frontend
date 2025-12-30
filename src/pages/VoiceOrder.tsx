@@ -25,11 +25,13 @@ import {
   LAYOUT_STYLES,
   SIZES,
 } from '../styles/designTokens';
+import { useAnalysisStore } from '../store/analysisStore';
 
 const VoiceOrder: React.FC = () => {
   const navigate = useNavigate();
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const isSenior = useAnalysisStore((s) => s.isSenior);
 
   // 1. 데이터 가져오기 (메뉴, 장바구니)
   const { items, isLoading } = useMenu();

@@ -10,16 +10,18 @@ import microphoneIcon from '../assets/icons/microphone.svg';
 import fingerIcon from '../assets/icons/finger.svg';
 import type { MenuItem } from '../types/OrderTypes';
 import { Home } from 'lucide-react';
+import { useAnalysisStore } from '../store/analysisStore';
 
 export default function Order() {
   const navigate = useNavigate();
   const { items, categories, isLoading } = useMenu();
   const { cart, addToCart, removeFromCart } = useCartStore();
-  
+  const isSenior = useAnalysisStore((s) => s.isSenior);
+
   const [activeCategory, setActiveCategory] = useState('추천메뉴');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  
+
   // [상태 추가] 주문 방법 (매장/포장)
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
   // [상태 추가] 현재 수정 중인 카트 아이템 ID (옵션 변경 시 사용)
@@ -32,13 +34,18 @@ export default function Order() {
 
   const isOptionMenu = (item: MenuItem) => {
     if (['커피', '음료'].includes(item.category)) return true;
-    if (item.category === '추천메뉴' && item.originalCategory && ['커피', '음료'].includes(item.originalCategory)) return true;
+    if (
+      item.category === '추천메뉴' &&
+      item.originalCategory &&
+      ['커피', '음료'].includes(item.originalCategory)
+    )
+      return true;
     return false;
   };
 
   // [기능 추가] 옵션 변경 버튼 클릭 핸들러
   const handleEditOptions = (cartId: string) => {
-    const itemToEdit = cart.find(item => item.cartId === cartId);
+    const itemToEdit = cart.find((item) => item.cartId === cartId);
     if (itemToEdit) {
       setEditingCartId(cartId); // 수정 중인 ID 저장
       setSelectedItem(itemToEdit); // 해당 아이템으로 모달 열기
@@ -46,14 +53,19 @@ export default function Order() {
   };
 
   // [기능 추가] 모달에서 '담기' 눌렀을 때 처리
-  const handleAddToCartFromModal = (item: MenuItem, opts: any, qty: number, backendOptions: any[]) => {
+  const handleAddToCartFromModal = (
+    item: MenuItem,
+    opts: any,
+    qty: number,
+    backendOptions: any[]
+  ) => {
     // 1. 만약 수정 중이었다면, 기존 아이템 삭제 (교체 효과)
     if (editingCartId) {
       removeFromCart(editingCartId);
     }
     // 2. 새 아이템 추가
     addToCart(item, opts, qty, backendOptions);
-    
+
     // 3. 상태 초기화
     setSelectedItem(null);
     setEditingCartId(null);
@@ -67,7 +79,6 @@ export default function Order() {
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl">
-        
         {/* 헤더 */}
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
@@ -96,15 +107,23 @@ export default function Order() {
             </button>
             <button
               onClick={() => navigate('/easy')}
-              className="flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group easy-button"
+              className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group ${
+                isSenior ? 'easy-button' : ''
+              }`}
             >
-              <style>{`
-                .easy-button { animation: easyButtonGlow 0.8s ease-in-out infinite; }
-                @keyframes easyButtonGlow { 0%, 100% { border-color: rgb(254, 208, 121); background-color: rgb(254, 245, 230); box-shadow: 0 0 0 0px rgba(217, 119, 6, 0); } 50% { border-color: rgb(217, 119, 6); background-color: rgb(255, 251, 235); box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3); } }
-                .finger-icon { animation: fingerWiggle 0.8s ease-in-out infinite; transform-origin: bottom center; }
-                @keyframes fingerWiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
-              `}</style>
-              <img src={fingerIcon} alt="finger" className="finger-icon w-12 h-12" />
+              {isSenior && (
+                <style>{`
+                  .easy-button { animation: easyButtonGlow 0.8s ease-in-out infinite; }
+                  @keyframes easyButtonGlow { 0%, 100% { border-color: rgb(254, 208, 121); background-color: rgb(254, 245, 230); box-shadow: 0 0 0 0px rgba(217, 119, 6, 0); } 50% { border-color: rgb(217, 119, 6); background-color: rgb(255, 251, 235); box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3); } }
+                  .finger-icon { animation: fingerWiggle 0.8s ease-in-out infinite; transform-origin: bottom center; }
+                  @keyframes fingerWiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+                `}</style>
+              )}
+              <img
+                src={fingerIcon}
+                alt="finger"
+                className={`${isSenior ? 'finger-icon ' : ''}w-12 h-12`}
+              />
               <span className="font-bold text-orange-900 text-xl">쉬운 주문</span>
             </button>
           </div>
@@ -135,7 +154,7 @@ export default function Order() {
               onItemClick={(item) => {
                 if (isOptionMenu(item)) {
                   setSelectedItem(item);
-                } else { 
+                } else {
                   addToCart(item);
                 }
               }}
@@ -144,7 +163,7 @@ export default function Order() {
         </main>
 
         {/* 하단 장바구니 바 */}
-        <BottomCart 
+        <BottomCart
           onCheckout={() => setIsCartOpen(true)}
           onEditOptions={handleEditOptions}
           orderMethod={orderMethod}
