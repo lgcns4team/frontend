@@ -164,7 +164,16 @@ export default function EasyConfirm() {
 
               <button
                 type="button"
-                onClick={() => navigate('/payment')}
+                onClick={() =>
+                  navigate('/payment', {
+                    state: {
+                      skipMethod: true,
+                      paymentMethod: 'card',
+                      // 필요하면 주문방법도 같이 넘김 (Payment에서 쓰고 있음)
+                      // orderMethod: 'dine-in' | 'takeout'
+                    },
+                  })
+                }
                 className="flex-1 bg-pink-400 hover:bg-pink-500 text-white py-8 text-4xl font-extrabold rounded-3xl"
               >
                 결제하기
