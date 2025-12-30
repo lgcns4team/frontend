@@ -4,10 +4,11 @@ import { useAds } from '../hooks/useAds';
 import type { Ad } from '../types/ad';
 import { toLocalDateTimeString } from '../utils/localDateTime';
 import { adImpressionQueue } from '../utils/adImpressionQueue';
+import { api } from '../Lib/api';
 
 const ROTATE_INTERVAL_MS = 10_000;
-const TRANSITION_DURATION_MS = 550; // 400~700ms 범위
-const EXIT_GUARD_MS = 400; // 300~500ms 범위
+const TRANSITION_DURATION_MS = 550;
+const EXIT_GUARD_MS = 400;
 
 const NEXT_MEDIA_MAX_WAIT_MS = 5_000;
 const NEXT_MEDIA_RETRY_MS = 300;
@@ -47,11 +48,10 @@ function renderAd(ad: Ad, handlers?: MediaMarkHandlers) {
 }
 
 /**
- * Fullscreen Advertisement page.
- * - Renders only (current + next) for perf
- * - Slides using translate3d transforms
- * - Sends impression logs at the moment the current ad definitively ends
- * - Any user input/presence exits immediately to /order
+ * Fullscreen Advertisement page with face detection integration.
+ * - SSE로 백엔드 상태를 실시간 감시
+ * - has_data=true 감지 시 자동으로 /order로 이동
+ * - 광고 노출 로그 기록
  */
 export default function Advertisement() {
   const navigate = useNavigate();
@@ -74,6 +74,11 @@ export default function Advertisement() {
   const displayedAtRef = useRef<string>('');
   const displayStartPerfRef = useRef<number>(0);
   const displayedAdIdRef = useRef<number | null>(null);
+
+  // 🆕 SSE 연결 관련
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const sseConnectedRef = useRef(false);
+  const initializedRef = useRef(false);
 
   const hasAds = ads.length > 0;
 
@@ -98,11 +103,6 @@ export default function Advertisement() {
     displayedAdIdRef.current = ad.adId;
   }, []);
 
-  /**
-   * Finalize the *currently tracked* impression immediately.
-   * - Uses refs captured at the time the ad started displaying
-   * - Enqueues + flushes in background (UI must not wait)
-   */
   const finalizeCurrentImpression = useCallback(() => {
     const adId = displayedAdIdRef.current;
     const displayedAt = displayedAtRef.current;
@@ -118,7 +118,6 @@ export default function Advertisement() {
       durationMs,
     });
 
-    // Flush on every attempt; it will stop on first failure.
     void adImpressionQueue.flush();
   }, []);
 
@@ -195,7 +194,6 @@ export default function Advertisement() {
   const advanceToNextPlayable = useCallback(() => {
     if (ads.length <= 1) return;
 
-    // End current impression immediately.
     finalizeCurrentImpression();
 
     setIsTransitioning(false);
@@ -227,7 +225,6 @@ export default function Advertisement() {
       rotateTimerIdRef.current = window.setTimeout(() => {
         if (!nextAd) return;
 
-        // Keep next warmed.
         preloadNext(nextAd);
 
         const ready = isMediaReady(nextAd);
@@ -260,7 +257,6 @@ export default function Advertisement() {
           return;
         }
 
-        // Retry soon.
         startRotateTimer(NEXT_MEDIA_RETRY_MS);
       }, delayMs);
     },
@@ -275,7 +271,6 @@ export default function Advertisement() {
     ]
   );
 
-  // Only animate while actually transitioning; otherwise snap instantly.
   const transitionCss = isTransitioning
     ? `transform ${TRANSITION_DURATION_MS}ms ease-in-out`
     : 'none';
@@ -285,17 +280,97 @@ export default function Advertisement() {
     finalizedRef.current = true;
 
     clearRotateTimer();
+    
+    // 🆕 SSE 연결 종료
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+      sseConnectedRef.current = false;
+    }
 
-    // Current ad ends immediately at exit moment.
     finalizeCurrentImpression();
+    
+    // 🆕 분석 데이터 초기화 (백엔드에 알림)
+    try {
+      await api.delete('/api/analysis');
+      console.log('🗑️ 서버 분석 데이터 초기화 완료');
+    } catch (err) {
+      console.error('분석 데이터 초기화 실패:', err);
+    }
+    
     navigate('/order');
   }, [clearRotateTimer, finalizeCurrentImpression, navigate]);
 
-  // On enter: guard against immediate accidental exit + flush any previous queue.
+  // 🆕 컴포넌트 마운트 시 이전 데이터 초기화
+  useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      console.log('🔄 광고 화면 진입: 이전 얼굴 인식 데이터 초기화');
+      
+      // 이전 분석 데이터 삭제
+      api.delete('/api/analysis').catch(err => {
+        console.error('초기 데이터 초기화 실패:', err);
+      });
+    }
+  }, []);
+
+  // 🆕 SSE 연결 및 얼굴 인식 감지
+  useEffect(() => {
+    if (sseConnectedRef.current) return;
+
+    // ⚠️ 중요: /nok-nok 프리픽스 포함
+    const AI_CORE_BASE_URL =
+      (import.meta.env.VITE_AI_CORE_URL as string | undefined) ??
+      (import.meta.env.VITE_API_URL as string | undefined) ??
+      'http://127.0.0.1:8080/nok-nok';
+
+    console.log('🔌 SSE 연결 시도:', `${AI_CORE_BASE_URL}/api/stream/status`);
+    
+    const eventSource = new EventSource(`${AI_CORE_BASE_URL}/api/stream/status`);
+    eventSourceRef.current = eventSource;
+    sseConnectedRef.current = true;
+
+    eventSource.onopen = () => {
+      console.log('✅ SSE 연결 성공');
+    };
+
+    eventSource.onmessage = (event: MessageEvent<string>) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        // has_data가 true이고 is_analyzing이 false이면 얼굴 인식 완료
+        if (data.has_data === true && data.is_analyzing === false && !finalizedRef.current) {
+          console.log('👤 얼굴 인식 완료! /order로 이동합니다.', data);
+          void exitToOrder();
+        }
+      } catch (err) {
+        console.error('SSE 데이터 파싱 실패:', err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error('❌ SSE 연결 오류:', err);
+      eventSource.close();
+      sseConnectedRef.current = false;
+
+      // 3초 후 재연결 시도
+      window.setTimeout(() => {
+        if (!finalizedRef.current) {
+          console.log('🔄 SSE 재연결 시도...');
+          sseConnectedRef.current = false;
+        }
+      }, 3000);
+    };
+
+    return () => {
+      eventSource.close();
+      sseConnectedRef.current = false;
+    };
+  }, [exitToOrder]);
+
+  // On enter: guard against immediate accidental exit + flush any previous queue
   useEffect(() => {
     ignoreInputUntilRef.current = performance.now() + EXIT_GUARD_MS;
-
-    // Try to flush any queued logs when entering.
     adImpressionQueue.flush();
 
     return () => {
@@ -303,7 +378,7 @@ export default function Advertisement() {
     };
   }, [clearRotateTimer]);
 
-  // Handle "no ads" rule: auto navigate to /order after 2 seconds.
+  // Handle "no ads" rule: auto navigate to /order after 2 seconds
   useEffect(() => {
     if (ads.length !== 0) return;
 
@@ -314,10 +389,9 @@ export default function Advertisement() {
     return () => window.clearTimeout(t);
   }, [ads.length, navigate]);
 
-  // Initialize timing when ads load / when current ad becomes available.
+  // Initialize timing when ads load / when current ad becomes available
   useEffect(() => {
     if (!currentAd) return;
-    // Reset finalization on fresh mount where ads exist.
     finalizedRef.current = false;
 
     setCurrentIndex(0);
@@ -329,7 +403,7 @@ export default function Advertisement() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ads.length]);
 
-  // Whenever currentIndex changes (after a completed transition), restart timing/timer.
+  // Whenever currentIndex changes, restart timing/timer
   useEffect(() => {
     if (!currentAd) return;
     startCurrentAdTiming(currentAd);
@@ -337,7 +411,7 @@ export default function Advertisement() {
     startRotateTimer();
   }, [currentAd, nextAd, preloadNext, startCurrentAdTiming, startRotateTimer]);
 
-  // Exit on user input/presence (with entry guard).
+  // Exit on user input/presence (with entry guard)
   useEffect(() => {
     const shouldIgnore = () => performance.now() < ignoreInputUntilRef.current;
 
@@ -368,7 +442,6 @@ export default function Advertisement() {
         mediaFailedUrlsRef.current.add(url);
       }
 
-      // If the currently visible ad fails, skip immediately.
       if (currentAd?.adId === ad.adId) {
         clearRotateTimer();
         advanceToNextPlayable();
@@ -384,10 +457,8 @@ export default function Advertisement() {
       if (transitionEndHandledRef.current) return;
       transitionEndHandledRef.current = true;
 
-      // Current ad is definitively ended *now*.
       finalizeCurrentImpression();
 
-      // Update index immediately so the next cycle is always forward.
       setCurrentIndex((prev) => {
         if (ads.length <= 1) return prev;
         return (prev + 1) % ads.length;
@@ -397,9 +468,7 @@ export default function Advertisement() {
     [ads.length, finalizeCurrentImpression, isTransitioning]
   );
 
-  // Nothing to render while ads are empty or still loading; requirements say full screen with no overlays.
   if (!currentAd) {
-    // Keep the same rotated kiosk wrapper so layout stays consistent.
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
         <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-black" />
@@ -407,9 +476,7 @@ export default function Advertisement() {
     );
   }
 
-  // Render only current + next (2 layers) and slide via transform.
   return (
-    // Same rotation wrapper used by Order.tsx
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-black">
         <div className="w-full h-full overflow-hidden relative">
