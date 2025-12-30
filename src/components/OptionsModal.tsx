@@ -36,6 +36,28 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
   });
 
   const optionGroups = rawOptionGroups as unknown as BackendOptionGroup[];
+  // ✅ 현재 선택된 온도(HOT/ICE) 이름을 selections에서 찾아서 ICE인지 판별
+  const selectedTempName = useMemo(() => {
+    // 온도 그룹 찾기 (이름은 상황에 따라 다를 수 있어서 범용으로)
+    const tempGroup = optionGroups.find((g) => {
+      const n = g.name.toLowerCase();
+      return (
+        n.includes('온도') || n.includes('temperature') || n.includes('hot') || n.includes('ice')
+      );
+    });
+    if (!tempGroup) return null;
+
+    const sel = selections[tempGroup.optionGroupId] || {};
+    const selectedOptionItemId = Number(Object.keys(sel)[0]); // SINGLE 가정
+    const opt = tempGroup.options.find((o) => o.optionItemId === selectedOptionItemId);
+    return opt?.name ?? null;
+  }, [optionGroups, selections]);
+
+  const isIceSelected = useMemo(() => {
+    if (!selectedTempName) return false;
+    const n = selectedTempName.toLowerCase();
+    return n.includes('ice') || n.includes('얼음') || n.includes('차갑');
+  }, [selectedTempName]);
 
   // 2. 초기값 및 수정 모드 설정
   useEffect(() => {
@@ -216,6 +238,13 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
                 <div className="space-y-4">
                   {optionGroups.map((group) => {
                     const groupNameLower = group.name.toLowerCase();
+                    // ✅ ICE가 아닐 때 "얼음양" 그룹 숨김
+                    if (
+                      (groupNameLower.includes('얼음') || groupNameLower.includes('ice')) &&
+                      !isIceSelected
+                    ) {
+                      return null;
+                    }
 
                     // 1. 샷 추가 (카운터 UI) - Dev 스타일 적용
                     if (groupNameLower.includes('샷') || groupNameLower.includes('shot')) {

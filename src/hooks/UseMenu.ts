@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { fetchMenus, fetchRecommendMenus } from '../api/MenuApi';
 import type { MenuItem } from '../types/OrderTypes';
@@ -10,83 +9,92 @@ const getCurrentTimeSlot = () => {
   return 'EVENING';
 };
 
+// fallback(응답 없을 때만)
 export const CATEGORIES = ['추천메뉴', '커피', '음료', '디저트', '브랜치', '베이커리'];
 
 export function useMenu() {
-  // 1. 전체 메뉴 조회 (원본 데이터)
   const menuQuery = useQuery({
     queryKey: ['menus'],
     queryFn: fetchMenus,
   });
 
-  // 2. 추천 메뉴 조회
+  const timeSlot = getCurrentTimeSlot();
   const recommendQuery = useQuery({
-    queryKey: ['recommend', getCurrentTimeSlot()],
-    queryFn: () =>
-      fetchRecommendMenus({
-        timeSlot: getCurrentTimeSlot(),
-      }),
+    queryKey: ['recommend', timeSlot],
+    queryFn: () => fetchRecommendMenus({ timeSlot }),
   });
 
   const isLoading = menuQuery.isLoading || recommendQuery.isLoading;
   const error = menuQuery.error || recommendQuery.error;
 
-  // --- 데이터 변환 ---
+  // -----------------------------
+  // (A) 일반 메뉴 변환
+  // -----------------------------
+  const basicItems: MenuItem[] = (menuQuery.data || []).flatMap((category: any) => {
+    if (!category?.menus) return [];
 
-  // (A) 일반 메뉴 변환 (먼저 만듭니다. 기준 데이터가 되기 때문입니다.)
-  const basicItems: MenuItem[] = (menuQuery.data || []).flatMap((category) => {
-    if (!category.menus) return [];
-    return category.menus.map((menu, index) => ({
-      id: menu.menuId ?? (index + 20000), 
+    return category.menus.map((menu: any) => ({
+      id: menu.menuId,
       name: menu.name,
       price: menu.price,
-      category: category.categoryName, 
-      // [수정 포인트 1] 일반 메뉴에도 'originalCategory'를 확실히 넣어줍니다.
-      originalCategory: category.categoryName, 
-      img: menu.imageUrl || '',        
+
+      // ✅ Order.tsx 필터가 보는 핵심 필드
+      category: category.categoryName, // 예: '커피','음료','디저트'
+
+      // (있으면 보관)
+      categoryId: category.categoryId,
+      categoryName: category.categoryName,
+
+      img: menu.imageUrl || '',
+      originalCategory: category.categoryName,
     }));
   });
 
-  // (B) 추천 메뉴 1차 변환 (API 데이터 기반)
-  const rawRecommendedItems: MenuItem[] = (recommendQuery.data || []).map((item: any, index: number) => ({
-    id: item.menuId ?? -(index + 10000),
-    name: item.menuName || item.name,    
-    price: item.basePrice || item.price || 0,
-    category: '추천메뉴', // 화면에 보여줄 탭 이름
-    // API가 categoryName을 주면 쓰고, 없으면 일단 비워둡니다.
-    originalCategory: item.categoryName || '', 
-    img: item.imageUrl || '', 
-  }));
+  // -----------------------------
+  // (B) 추천 메뉴 변환 + 보정
+  // -----------------------------
+  const recommendedItems: MenuItem[] = (recommendQuery.data || []).map((rec: any) => {
+    const menuId = rec.menuId;
+    const original = basicItems.find((m) => m.id === menuId);
 
-  // (C) 추천 메뉴 보정 (빈 카테고리 채우기)
-  // 추천 API가 카테고리를 안 알려주면, 위에서 만든 basicItems(일반 메뉴)에서 이름을 검색해 찾아냅니다.
-  const enhancedRecommendedItems = rawRecommendedItems.map(recItem => {
-    // 이름이 같은 일반 메뉴 찾기
-    const original = basicItems.find(basic => basic.name === recItem.name);
-    
-    // 1순위: 추천 API가 준 카테고리
-    // 2순위: 이름으로 찾은 일반 메뉴의 카테고리
-    // 3순위: 그래도 없으면 '기타'
+    const originalCategoryName =
+      rec.categoryName || original?.categoryName || original?.category || '기타';
+
     return {
-      ...recItem,
-      originalCategory: recItem.originalCategory || original?.originalCategory || '기타'
+      id: menuId,
+      name: rec.menuName ?? rec.name,
+      price: rec.basePrice ?? rec.price ?? 0,
+
+      // ✅ 추천 탭에 표시되게 고정
+      category: '추천메뉴',
+
+      // 원래 소속 카테고리(옵션 판단용)
+      originalCategory: originalCategoryName,
+
+      // 보관용
+      categoryId: original?.categoryId ?? -1,
+      categoryName: originalCategoryName,
+
+      img: rec.imageUrl || original?.img || '',
     };
   });
 
-  // (D) 최종 합치기
-  const allItems = [...enhancedRecommendedItems, ...basicItems];
+  // ✅ Order.tsx가 items 하나만 써도 되게 합쳐서 내려줌
+  const items: MenuItem[] = [...recommendedItems, ...basicItems];
 
-  // (E) 카테고리 탭 자동 생성
-  const apiCategories = menuQuery.data
-    ?.map((c) => c.categoryName)
-    .filter((name) => name) || [];
-  
-  const dynamicCategories = Array.from(new Set(['추천메뉴', ...apiCategories]));
+  // -----------------------------
+  // (C) 카테고리 탭 생성
+  // -----------------------------
+  const apiCategories = (menuQuery.data || []).map((c: any) => c.categoryName).filter(Boolean);
+
+  const categories =
+    apiCategories.length > 0 ? Array.from(new Set(['추천메뉴', ...apiCategories])) : CATEGORIES;
 
   return {
-    items: allItems,
+    items, // ✅ 추천+일반 합쳐진 리스트
+    recommendedItems, // (원하면 별도로도 사용 가능)
     isLoading,
-    categories: apiCategories.length > 0 ? dynamicCategories : CATEGORIES,
+    categories,
     error,
   };
 }

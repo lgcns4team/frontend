@@ -1,14 +1,16 @@
-
-
 // ----------------------------------------------------------------------
 // 1. 프론트엔드 내부용 (화면 표시용)
 // ----------------------------------------------------------------------
 export interface MenuItem {
-  id: number;       // 화면용 ID (백엔드 menuId를 매핑)
+  id: number;
   name: string;
   price: number;
-  category: string; // 화면용 카테고리명 (백엔드 categoryName을 매핑)
-  img: string;      // 화면용 이미지 주소 (백엔드 imageUrl을 매핑)
+
+  category: string; //  화면 탭 필터용 (추천메뉴/커피/음료/디저트)
+  categoryId?: number; // (있으면 보관)
+  categoryName?: string; // (있으면 보관)
+
+  img: string;
   originalCategory?: string;
   description?: string;
   isSoldOut?: boolean;
@@ -18,9 +20,9 @@ export type CartItem = MenuItem & {
   cartId: string;
   quantity: number;
 
-  selectedBackendOptions: { 
-    optionItemId: number; 
-    quantity: number; 
+  selectedBackendOptions: {
+    optionItemId: number;
+    quantity: number;
     price: number;
     name: string;
   }[];
@@ -33,28 +35,28 @@ export type CartItem = MenuItem & {
 
 // 메뉴 1개 데이터 (백엔드 모양)
 export interface BackendMenu {
-  menuId: number;        // 백엔드는 menuId를 씀
+  menuId: number; // 백엔드는 menuId를 씀
   categoryId: number;
   categoryName: string;
   name: string;
   price: number;
   isActive: boolean;
-  imageUrl: string;      // 백엔드는 imageUrl을 씀
+  imageUrl: string; // 백엔드는 imageUrl을 씀
 }
 
 // 카테고리 1개 데이터 (백엔드 모양)
 export interface BackendCategory {
-  categoryId: number;    // 백엔드는 categoryId를 씀
-  categoryName: string;  // 백엔드는 categoryName을 씀
+  categoryId: number; // 백엔드는 categoryId를 씀
+  categoryName: string; // 백엔드는 categoryName을 씀
   displayOrder: number;
   menus: BackendMenu[];
   menuCount: number;
 }
 
 export interface BackendOptionItem {
-  optionItemId: number;   // 프론트는 id
+  optionItemId: number; // 프론트는 id
   name: string;
-  optionPrice: number;    // 프론트는 price
+  optionPrice: number; // 프론트는 price
 }
 
 // 2. 옵션 그룹 (온도, 사이즈 등)
@@ -65,7 +67,6 @@ export interface BackendOptionGroup {
   selectionType: 'SINGLE' | 'MULTI'; // Swagger: selectionType
   options: BackendOptionItem[];
 }
-
 
 // 3. 옵션 API 전체 응답 (껍데기)
 export interface MenuOptionsResponse {
@@ -100,9 +101,9 @@ export interface MenuOptionGroup {
 }
 
 export type Options = {
-  temperature: "hot" | "cold";
-  size: "tall" | "grande" | "venti";
-  ice: "less" | "normal" | "more";
+  temperature: 'hot' | 'cold';
+  size: 'tall' | 'grande' | 'venti';
+  ice: 'less' | 'normal' | 'more';
   shot: number;
   whip: boolean;
   isWeak: boolean;
@@ -115,7 +116,6 @@ export interface RecommendResponse {
   recommendedMenus: BackendMenu[]; // 여기가 핵심! 메뉴들이 이 안에 들어있음
 }
 
-
 // ==========================================================
 //  주문 생성 API (POST /api/orders) 관련 타입
 // ==========================================================
@@ -123,13 +123,13 @@ export interface RecommendResponse {
 // 1. 주문 요청 시 선택한 옵션 구조
 export interface OrderOptionRequest {
   optionItemId: number; // 옵션 ID (필수)
-  quantity: number;     // 수량
+  quantity: number; // 수량
 }
 
 // 2. 주문 요청 시 개별 메뉴 구조
 export interface OrderItemRequest {
-  menuId: number;       // 메뉴 ID (필수)
-  quantity: number;     // 수량
+  menuId: number; // 메뉴 ID (필수)
+  quantity: number; // 수량
   selectedOptions: OrderOptionRequest[]; // 선택된 옵션 리스트
 }
 
@@ -139,14 +139,14 @@ export interface CreateOrderRequest {
   sessionId: number;
 
   orderItems: OrderItemRequest[];
-  
-  orderType: string;       // DB: 'dine-in' | 'takeout'
-  paymentMethod: string;   // DB: '카드결제' | '네이버페이' ...
+
+  orderType: string; // DB: 'dine-in' | 'takeout'
+  paymentMethod: string; // DB: '카드결제' | '네이버페이' ...
   pgTransactionId: string;
 
   totalAmount: number;
   expectedTotalAmount?: number; // 백엔드 검증용 필드
-  
+
   // 스웨거에는 있고 DB에는 없을 수 있지만, API 규격상 필요하다면 유지
   ageGroup?: string;
   gender?: string;
@@ -188,12 +188,12 @@ export interface OrderResponse {
   orderedAt: string;
   paidAt: string;
   paymentMethod: string;
-  paymentStatus: string;  // [신규]
-  status: number;         // [변경] string -> number (예시가 0이므로)
-  
-  ageGroup: string;       // [신규]
-  gender: string;         // [신규]
-  timeSlot: string;       // [신규]
-  
+  paymentStatus: string; // [신규]
+  status: number; // [변경] string -> number (예시가 0이므로)
+
+  ageGroup: string; // [신규]
+  gender: string; // [신규]
+  timeSlot: string; // [신규]
+
   orderItems: OrderResponseItem[];
 }

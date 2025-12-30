@@ -62,6 +62,7 @@ export default function BottomCart({
         {/* 중앙: 주문방법 선택 */}
         <div className="flex gap-8">
           <button
+            type="button"
             onClick={() => onOrderMethodChange?.('dine-in')}
             className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors ${
               orderMethod === 'dine-in'
@@ -72,6 +73,7 @@ export default function BottomCart({
             매장
           </button>
           <button
+            type="button"
             onClick={() => onOrderMethodChange?.('takeout')}
             className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors ${
               orderMethod === 'takeout'
@@ -87,6 +89,7 @@ export default function BottomCart({
         <div className="w-16 text-center">
           {cart.length > 0 && (
             <button
+              type="button"
               onClick={clearCart}
               className="text-base text-gray-400 underline hover:text-red-500 text-sm font-semibold transition-colors"
             >
@@ -135,6 +138,7 @@ export default function BottomCart({
                     {/* 옵션 변경 버튼 */}
                     {canEditOptions && (
                       <button
+                        type="button"
                         onClick={() => onEditOptions?.(item.cartId)}
                         className="h-9 flex items-center px-6 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-colors whitespace-nowrap"
                       >
@@ -145,6 +149,7 @@ export default function BottomCart({
                     {/* 수량 조절 */}
                     <div className="h-9 flex items-center gap-3 bg-white rounded-lg px-3 border border-gray-200 shadow-sm">
                       <button
+                        type="button"
                         onClick={() => updateQuantity(item.cartId, -1)}
                         className="p-1 hover:bg-gray-100 rounded"
                       >
@@ -152,6 +157,7 @@ export default function BottomCart({
                       </button>
                       <span className="font-bold text-lg w-7 text-center">{item.quantity}</span>
                       <button
+                        type="button"
                         onClick={() => updateQuantity(item.cartId, 1)}
                         className="p-1 hover:bg-gray-100 rounded"
                       >
@@ -176,6 +182,7 @@ export default function BottomCart({
           </span>
         </div>
         <button
+          type="button"
           onClick={onCheckout}
           disabled={cart.length === 0}
           className={`w-[40%] rounded-3xl flex flex-col items-center justify-center gap-2 transition-all shadow-xl ${

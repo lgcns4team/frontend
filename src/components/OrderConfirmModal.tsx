@@ -38,7 +38,7 @@ export default function OrderConfirmModal({
         .join(' / ');
     }
 
-    // 2) ✅ 이지 오더: temperature 옵션
+    // 2)  이지 오더: temperature 옵션
     // (CartItem 타입에 options가 없을 수도 있으니 안전하게 any로 접근)
     const temp = (item as any).options?.temperature;
     if (temp === 'hot') return 'HOT';

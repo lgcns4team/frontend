@@ -1,0 +1,659 @@
+diff --git a/src/components/BottomCart.tsx b/src/components/BottomCart.tsx
+index e922320..02d862c 100644
+--- a/src/components/BottomCart.tsx
++++ b/src/components/BottomCart.tsx
+@@ -62,6 +62,7 @@ export default function BottomCart({
+         {/* 중앙: 주문방법 선택 */}
+         <div className="flex gap-8">
+           <button
++            type="button"
+             onClick={() => onOrderMethodChange?.('dine-in')}
+             className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors ${
+               orderMethod === 'dine-in'
+@@ -72,6 +73,7 @@ export default function BottomCart({
+             매장
+           </button>
+           <button
++            type="button"
+             onClick={() => onOrderMethodChange?.('takeout')}
+             className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors ${
+               orderMethod === 'takeout'
+@@ -87,6 +89,7 @@ export default function BottomCart({
+         <div className="w-16 text-center">
+           {cart.length > 0 && (
+             <button
++              type="button"
+               onClick={clearCart}
+               className="text-base text-gray-400 underline hover:text-red-500 text-sm font-semibold transition-colors"
+             >
+@@ -135,6 +138,7 @@ export default function BottomCart({
+                     {/* 옵션 변경 버튼 */}
+                     {canEditOptions && (
+                       <button
++                        type="button"
+                         onClick={() => onEditOptions?.(item.cartId)}
+                         className="h-9 flex items-center px-6 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-colors whitespace-nowrap"
+                       >
+@@ -145,6 +149,7 @@ export default function BottomCart({
+                     {/* 수량 조절 */}
+                     <div className="h-9 flex items-center gap-3 bg-white rounded-lg px-3 border border-gray-200 shadow-sm">
+                       <button
++                        type="button"
+                         onClick={() => updateQuantity(item.cartId, -1)}
+                         className="p-1 hover:bg-gray-100 rounded"
+                       >
+@@ -152,6 +157,7 @@ export default function BottomCart({
+                       </button>
+                       <span className="font-bold text-lg w-7 text-center">{item.quantity}</span>
+                       <button
++                        type="button"
+                         onClick={() => updateQuantity(item.cartId, 1)}
+                         className="p-1 hover:bg-gray-100 rounded"
+                       >
+@@ -176,6 +182,7 @@ export default function BottomCart({
+           </span>
+         </div>
+         <button
++          type="button"
+           onClick={onCheckout}
+           disabled={cart.length === 0}
+           className={`w-[40%] rounded-3xl flex flex-col items-center justify-center gap-2 transition-all shadow-xl ${
+diff --git a/src/components/OptionsModal.tsx b/src/components/OptionsModal.tsx
+index abec8c0..4f9bb6c 100644
+--- a/src/components/OptionsModal.tsx
++++ b/src/components/OptionsModal.tsx
+@@ -36,6 +36,28 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
+   });
+ 
+   const optionGroups = rawOptionGroups as unknown as BackendOptionGroup[];
++  // ✅ 현재 선택된 온도(HOT/ICE) 이름을 selections에서 찾아서 ICE인지 판별
++  const selectedTempName = useMemo(() => {
++    // 온도 그룹 찾기 (이름은 상황에 따라 다를 수 있어서 범용으로)
++    const tempGroup = optionGroups.find((g) => {
++      const n = g.name.toLowerCase();
++      return (
++        n.includes('온도') || n.includes('temperature') || n.includes('hot') || n.includes('ice')
++      );
++    });
++    if (!tempGroup) return null;
++
++    const sel = selections[tempGroup.optionGroupId] || {};
++    const selectedOptionItemId = Number(Object.keys(sel)[0]); // SINGLE 가정
++    const opt = tempGroup.options.find((o) => o.optionItemId === selectedOptionItemId);
++    return opt?.name ?? null;
++  }, [optionGroups, selections]);
++
++  const isIceSelected = useMemo(() => {
++    if (!selectedTempName) return false;
++    const n = selectedTempName.toLowerCase();
++    return n.includes('ice') || n.includes('얼음') || n.includes('차갑');
++  }, [selectedTempName]);
+ 
+   // 2. 초기값 및 수정 모드 설정
+   useEffect(() => {
+@@ -216,6 +238,13 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
+                 <div className="space-y-4">
+                   {optionGroups.map((group) => {
+                     const groupNameLower = group.name.toLowerCase();
++                    // ✅ ICE가 아닐 때 "얼음양" 그룹 숨김
++                    if (
++                      (groupNameLower.includes('얼음') || groupNameLower.includes('ice')) &&
++                      !isIceSelected
++                    ) {
++                      return null;
++                    }
+ 
+                     // 1. 샷 추가 (카운터 UI) - Dev 스타일 적용
+                     if (groupNameLower.includes('샷') || groupNameLower.includes('shot')) {
+diff --git a/src/components/OrderConfirmModal.tsx b/src/components/OrderConfirmModal.tsx
+index 2b9733b..73ef42d 100644
+--- a/src/components/OrderConfirmModal.tsx
++++ b/src/components/OrderConfirmModal.tsx
+@@ -38,7 +38,7 @@ export default function OrderConfirmModal({
+         .join(' / ');
+     }
+ 
+-    // 2) ✅ 이지 오더: temperature 옵션
++    // 2)  이지 오더: temperature 옵션
+     // (CartItem 타입에 options가 없을 수도 있으니 안전하게 any로 접근)
+     const temp = (item as any).options?.temperature;
+     if (temp === 'hot') return 'HOT';
+diff --git a/src/hooks/UseMenu.ts b/src/hooks/UseMenu.ts
+index 645e4ad..30c9515 100644
+--- a/src/hooks/UseMenu.ts
++++ b/src/hooks/UseMenu.ts
+@@ -1,4 +1,3 @@
+-
+ import { useQuery } from '@tanstack/react-query';
+ import { fetchMenus, fetchRecommendMenus } from '../api/MenuApi';
+ import type { MenuItem } from '../types/OrderTypes';
+@@ -10,83 +9,92 @@ const getCurrentTimeSlot = () => {
+   return 'EVENING';
+ };
+ 
++// fallback(응답 없을 때만)
+ export const CATEGORIES = ['추천메뉴', '커피', '음료', '디저트', '브랜치', '베이커리'];
+ 
+ export function useMenu() {
+-  // 1. 전체 메뉴 조회 (원본 데이터)
+   const menuQuery = useQuery({
+     queryKey: ['menus'],
+     queryFn: fetchMenus,
+   });
+ 
+-  // 2. 추천 메뉴 조회
++  const timeSlot = getCurrentTimeSlot();
+   const recommendQuery = useQuery({
+-    queryKey: ['recommend', getCurrentTimeSlot()],
+-    queryFn: () =>
+-      fetchRecommendMenus({
+-        timeSlot: getCurrentTimeSlot(),
+-      }),
++    queryKey: ['recommend', timeSlot],
++    queryFn: () => fetchRecommendMenus({ timeSlot }),
+   });
+ 
+   const isLoading = menuQuery.isLoading || recommendQuery.isLoading;
+   const error = menuQuery.error || recommendQuery.error;
+ 
+-  // --- 데이터 변환 ---
++  // -----------------------------
++  // (A) 일반 메뉴 변환
++  // -----------------------------
++  const basicItems: MenuItem[] = (menuQuery.data || []).flatMap((category: any) => {
++    if (!category?.menus) return [];
+ 
+-  // (A) 일반 메뉴 변환 (먼저 만듭니다. 기준 데이터가 되기 때문입니다.)
+-  const basicItems: MenuItem[] = (menuQuery.data || []).flatMap((category) => {
+-    if (!category.menus) return [];
+-    return category.menus.map((menu, index) => ({
+-      id: menu.menuId ?? (index + 20000), 
++    return category.menus.map((menu: any) => ({
++      id: menu.menuId,
+       name: menu.name,
+       price: menu.price,
+-      category: category.categoryName, 
+-      // [수정 포인트 1] 일반 메뉴에도 'originalCategory'를 확실히 넣어줍니다.
+-      originalCategory: category.categoryName, 
+-      img: menu.imageUrl || '',        
++
++      // ✅ Order.tsx 필터가 보는 핵심 필드
++      category: category.categoryName, // 예: '커피','음료','디저트'
++
++      // (있으면 보관)
++      categoryId: category.categoryId,
++      categoryName: category.categoryName,
++
++      img: menu.imageUrl || '',
++      originalCategory: category.categoryName,
+     }));
+   });
+ 
+-  // (B) 추천 메뉴 1차 변환 (API 데이터 기반)
+-  const rawRecommendedItems: MenuItem[] = (recommendQuery.data || []).map((item: any, index: number) => ({
+-    id: item.menuId ?? -(index + 10000),
+-    name: item.menuName || item.name,    
+-    price: item.basePrice || item.price || 0,
+-    category: '추천메뉴', // 화면에 보여줄 탭 이름
+-    // API가 categoryName을 주면 쓰고, 없으면 일단 비워둡니다.
+-    originalCategory: item.categoryName || '', 
+-    img: item.imageUrl || '', 
+-  }));
+-
+-  // (C) 추천 메뉴 보정 (빈 카테고리 채우기)
+-  // 추천 API가 카테고리를 안 알려주면, 위에서 만든 basicItems(일반 메뉴)에서 이름을 검색해 찾아냅니다.
+-  const enhancedRecommendedItems = rawRecommendedItems.map(recItem => {
+-    // 이름이 같은 일반 메뉴 찾기
+-    const original = basicItems.find(basic => basic.name === recItem.name);
+-    
+-    // 1순위: 추천 API가 준 카테고리
+-    // 2순위: 이름으로 찾은 일반 메뉴의 카테고리
+-    // 3순위: 그래도 없으면 '기타'
++  // -----------------------------
++  // (B) 추천 메뉴 변환 + 보정
++  // -----------------------------
++  const recommendedItems: MenuItem[] = (recommendQuery.data || []).map((rec: any) => {
++    const menuId = rec.menuId;
++    const original = basicItems.find((m) => m.id === menuId);
++
++    const originalCategoryName =
++      rec.categoryName || original?.categoryName || original?.category || '기타';
++
+     return {
+-      ...recItem,
+-      originalCategory: recItem.originalCategory || original?.originalCategory || '기타'
++      id: menuId,
++      name: rec.menuName ?? rec.name,
++      price: rec.basePrice ?? rec.price ?? 0,
++
++      // ✅ 추천 탭에 표시되게 고정
++      category: '추천메뉴',
++
++      // 원래 소속 카테고리(옵션 판단용)
++      originalCategory: originalCategoryName,
++
++      // 보관용
++      categoryId: original?.categoryId ?? -1,
++      categoryName: originalCategoryName,
++
++      img: rec.imageUrl || original?.img || '',
+     };
+   });
+ 
+-  // (D) 최종 합치기
+-  const allItems = [...enhancedRecommendedItems, ...basicItems];
++  // ✅ Order.tsx가 items 하나만 써도 되게 합쳐서 내려줌
++  const items: MenuItem[] = [...recommendedItems, ...basicItems];
++
++  // -----------------------------
++  // (C) 카테고리 탭 생성
++  // -----------------------------
++  const apiCategories = (menuQuery.data || []).map((c: any) => c.categoryName).filter(Boolean);
+ 
+-  // (E) 카테고리 탭 자동 생성
+-  const apiCategories = menuQuery.data
+-    ?.map((c) => c.categoryName)
+-    .filter((name) => name) || [];
+-  
+-  const dynamicCategories = Array.from(new Set(['추천메뉴', ...apiCategories]));
++  const categories =
++    apiCategories.length > 0 ? Array.from(new Set(['추천메뉴', ...apiCategories])) : CATEGORIES;
+ 
+   return {
+-    items: allItems,
++    items, // ✅ 추천+일반 합쳐진 리스트
++    recommendedItems, // (원하면 별도로도 사용 가능)
+     isLoading,
+-    categories: apiCategories.length > 0 ? dynamicCategories : CATEGORIES,
++    categories,
+     error,
+   };
+ }
+diff --git a/src/pages/EasyOrder.tsx b/src/pages/EasyOrder.tsx
+index fde5a8c..122a9ea 100644
+--- a/src/pages/EasyOrder.tsx
++++ b/src/pages/EasyOrder.tsx
+@@ -2,59 +2,65 @@
+ import { useState, useMemo } from 'react';
+ import { useNavigate } from 'react-router-dom';
+ import { ArrowLeft, Home } from 'lucide-react';
++
+ import { useMenu } from '../hooks/UseMenu';
+ import { useCartStore } from '../store/UseCartStore';
++
+ import BottomCart from '../components/BottomCart';
+ import EasyMenuGrid from '../components/EasyMode/EasyMenuGrid';
+ import EasyBeverageOptionsModal from '../components/EasyMode/EasyOptionsModal';
++
+ import type { MenuItem, Options } from '../types';
+ 
+-const EASY_CATEGORIES = [
+-  { name: '커피', emoji: '☕️' },
+-  { name: '차', emoji: '🫖' },
+-  { name: '다른음료', emoji: '🥤' },
+-  { name: '디저트', emoji: '🍰' },
+-  { name: '추천메뉴', emoji: '🍊' },
+-  { name: '세트메뉴', emoji: '🍽️' },
++type EasyCategoryKey = 'COFFEE' | 'DRINK' | 'DESSERT' | 'RECOMMEND';
++
++const EASY_CATEGORIES: { key: EasyCategoryKey; name: string; emoji: string }[] = [
++  { key: 'COFFEE', name: '커피', emoji: '☕️' },
++  { key: 'DRINK', name: '음료', emoji: '🥤' },
++  { key: 'DESSERT', name: '디저트', emoji: '🍰' },
++  { key: 'RECOMMEND', name: '추천메뉴', emoji: '🍊' },
+ ];
+ 
+ export default function EasyOrder() {
+   const navigate = useNavigate();
+-  const { items, isLoading } = useMenu();
++  const { items, recommendedItems, isLoading } = useMenu();
+   const { cart, addToCart, updateCartOptions } = useCartStore();
+ 
+-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
++  const [selectedCategory, setSelectedCategory] = useState<EasyCategoryKey | null>(null);
++  const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
++
+   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+   const [editCartId, setEditCartId] = useState<string | null>(null);
+   const [editItem, setEditItem] = useState<
+     (MenuItem & { options?: Pick<Options, 'temperature'> }) | null
+   >(null);
+ 
++  const selectedCategoryLabel = useMemo(() => {
++    const found = EASY_CATEGORIES.find((c) => c.key === selectedCategory);
++    return found?.name ?? '';
++  }, [selectedCategory]);
++
+   const filteredItems = useMemo(() => {
+     if (!selectedCategory) return [];
+ 
+     switch (selectedCategory) {
+-      case '커피':
+-        return items.filter((item) => item.category === '커피');
+-
+-      // "다른음료"는 원본 category가 "음료"인 것들을 보여줌
+-      case '다른음료':
+-        return items.filter((item) => item.category === '음료');
+-
+-      case '차':
+-        return items.filter((item) => item.name.includes('티'));
+-
+-      case '디저트':
+-      case '추천메뉴':
+-      case '세트메뉴':
+-        return items.filter((item) => item.category === '디저트');
++      case 'COFFEE':
++        return items.filter((item: any) => item.categoryId === 1);
++      case 'DRINK':
++        return items.filter((item: any) => item.categoryId === 2);
++      case 'DESSERT':
++        return items.filter((item: any) => item.categoryId === 3);
++      case 'RECOMMEND':
++        return recommendedItems;
+       default:
+         return [];
+     }
+-  }, [selectedCategory, items]);
++  }, [selectedCategory, items, recommendedItems]);
+ 
+   const handleItemClick = (item: MenuItem) => {
+-    if (item.category === '커피' || item.category === '음료') {
++    // 옵션모달 띄울 대상: 커피(1), 음료(2)
++    const cid = (item as any).categoryId;
++    if (cid === 1 || cid === 2) {
+       setSelectedItem(item);
+     } else {
+       addToCart(item);
+@@ -69,11 +75,11 @@ export default function EasyOrder() {
+     addToCart(item, options, quantity);
+     setSelectedItem(null);
+   };
++
+   const handleEditOptions = (cartId: string) => {
+     const target = cart.find((c: any) => c.cartId === cartId);
+     if (!target) return;
+ 
+-    // cart item을 모달이 받을 수 있는 형태로 넣기
+     setEditCartId(cartId);
+     setEditItem({
+       ...(target as any),
+@@ -81,13 +87,9 @@ export default function EasyOrder() {
+     });
+   };
+ 
+-  // 카테고리 화면에서는 cart 있을 때만 BottomCart 보이게
+-  const shouldShowBottomCart = !selectedCategory ? cart.length > 0 : true;
+-
+   return (
+     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
+       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-white flex flex-col shadow-2xl">
+-        {/* 메인(Order) 페이지와 동일한 헤더 */}
+         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
+           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
+           <button
+@@ -99,7 +101,6 @@ export default function EasyOrder() {
+           </button>
+         </header>
+ 
+-        {/* 메인 컨텐츠 */}
+         <main className="flex-1 flex flex-col p-10 overflow-hidden">
+           {!selectedCategory ? (
+             <>
+@@ -109,38 +110,21 @@ export default function EasyOrder() {
+ 
+               <div className="flex-1 flex justify-center overflow-y-auto">
+                 <div className="grid grid-cols-2 gap-8 w-full max-w-4xl pb-8">
+-                  {EASY_CATEGORIES.map((cat) => {
+-                    const isOtherBeverage = cat.name === '커피 외 음료';
+-
+-                    return (
+-                      <button
+-                        key={cat.name}
+-                        onClick={() => setSelectedCategory(cat.name)}
+-                        className="bg-gray-100 rounded-3xl p-10 flex flex-col items-center justify-center aspect-square hover:bg-orange-100 hover:border-orange-400 border-6 border-transparent transition-all duration-200"
++                  {EASY_CATEGORIES.map((cat) => (
++                    <button
++                      key={cat.key}
++                      onClick={() => setSelectedCategory(cat.key)}
++                      className="bg-gray-100 rounded-3xl p-10 flex flex-col items-center justify-center aspect-square hover:bg-orange-100 hover:border-orange-400 border-6 border-transparent transition-all duration-200"
++                    >
++                      <span className="text-[10rem] mb-6">{cat.emoji}</span>
++                      <span
++                        className="text-6xl font-extrabold whitespace-nowrap break-keep leading-none"
++                        style={{ writingMode: 'horizontal-tb' }}
+                       >
+-                        {/* 이모지: '커피 외 음료'만 위로 */}
+-                        <span className={`text-[10rem] mb-6 ${isOtherBeverage ? '-mt-6' : ''}`}>
+-                          {cat.emoji}
+-                        </span>
+-
+-                        {/* 텍스트: '커피 외 음료'만 3줄로 */}
+-                        {isOtherBeverage ? (
+-                          <span className="text-6xl font-extrabold leading-[1.05] text-center">
+-                            <span className="block">커피</span>
+-                            <span className="block">외</span>
+-                            <span className="block">음료</span>
+-                          </span>
+-                        ) : (
+-                          <span
+-                            className="text-6xl font-extrabold whitespace-nowrap break-keep leading-none"
+-                            style={{ writingMode: 'horizontal-tb' }}
+-                          >
+-                            {cat.name}
+-                          </span>
+-                        )}
+-                      </button>
+-                    );
+-                  })}
++                        {cat.name}
++                      </span>
++                    </button>
++                  ))}
+                 </div>
+               </div>
+             </>
+@@ -155,7 +139,7 @@ export default function EasyOrder() {
+                   <span>뒤로가기</span>
+                 </button>
+ 
+-                <h2 className="text-5xl font-bold text-center flex-1">{selectedCategory}</h2>
++                <h2 className="text-5xl font-bold text-center flex-1">{selectedCategoryLabel}</h2>
+                 <div className="w-[140px]" />
+               </div>
+ 
+@@ -168,14 +152,13 @@ export default function EasyOrder() {
+           )}
+         </main>
+ 
+-        {shouldShowBottomCart && (
+-          <BottomCart
+-            onCheckout={() => navigate('/easy/confirm')}
+-            onEditOptions={handleEditOptions} //  추가
+-          />
+-        )}
++        <BottomCart
++          onCheckout={() => navigate('/easy/confirm')}
++          onEditOptions={handleEditOptions}
++          orderMethod={orderMethod}
++          onOrderMethodChange={setOrderMethod}
++        />
+ 
+-        {/* 옵션 모달 */}
+         <EasyBeverageOptionsModal
+           open={Boolean(selectedItem || editItem)}
+           item={selectedItem ?? editItem}
+@@ -186,12 +169,11 @@ export default function EasyOrder() {
+           }}
+           onAdd={(item, options, quantity) => {
+             if (editCartId) {
+-              updateCartOptions(editCartId, options); // 여기서 실제 반영
++              updateCartOptions(editCartId, options);
+               setEditItem(null);
+               setEditCartId(null);
+               return;
+             }
+-
+             handleAddWithOptions(item, options, quantity);
+           }}
+         />
+diff --git a/src/types/OrderTypes.ts b/src/types/OrderTypes.ts
+index 9782228..d20fc74 100644
+--- a/src/types/OrderTypes.ts
++++ b/src/types/OrderTypes.ts
+@@ -1,14 +1,16 @@
+-
+-
+ // ----------------------------------------------------------------------
+ // 1. 프론트엔드 내부용 (화면 표시용)
+ // ----------------------------------------------------------------------
+ export interface MenuItem {
+-  id: number;       // 화면용 ID (백엔드 menuId를 매핑)
++  id: number;
+   name: string;
+   price: number;
+-  category: string; // 화면용 카테고리명 (백엔드 categoryName을 매핑)
+-  img: string;      // 화면용 이미지 주소 (백엔드 imageUrl을 매핑)
++
++  category: string; //  화면 탭 필터용 (추천메뉴/커피/음료/디저트)
++  categoryId?: number; // (있으면 보관)
++  categoryName?: string; // (있으면 보관)
++
++  img: string;
+   originalCategory?: string;
+   description?: string;
+   isSoldOut?: boolean;
+@@ -18,9 +20,9 @@ export type CartItem = MenuItem & {
+   cartId: string;
+   quantity: number;
+ 
+-  selectedBackendOptions: { 
+-    optionItemId: number; 
+-    quantity: number; 
++  selectedBackendOptions: {
++    optionItemId: number;
++    quantity: number;
+     price: number;
+     name: string;
+   }[];
+@@ -33,28 +35,28 @@ export type CartItem = MenuItem & {
+ 
+ // 메뉴 1개 데이터 (백엔드 모양)
+ export interface BackendMenu {
+-  menuId: number;        // 백엔드는 menuId를 씀
++  menuId: number; // 백엔드는 menuId를 씀
+   categoryId: number;
+   categoryName: string;
+   name: string;
+   price: number;
+   isActive: boolean;
+-  imageUrl: string;      // 백엔드는 imageUrl을 씀
++  imageUrl: string; // 백엔드는 imageUrl을 씀
+ }
+ 
+ // 카테고리 1개 데이터 (백엔드 모양)
+ export interface BackendCategory {
+-  categoryId: number;    // 백엔드는 categoryId를 씀
+-  categoryName: string;  // 백엔드는 categoryName을 씀
++  categoryId: number; // 백엔드는 categoryId를 씀
++  categoryName: string; // 백엔드는 categoryName을 씀
+   displayOrder: number;
+   menus: BackendMenu[];
+   menuCount: number;
+ }
+ 
+ export interface BackendOptionItem {
+-  optionItemId: number;   // 프론트는 id
++  optionItemId: number; // 프론트는 id
+   name: string;
+-  optionPrice: number;    // 프론트는 price
++  optionPrice: number; // 프론트는 price
+ }
+ 
+ // 2. 옵션 그룹 (온도, 사이즈 등)
+@@ -66,7 +68,6 @@ export interface BackendOptionGroup {
+   options: BackendOptionItem[];
+ }
+ 
+-
+ // 3. 옵션 API 전체 응답 (껍데기)
+ export interface MenuOptionsResponse {
+   menuId: number;
+@@ -100,9 +101,9 @@ export interface MenuOptionGroup {
+ }
+ 
+ export type Options = {
+-  temperature: "hot" | "cold";
+-  size: "tall" | "grande" | "venti";
+-  ice: "less" | "normal" | "more";
++  temperature: 'hot' | 'cold';
++  size: 'tall' | 'grande' | 'venti';
++  ice: 'less' | 'normal' | 'more';
+   shot: number;
+   whip: boolean;
+   isWeak: boolean;
+@@ -115,7 +116,6 @@ export interface RecommendResponse {
+   recommendedMenus: BackendMenu[]; // 여기가 핵심! 메뉴들이 이 안에 들어있음
+ }
+ 
+-
+ // ==========================================================
+ //  주문 생성 API (POST /api/orders) 관련 타입
+ // ==========================================================
+@@ -123,13 +123,13 @@ export interface RecommendResponse {
+ // 1. 주문 요청 시 선택한 옵션 구조
+ export interface OrderOptionRequest {
+   optionItemId: number; // 옵션 ID (필수)
+-  quantity: number;     // 수량
++  quantity: number; // 수량
+ }
+ 
+ // 2. 주문 요청 시 개별 메뉴 구조
+ export interface OrderItemRequest {
+-  menuId: number;       // 메뉴 ID (필수)
+-  quantity: number;     // 수량
++  menuId: number; // 메뉴 ID (필수)
++  quantity: number; // 수량
+   selectedOptions: OrderOptionRequest[]; // 선택된 옵션 리스트
+ }
+ 
+@@ -139,14 +139,14 @@ export interface CreateOrderRequest {
+   sessionId: number;
+ 
+   orderItems: OrderItemRequest[];
+-  
+-  orderType: string;       // DB: 'dine-in' | 'takeout'
+-  paymentMethod: string;   // DB: '카드결제' | '네이버페이' ...
++
++  orderType: string; // DB: 'dine-in' | 'takeout'
++  paymentMethod: string; // DB: '카드결제' | '네이버페이' ...
+   pgTransactionId: string;
+ 
+   totalAmount: number;
+   expectedTotalAmount?: number; // 백엔드 검증용 필드
+-  
++
+   // 스웨거에는 있고 DB에는 없을 수 있지만, API 규격상 필요하다면 유지
+   ageGroup?: string;
+   gender?: string;
+@@ -188,12 +188,12 @@ export interface OrderResponse {
+   orderedAt: string;
+   paidAt: string;
+   paymentMethod: string;
+-  paymentStatus: string;  // [신규]
+-  status: number;         // [변경] string -> number (예시가 0이므로)
+-  
+-  ageGroup: string;       // [신규]
+-  gender: string;         // [신규]
+-  timeSlot: string;       // [신규]
+-  
++  paymentStatus: string; // [신규]
++  status: number; // [변경] string -> number (예시가 0이므로)
++
++  ageGroup: string; // [신규]
++  gender: string; // [신규]
++  timeSlot: string; // [신규]
++
+   orderItems: OrderResponseItem[];
+-}
+\ No newline at end of file
++}
