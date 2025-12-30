@@ -4,9 +4,9 @@ import { Lightbulb, Home } from 'lucide-react';
 
 // [Hooks & API]
 import { useMenu } from '../hooks/UseMenu';
-// import { useCart } from '../hooks/VoiceuseCart'; // [삭제] 더 이상 사용하지 않음
 import { useRecorder } from '../hooks/UseRecorder';
 import { sendAudioOrder } from '../api/VoiceOrderApi';
+import { fetchMenuOptions } from '../api/MenuApi'; // ⭐️ 옵션 조회 API 추가
 
 // [Global Store & Types]
 import { useCartStore } from '../store/UseCartStore';
@@ -42,20 +42,15 @@ const VoiceOrder: React.FC = () => {
   const lastHeardTimeRef = useRef<number>(0);
   const silenceCheckIntervalRef = useRef<number | null>(null);
 
-  // 1. 전역 장바구니 스토어 사용 (로컬 훅 대체)
-  const { 
-    addToCart, 
-    removeFromCart, 
-    dispatchVoiceActions // [추가] 스토어에 새로 만든 액션 처리 함수
-  } = useCartStore();
-  
-  // 전역 장바구니 상태 구독
-  const cart = useCartStore((state) => state.cart); 
+  // 1. 전역 장바구니 스토어 사용
+  // (VoiceuseCart 훅은 제거하고 스토어 직접 사용으로 변경)
+  const { addToCart, removeFromCart, clearCart } = useCartStore();
+  const cart = useCartStore((state) => state.cart);
 
-  // ⭐️ [중요] items를 먼저 가져와야 합니다!
-  const { items, isLoading } = useMenu(); 
+  // ⭐️ [중요] items를 먼저 가져옵니다.
+  const { items, isLoading } = useMenu();
 
-  // items 분류 로직
+  // 메뉴 분류 로직 (기존 디자인 유지)
   const recommendedItems = items.filter((item) => item.category === '추천메뉴');
   const normalItems = items.filter((item) => item.category !== '추천메뉴');
 
@@ -74,9 +69,8 @@ const VoiceOrder: React.FC = () => {
     }
   };
 
-  // 3. 페이지 진입 초기화 (장바구니 초기화 로직 삭제됨)
+  // 3. 페이지 진입 초기화 (장바구니 초기화 로직 삭제됨 -> 기존 장바구니 유지)
   useEffect(() => {
-    // [수정] clearGlobalCart() 호출 삭제 -> 기존 장바구니 유지
     speak('화면에 보이는 주문하기 버튼을 눌러 음성주문을 시작해보세요');
     
     return () => {
@@ -85,7 +79,7 @@ const VoiceOrder: React.FC = () => {
         clearInterval(silenceCheckIntervalRef.current);
       }
     };
-  }, []); // 의존성 배열 비움
+  }, []); 
 
   // === [침묵 감지 로직] ===
   useEffect(() => {
@@ -108,7 +102,7 @@ const VoiceOrder: React.FC = () => {
             clearInterval(silenceCheckIntervalRef.current);
           }
         }
-      }, 1000);
+      }, 1000); 
     } else {
       if (silenceCheckIntervalRef.current) {
         clearInterval(silenceCheckIntervalRef.current);
@@ -116,8 +110,131 @@ const VoiceOrder: React.FC = () => {
     }
   }, [isRecording, stopRecording]);
 
+  // ⭐️ [핵심] 음성 태그를 실제 DB 옵션 ID로 변환하는 함수 (새로 추가됨)
+  const resolveBackendOptions = async (menuId: number, voiceTags: string[]) => {
+    try {
+      // 1. 해당 메뉴의 전체 옵션 그룹을 서버에서 가져옴
+      const optionGroups = await fetchMenuOptions(menuId);
+      const resolvedOptions: { optionItemId: number; quantity: number; price: number; name: string }[] = [];
+      const globalOptions: Partial<Options> = {}; // 프론트 표시용
 
-  // [삭제] convertVoiceOptionsToGlobal 함수 삭제 (스토어 내부로 이동됨)
+      // 헬퍼: 키워드로 옵션 찾기
+      const findOption = (keywords: string[]) => {
+        for (const group of optionGroups) {
+          for (const opt of group.options) {
+            if (keywords.some(k => opt.name.toLowerCase().includes(k))) {
+              return opt;
+            }
+          }
+        }
+        return null;
+      };
+
+      // 2. 태그별 매칭 로직 (SQL DB 기준 명칭 매핑)
+      // 온도
+      if (voiceTags.includes('hot')) {
+        const opt = findOption(['hot', '따뜻']);
+        if (opt) {
+          resolvedOptions.push({ optionItemId: opt.optionItemId, quantity: 1, price: opt.optionPrice, name: opt.name });
+          globalOptions.temperature = 'hot';
+        }
+      } else if (voiceTags.includes('cold')) {
+        const opt = findOption(['ice', '아이스', '차가운']);
+        if (opt) {
+          resolvedOptions.push({ optionItemId: opt.optionItemId, quantity: 1, price: opt.optionPrice, name: opt.name });
+          globalOptions.temperature = 'cold';
+        }
+      }
+
+      // 사이즈
+      if (voiceTags.includes('tall')) {
+        const opt = findOption(['tall', '톨']);
+        if (opt) {
+          resolvedOptions.push({ optionItemId: opt.optionItemId, quantity: 1, price: opt.optionPrice, name: opt.name });
+          globalOptions.size = 'tall';
+        }
+      } else if (voiceTags.includes('grande')) {
+        const opt = findOption(['grande', '그란데']);
+        if (opt) {
+          resolvedOptions.push({ optionItemId: opt.optionItemId, quantity: 1, price: opt.optionPrice, name: opt.name });
+          globalOptions.size = 'grande';
+        }
+      } else if (voiceTags.includes('venti')) {
+        const opt = findOption(['venti', '벤티']);
+        if (opt) {
+          resolvedOptions.push({ optionItemId: opt.optionItemId, quantity: 1, price: opt.optionPrice, name: opt.name });
+          globalOptions.size = 'venti';
+        }
+      }
+
+      // 샷 추가
+      const shotCount = voiceTags.filter(t => t === 'shot').length;
+      if (shotCount > 0) {
+        const opt = findOption(['shot', '샷']);
+        if (opt) {
+          resolvedOptions.push({ optionItemId: opt.optionItemId, quantity: shotCount, price: opt.optionPrice, name: opt.name });
+          globalOptions.shot = shotCount;
+        }
+      }
+
+      // 휘핑
+      if (voiceTags.includes('whip')) {
+        const opt = findOption(['휘핑 크림 추가', '휘핑']); 
+        if (opt) {
+          resolvedOptions.push({ optionItemId: opt.optionItemId, quantity: 1, price: opt.optionPrice, name: opt.name });
+          globalOptions.whip = true;
+        }
+      }
+
+      // 얼음량
+      if (voiceTags.includes('less_ice')) {
+        const opt = findOption(['적게']);
+        if (opt) {
+           resolvedOptions.push({ optionItemId: opt.optionItemId, quantity: 1, price: opt.optionPrice, name: opt.name });
+           globalOptions.ice = 'less';
+        }
+      } else if (voiceTags.includes('more_ice')) {
+        const opt = findOption(['많이']);
+        if (opt) {
+           resolvedOptions.push({ optionItemId: opt.optionItemId, quantity: 1, price: opt.optionPrice, name: opt.name });
+           globalOptions.ice = 'more';
+        }
+      }
+
+      return { backendOptions: resolvedOptions, globalOptions };
+
+    } catch (error) {
+      console.error("옵션 매핑 중 에러:", error);
+      return { backendOptions: [], globalOptions: {} };
+    }
+  };
+
+  // ⭐️ [핵심] 음성 액션 처리기 (장바구니 추가 로직)
+  const handleVoiceActions = async (actions: any[]) => {
+    for (const action of actions) {
+      if (action.type === 'ADD') {
+        const targetItem = items.find(i => i.name === action.data.name);
+        if (targetItem) {
+          // 비동기로 옵션 ID 조회 후 추가
+          const { backendOptions, globalOptions } = await resolveBackendOptions(targetItem.id, action.data.option_ids || []);
+          addToCart(targetItem, globalOptions, action.data.quantity || 1, backendOptions);
+        }
+      } 
+      else if (action.type === 'UPDATE') {
+        if (action.targetId === 'last_item' && cart.length > 0) {
+           const lastItem = cart[cart.length - 1];
+           removeFromCart(lastItem.cartId); // 기존 것 삭제 후 다시 추가
+           const { backendOptions, globalOptions } = await resolveBackendOptions(lastItem.id, action.data.option_ids || []);
+           addToCart(lastItem, globalOptions, lastItem.quantity, backendOptions);
+        }
+      }
+      else if (action.type === 'REMOVE') {
+         if (action.id === 'last_item' && cart.length > 0) {
+             removeFromCart(cart[cart.length - 1].cartId);
+         }
+      }
+    }
+  };
 
   // 4. 주문확인 핸들러
   const handleCheckout = () => {
@@ -126,7 +243,7 @@ const VoiceOrder: React.FC = () => {
       alert('장바구니가 비어있습니다.');
       return;
     }
-    // [수정] 별도의 변환/추가 로직 없이 바로 모달 오픈 (이미 스토어에 담겨있음)
+    // 별도 변환 과정 없이 바로 오픈 (이미 스토어에 정확한 데이터가 있음)
     setIsCartOpen(true);
   };
 
@@ -147,8 +264,8 @@ const VoiceOrder: React.FC = () => {
             setLogText(`"${response.text}"\n주문을 확인해주세요`);
             if (response.actions && response.actions.length > 0) {
               
-              // [수정] 전역 스토어 액션 호출 (items 전달 필수)
-              dispatchVoiceActions(response.actions, items);
+              // [수정] 위에서 만든 핸들러 호출
+              await handleVoiceActions(response.actions);
               
               speak('말씀하신 메뉴가 장바구니에 담겼어요');
             } else {
@@ -275,6 +392,7 @@ const VoiceOrder: React.FC = () => {
         {/* 3. 메인 컨텐츠 영역 */}
         <main className="flex-1 flex flex-col overflow-hidden relative bg-gray-50">
           
+          {/* [수정 2] 메뉴 리스트 영역 (분리 렌더링 - 기존 디자인 복구) */}
           <section className="flex-1 overflow-y-auto p-4 bg-gray-50 scrollbar-hide">
             
             {isLoading ? (
