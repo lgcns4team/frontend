@@ -42,35 +42,32 @@ export default function EasyConfirm() {
 
         {/* 🔹 상단 고정 안내 문구 (카드 밖, 핑크 배경 위에 고정) */}
         <div className="absolute left-1/2 top-28 -translate-x-1/2 text-center pointer-events-none z-10">
-          <p className="text-6xl font-extrabold text-gray-900 leading-tight whitespace-nowrap">
+          <p className="text-5xl font-extrabold text-gray-900 leading-tight whitespace-nowrap">
             주문 내역을 확인해주세요
           </p>
         </div>
 
-        {/* 메인: 주문 내역 카드만 담당 */}
-        <main className="flex-1 flex items-center justify-center px-6 pb-10 pt-32">
-          {/* 주문 내역 카드 */}
-
-          <div className="w-full max-w-[900px] bg-white/95 rounded-3xl p-10 shadow-2xl min-h-[1000px]">
-            <div className="mb-20">
-              <div className="border-b border-gray-300 pb-6 mb-10">
-                <div className="text-5xl font-extrabold">주문 내역</div>
+        <main className="flex-1 flex items-center justify-center px-6 pt-32 pb-4 overflow-hidden">
+          <div className="w-full max-w-[800px] bg-white/95 rounded-3xl p-10 shadow-2xl flex flex-col h-full max-h-[1050px]">
+            <div className="mb-10">
+              <div className="border-b border-gray-300 pb-3 mb-5">
+                <div className="text-4xl font-extrabold">주문 내역</div>
               </div>
             </div>
-            {/* 리스트 영역: 최대 4개 정도까지 보이고 이후는 스크롤 */}
-            <div className="max-h-[1000px] overflow-y-auto pr-2 -mr-2">
-              <ul className="space-y-8 text-4xl">
+            {/* 리스트 영역: 최대 3개 정도까지 보이고 이후는 스크롤 */}
+            <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+              <ul className="space-y-5 text-4xl">
                 {cart.map((item) => (
                   <li
                     key={item.cartId}
-                    className="flex items-center gap-10 pb-8 border-b last:border-b-0"
+                    className="flex items-center gap-10 pb-5 border-b last:border-b-0"
                   >
                     {/*  왼쪽 영역: 이미지 + 가격 + 메뉴명 */}
                     <div className="flex flex-col flex-[2] gap-4">
                       {/* 이미지 + 가격 한 줄 */}
-                      <div className="flex items-center gap-6">
+                      <div className="flex items-center gap-1flex-[1]justify-between">
                         {/* 이미지 */}
-                        <div className="w-[140px] h-[140px] rounded-3xl overflow-hidden bg-white shadow-lg shrink-0">
+                        <div className="w-[130px] h-[130px] rounded-3xl overflow-hidden bg-white shadow-lg shrink-0">
                           <img
                             src={item.img}
                             alt={item.name}
@@ -79,7 +76,7 @@ export default function EasyConfirm() {
                         </div>
 
                         {/* 가격 */}
-                        <div className="text-4xl md:text-5xl font-extrabold text-gray-900 whitespace-nowrap">
+                        <div className="text-4xl md:text-5xl font-extrabold text-gray-900 whitespace-nowrap min-w-[200px] text-right">
                           {(item.price * item.quantity).toLocaleString()}원
                         </div>
                       </div>
@@ -96,7 +93,7 @@ export default function EasyConfirm() {
                     </div>
 
                     {/* 🔹 오른쪽 영역: 수량 조절 + 삭제 */}
-                    <div className="flex items-center gap-6 flex-[1] justify-end">
+                    <div className="flex items-center gap-1 flex-[1] justify-end">
                       {/* - 버튼 */}
                       <button
                         type="button"
@@ -104,12 +101,12 @@ export default function EasyConfirm() {
                           if (item.quantity <= 1) return;
                           updateQuantity(item.cartId, -1);
                         }}
-                        className="w-[56px] h-[56px] rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-4xl font-bold"
+                        className="w-[30px] h-[30px] rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-3xl font-bold"
                       >
                         -
                       </button>
 
-                      <span className="text-5xl font-extrabold w-[70px] text-center">
+                      <span className="text-3xl font-extrabold w-[50px] text-center">
                         {item.quantity}
                       </span>
 
@@ -117,7 +114,7 @@ export default function EasyConfirm() {
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.cartId, 1)}
-                        className="w-[56px] h-[56px] rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-4xl font-bold"
+                        className="w-[30px] h-[30px] rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-3xl font-bold"
                       >
                         +
                       </button>
@@ -126,7 +123,7 @@ export default function EasyConfirm() {
                       <button
                         type="button"
                         onClick={() => removeFromCart(item.cartId)}
-                        className="ml-4 px-6 py-4 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-3xl font-bold whitespace-nowrap"
+                        className="ml-3 px-4 py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-2xl font-bold whitespace-nowrap"
                       >
                         삭제
                       </button>
