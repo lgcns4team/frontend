@@ -24,6 +24,13 @@ const areOptionsEqual = (opts1: any[], opts2: any[]) => {
   return JSON.stringify(sorted1) === JSON.stringify(sorted2);
 };
 
+// ✅ 이지모드(온도) 옵션 비교 헬퍼 (파일 상단에 둬야 함)
+const getTemp = (opts?: Partial<Options>) => opts?.temperature ?? null;
+
+const areEasyOptionsEqual = (a?: Partial<Options>, b?: Partial<Options>) => {
+  return getTemp(a) === getTemp(b);
+};
+
 export const useCartStore = create<CartState>((set, get) => ({
   cart: [],
 
@@ -32,7 +39,8 @@ export const useCartStore = create<CartState>((set, get) => ({
       const existingItemIndex = state.cart.findIndex(
         (cartItem) =>
           cartItem.id === item.id &&
-          areOptionsEqual(cartItem.selectedBackendOptions, backendOptions)
+          areOptionsEqual(cartItem.selectedBackendOptions, backendOptions) &&
+          areEasyOptionsEqual(cartItem.options, options) // ✅ 온도까지 비교
       );
 
       if (existingItemIndex !== -1) {
@@ -64,6 +72,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         item.cartId === cartId ? { ...item, quantity: Math.max(1, quantity) } : item
       ),
     })),
+
   updateCartOptions: (cartId, options) =>
     set((state) => ({
       cart: state.cart.map((item) =>
@@ -85,7 +94,6 @@ export const useCartStore = create<CartState>((set, get) => ({
   getTotalPrice: () => {
     const { cart } = get();
     return cart.reduce((total, item) => {
-      // (기존) acc + opt.price  ->  (수정) acc + (opt.price * opt.quantity)
       const optionsPrice = item.selectedBackendOptions.reduce(
         (acc, opt) => acc + opt.price * opt.quantity,
         0
