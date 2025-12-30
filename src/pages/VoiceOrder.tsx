@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lightbulb, Home } from 'lucide-react';
 
 // [Hooks & API]
 import { useMenu } from '../hooks/UseMenu';
-import { useCart } from '../hooks/VoiceuseCart';
+// import { useCart } from '../hooks/VoiceuseCart'; // [삭제] 더 이상 사용하지 않음
 import { useRecorder } from '../hooks/UseRecorder';
 import { sendAudioOrder } from '../api/VoiceOrderApi';
 
@@ -38,72 +38,95 @@ const VoiceOrder: React.FC = () => {
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // 1. 전역 장바구니 스토어 (주문확인 시에만 사용)
-  const { addToCart, clearCart: clearGlobalCart, removeFromCart } = useCartStore();
-  const globalCart = useCartStore((state) => state.cart);
+  // 침묵 감지를 위한 Ref
+  const lastHeardTimeRef = useRef<number>(0);
+  const silenceCheckIntervalRef = useRef<number | null>(null);
 
-  const { items, isLoading } = useMenu();
-  const { cart, updateCart } = useCart();
-  const { isRecording, audioFile, audioLevel, startRecording, stopRecording, resetRecording } =
-    useRecorder();
+  // 1. 전역 장바구니 스토어 사용 (로컬 훅 대체)
+  const { 
+    addToCart, 
+    removeFromCart, 
+    dispatchVoiceActions // [추가] 스토어에 새로 만든 액션 처리 함수
+  } = useCartStore();
+  
+  // 전역 장바구니 상태 구독
+  const cart = useCartStore((state) => state.cart); 
 
-  // 2. VoiceOrder 페이지에 진입할 때 전역 장바구니 초기화
-  useEffect(() => {
-    clearGlobalCart();
-  }, [clearGlobalCart]);
+  // ⭐️ [중요] items를 먼저 가져와야 합니다!
+  const { items, isLoading } = useMenu(); 
 
-  // 3. 음성 옵션(배열) -> 전역 옵션(객체) 변환 함수
-  const convertVoiceOptionsToGlobal = (voiceOptions: string[] = []): Partial<Options> => {
-    const options: Partial<Options> = {};
+  // items 분류 로직
+  const recommendedItems = items.filter((item) => item.category === '추천메뉴');
+  const normalItems = items.filter((item) => item.category !== '추천메뉴');
 
-    // 온도 변환
-    if (voiceOptions.includes('hot')) options.temperature = 'hot';
-    else if (voiceOptions.includes('cold')) options.temperature = 'cold';
+  // 2. 녹음 관련 Hooks
+  const { isRecording, audioFile, audioLevel, startRecording, stopRecording, resetRecording } = useRecorder();
 
-    // 사이즈 변환
-    if (voiceOptions.includes('tall')) options.size = 'tall';
-    else if (voiceOptions.includes('venti')) options.size = 'venti';
-    else options.size = 'grande'; // 기본값
-
-    // 샷 추가 (배열에 'shot'이 몇 개 있는지 카운트)
-    const shotCount = voiceOptions.filter((opt) => opt === 'shot').length;
-    options.shot = shotCount;
-
-    // 얼음 옵션
-    if (voiceOptions.includes('less_ice')) options.ice = 'less';
-    else if (voiceOptions.includes('more_ice')) options.ice = 'more';
-    else options.ice = 'normal';
-
-    // 기타
-    if (voiceOptions.includes('whip')) options.whip = true;
-    if (voiceOptions.includes('weak')) options.isWeak = true;
-
-    return options;
+  // === [TTS 기능] ===
+  const speak = (message: string) => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(message);
+      utterance.lang = 'ko-KR'; 
+      utterance.rate = 1.2; 
+      utterance.pitch = 1.0; 
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
-  // 4. 주문확인 핸들러 (CartSheet 표시)
+  // 3. 페이지 진입 초기화 (장바구니 초기화 로직 삭제됨)
+  useEffect(() => {
+    // [수정] clearGlobalCart() 호출 삭제 -> 기존 장바구니 유지
+    speak('화면에 보이는 주문하기 버튼을 눌러 음성주문을 시작해보세요');
+    
+    return () => {
+      window.speechSynthesis.cancel();
+      if (silenceCheckIntervalRef.current) {
+        clearInterval(silenceCheckIntervalRef.current);
+      }
+    };
+  }, []); // 의존성 배열 비움
+
+  // === [침묵 감지 로직] ===
+  useEffect(() => {
+    if (isRecording && audioLevel > 0.05) {
+      lastHeardTimeRef.current = Date.now();
+    }
+  }, [isRecording, audioLevel]);
+
+  useEffect(() => {
+    if (isRecording) {
+      lastHeardTimeRef.current = Date.now();
+      silenceCheckIntervalRef.current = window.setInterval(() => {
+        const silenceDuration = Date.now() - lastHeardTimeRef.current;
+        
+        if (silenceDuration > 5000) {
+          stopRecording();
+          setLogText('말씀이 없으셔서\n자동으로 종료되었어요');
+          speak('말씀이 없으셔서 자동으로 종료되었어요');
+          if (silenceCheckIntervalRef.current) {
+            clearInterval(silenceCheckIntervalRef.current);
+          }
+        }
+      }, 1000);
+    } else {
+      if (silenceCheckIntervalRef.current) {
+        clearInterval(silenceCheckIntervalRef.current);
+      }
+    }
+  }, [isRecording, stopRecording]);
+
+
+  // [삭제] convertVoiceOptionsToGlobal 함수 삭제 (스토어 내부로 이동됨)
+
+  // 4. 주문확인 핸들러
   const handleCheckout = () => {
     if (cart.length === 0) {
+      speak('장바구니가 비어있습니다');
       alert('장바구니가 비어있습니다.');
       return;
     }
-
-    // 음성 장바구니 아이템들을 전역 장바구니로 이동
-    cart.forEach((voiceItem) => {
-      // 원본 메뉴 정보 찾기 (이미지, 카테고리 등)
-      const originalItem = items.find((item) => item.name === voiceItem.name);
-
-      if (originalItem) {
-        // 옵션 포맷 변환
-        const globalOptions = convertVoiceOptionsToGlobal(voiceItem.option_ids || []);
-        // 전역 스토어에 추가
-        addToCart(originalItem, globalOptions, voiceItem.quantity);
-      } else {
-        console.warn(`메뉴를 찾을 수 없습니다: ${voiceItem.name}`);
-      }
-    });
-
-    // CartSheet 표시 (Order와 동일한 플로우)
+    // [수정] 별도의 변환/추가 로직 없이 바로 모달 오픈 (이미 스토어에 담겨있음)
     setIsCartOpen(true);
   };
 
@@ -119,15 +142,23 @@ const VoiceOrder: React.FC = () => {
 
           if (!response.text) {
             setLogText('잘 못 들었어요\n다시 말씀해 주세요');
+            speak('잘 못 들었어요. 다시 말씀해 주세요');
           } else {
             setLogText(`"${response.text}"\n주문을 확인해주세요`);
             if (response.actions && response.actions.length > 0) {
-              updateCart(response.actions);
+              
+              // [수정] 전역 스토어 액션 호출 (items 전달 필수)
+              dispatchVoiceActions(response.actions, items);
+              
+              speak('말씀하신 메뉴가 장바구니에 담겼어요');
+            } else {
+               speak('주문하실 메뉴를 말씀해 주세요');
             }
           }
         } catch (error) {
           console.error(error);
           setLogText('오류가 발생했습니다\n직원을 호출해주세요');
+          speak('오류가 발생했습니다. 직원을 호출해주세요');
         } finally {
           setIsProcessing(false);
           resetRecording();
@@ -139,18 +170,15 @@ const VoiceOrder: React.FC = () => {
   }, [audioFile, isRecording]);
 
   const handleStart = () => {
+    window.speechSynthesis.cancel();
     startRecording();
     setLogText('네, 듣고 있어요! 편하게 말씀해주세요');
   };
 
-  const handleEditOptions = () => {
-    // VoiceOrder에서는 옵션 편집을 제공하지 않음
-    // BottomCart의 onEditOptions prop을 만족시키기 위한 더미 함수
-  };
+  const handleEditOptions = () => {};
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      {/* 90도 회전된 래퍼 */}
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl relative">
         {/* 로딩 오버레이 */}
         {isProcessing && (
@@ -182,7 +210,7 @@ const VoiceOrder: React.FC = () => {
             onClick={() => navigate('/order')}
             className="flex-1 bg-pink-50 p-8 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
           >
-            <style>{`
+             <style>{`
               .wave-bar {
                 animation: wave 1s linear infinite;
                 animation-delay: calc(1s - var(--delay));
@@ -246,32 +274,67 @@ const VoiceOrder: React.FC = () => {
 
         {/* 3. 메인 컨텐츠 영역 */}
         <main className="flex-1 flex flex-col overflow-hidden relative bg-gray-50">
-          {/* [A] 메뉴 리스트 (참고용) */}
-          <section className="flex-1 overflow-y-auto p-4 bg-gray-50">
-            <h2 className="text-lg font-bold text-gray-800 mb-4 pl-2 border-l-4 border-gray-800">
-              📋 전체 메뉴
-            </h2>
+          
+          <section className="flex-1 overflow-y-auto p-4 bg-gray-50 scrollbar-hide">
+            
             {isLoading ? (
-              <div className="h-40 flex items-center justify-center text-gray-400">
-                메뉴 로딩 중...
+              <div className="h-full flex items-center justify-center text-gray-400">
+                메뉴 정보를 불러오고 있어요...
               </div>
             ) : (
-              <div className={LAYOUT_STYLES.menuGrid}>
-                {items.map((item, index) => (
-                  <button
-                    key={`menu-${item.id}-${index}`} 
-                    className={`${CARD_STYLES.menuCard} ${SIZES.menuCardHeight}`}
-                    onClick={() => alert(`"${item.name}"\n음성으로 주문하시면 편리합니다!`)}
-                  >
-                    <span className={`${TEXT_STYLES.menuCardTitle} leading-tight break-keep`}>
-                      {item.name}
-                    </span>
-                    <span className={`${TEXT_STYLES.menuCardPrice} text-gray-500`}>
-                      {item.price.toLocaleString()}원
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <>
+                {/* A. 추천 메뉴 섹션 */}
+                {recommendedItems.length > 0 && (
+                  <div className="mb-8">
+                    <h2 className="text-xl font-bold text-gray-800 mb-4 pl-2 border-l-4 border-red-500 flex items-center gap-2">
+                      🔥 추천 메뉴
+                    </h2>
+                    <div className={LAYOUT_STYLES.menuGrid}>
+                      {recommendedItems.map((item, index) => (
+                        <button
+                          key={`rec-${item.id}-${index}`}
+                          className={`${CARD_STYLES.menuCard} ${SIZES.menuCardHeight} ring-2 ring-red-100 bg-red-50/30`} 
+                          onClick={() => {
+                            speak(`${item.name}입니다.`);
+                          }}
+                        >
+                          <span className={`${TEXT_STYLES.menuCardTitle} leading-tight break-keep`}>
+                            {item.name}
+                          </span>
+                          <span className={`${TEXT_STYLES.menuCardPrice} text-red-600 font-bold`}>
+                            {item.price.toLocaleString()}원
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* B. 전체 메뉴 섹션 */}
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4 pl-2 border-l-4 border-gray-800">
+                    📋 전체 메뉴
+                  </h2>
+                  <div className={LAYOUT_STYLES.menuGrid}>
+                    {normalItems.map((item, index) => (
+                      <button
+                        key={`norm-${item.id}-${index}`}
+                        className={`${CARD_STYLES.menuCard} ${SIZES.menuCardHeight}`}
+                        onClick={() => {
+                          speak(`${item.name}입니다.`);
+                        }}
+                      >
+                        <span className={`${TEXT_STYLES.menuCardTitle} leading-tight break-keep`}>
+                          {item.name}
+                        </span>
+                        <span className={`${TEXT_STYLES.menuCardPrice} text-gray-500`}>
+                          {item.price.toLocaleString()}원
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </section>
 
@@ -279,9 +342,7 @@ const VoiceOrder: React.FC = () => {
           <section
             className={`shrink-0 ${COLORS.bgPrimary} border-t ${COLORS.primary.border} ${SPACING.bottomBarPaddingX} py-6 flex flex-row items-center justify-center gap-12 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] z-20 relative min-h-[240px]`}
           >
-            {/* === 왼쪽: 텍스트 박스 영역 === */}
             <div className="flex flex-col gap-3 h-full justify-center w-[450px] shrink-0">
-              {/* 1. 안내 멘트 & 비주얼라이저 박스 */}
               <div
                 className={`${SPACING.panelPadding} ${
                   BORDERS.largeRadius
@@ -292,7 +353,7 @@ const VoiceOrder: React.FC = () => {
                             : `${COLORS.blue.bg} ${COLORS.blue.border} text-blue-700`
                         }`}
               >
-                {/* 비주얼라이저 (녹음 중에만 표시) */}
+                {/* 비주얼라이저 */}
                 {isRecording ? (
                   <div className="w-full mb-6 ">
                     <AudioVisualizer level={audioLevel} />
@@ -302,7 +363,6 @@ const VoiceOrder: React.FC = () => {
                 <p className="text-xl font-bold leading-tight">{logText}</p>
               </div>
 
-              {/* 2. 주문 예시 박스 */}
               <div
                 className={`${COLORS.bgTertiary} ${SPACING.panelPadding} ${BORDERS.largeRadius} border ${COLORS.primary.border} flex flex-col justify-center min-h-[80px] text-gray-500 shadow-inner`}
               >
@@ -316,14 +376,11 @@ const VoiceOrder: React.FC = () => {
               </div>
             </div>
 
-            {/* === 중앙: 버튼 영역 === */}
             <div className="shrink-0 relative flex items-center justify-center">
-              {/* 핑 효과 */}
               {!isRecording && !isProcessing && (
                 <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-10 scale-[1.5]"></div>
               )}
 
-              {/* 버튼 래퍼 */}
               <div className="transform scale-[1.3] origin-center relative z-10 drop-shadow-lg active:scale-[1.5] transition-transform">
                 <RecordButton
                   isRecording={isRecording}
@@ -335,7 +392,6 @@ const VoiceOrder: React.FC = () => {
           </section>
         </main>
 
-        {/* 4. 하단 장바구니 */}
         <BottomCart
           onCheckout={handleCheckout}
           onEditOptions={handleEditOptions}
@@ -343,10 +399,9 @@ const VoiceOrder: React.FC = () => {
           onOrderMethodChange={setOrderMethod}
         />
 
-        {/* 5. 주문 확인 모달 */}
         <OrderConfirmModal
           isOpen={isCartOpen}
-          cart={globalCart}
+          cart={cart}
           onClose={() => setIsCartOpen(false)}
           onPrevious={() => setIsCartOpen(false)}
           onCheckout={() => {

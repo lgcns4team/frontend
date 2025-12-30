@@ -65,15 +65,30 @@ export const useCart = () => {
   };
 
   const updateCart = (actions: OrderAction[]) => {
-    if (!actions || !Array.isArray(actions)) return;
+    // ✅ [디버깅 로그 추가] - 함수 호출 확인
+    console.log('🔍 updateCart 호출됨:', actions);
+    
+    if (!actions || !Array.isArray(actions)) {
+      // ✅ [디버깅 로그 추가] - actions 검증 실패시
+      console.log('❌ actions가 없거나 배열이 아님:', actions);
+      return;
+    }
 
     setCart((prevCart) => {
+      // ✅ [디버깅 로그 추가] - 현재 카트 상태
+      console.log('🔍 현재 카트:', prevCart);
       const newCart = [...prevCart];
 
       actions.forEach((action) => {
+        // ✅ [디버깅 로그 추가] - 처리중인 액션
+        console.log('🔍 처리중인 액션:', action);
+        
         // [CASE 1] 신규 추가 (ADD)
         if (action.type === 'ADD') {
           const newItem = action.data;
+          // ✅ [디버깅 로그 추가] - ADD 액션의 데이터
+          console.log('🔍 ADD - newItem:', newItem);
+          
           const inputOptionIds = newItem.option_ids || [];
 
           // 1. 옵션 정렬 및 중복 정리
@@ -101,17 +116,24 @@ export const useCart = () => {
               // 총액 재계산 (단가 * 새 수량)
               totalPrice: existingItem.unitPrice * updatedQuantity
             };
+            
+            // ✅ [디버깅 로그 추가] - 기존 아이템 수량 증가
+            console.log('🔍 기존 아이템 수량 증가:', newCart[existingIndex]);
           } 
           // 4. 같은게 없으면 -> 새로 추가 (기존 로직)
           else {
-            newCart.push({
+            const cartItem = {
               ...newItem,
               _uid: generateId(),
               option_ids: mergedIds,
               options: displayNames,
               unitPrice: newItem.price / newItem.quantity,
               totalPrice: newItem.price,
-            });
+            };
+            
+            // ✅ [디버깅 로그 추가] - 장바구니에 추가할 아이템
+            console.log('🔍 장바구니에 추가할 아이템:', cartItem);
+            newCart.push(cartItem);
           }
         }
 
@@ -226,6 +248,8 @@ export const useCart = () => {
         }
       });
 
+      // ✅ [디버깅 로그 추가] - 최종 장바구니 상태
+      console.log('🔍 최종 newCart:', newCart);
       return newCart;
     });
   };
@@ -248,7 +272,7 @@ export const useCart = () => {
     });
   };
 
- const removeItem = (uid: string) => {
+  const removeItem = (uid: string) => {
     setCart((prevCart) => prevCart.filter(item => item._uid !== uid));
   };
 
