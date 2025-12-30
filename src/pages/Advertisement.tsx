@@ -4,7 +4,7 @@ import { useAds } from '../hooks/useAds';
 import type { Ad } from '../types/ad';
 import { toLocalDateTimeString } from '../utils/localDateTime';
 import { adImpressionQueue } from '../utils/adImpressionQueue';
-import { api } from '../Lib/api';
+import { useAnalysisStore } from '../store/analysisStore';
 
 const ROTATE_INTERVAL_MS = 10_000;
 const TRANSITION_DURATION_MS = 550;
@@ -12,6 +12,12 @@ const EXIT_GUARD_MS = 400;
 
 const NEXT_MEDIA_MAX_WAIT_MS = 5_000;
 const NEXT_MEDIA_RETRY_MS = 300;
+
+// Face analysis backend base URL (must include /nok-nok prefix when applicable)
+const AI_CORE_BASE_URL =
+  (import.meta.env.VITE_AI_CORE_URL as string | undefined) ??
+  (import.meta.env.VITE_API_URL as string | undefined) ??
+  'http://127.0.0.1:8080/nok-nok';
 
 type MediaMarkHandlers = {
   onReady?: () => void;
@@ -56,6 +62,9 @@ function renderAd(ad: Ad, handlers?: MediaMarkHandlers) {
 export default function Advertisement() {
   const navigate = useNavigate();
   const { ads } = useAds();
+
+  const setAnalysis = useAnalysisStore((s) => s.setAnalysis);
+  const clearLocalAnalysis = useAnalysisStore((s) => s.clearAnalysis);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -280,7 +289,7 @@ export default function Advertisement() {
     finalizedRef.current = true;
 
     clearRotateTimer();
-    
+
     // 🆕 SSE 연결 종료
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -289,43 +298,52 @@ export default function Advertisement() {
     }
 
     finalizeCurrentImpression();
-    
-    // 🆕 분석 데이터 초기화 (백엔드에 알림)
+
+    // 🆕 얼굴 인식 결과를 store에 반영한 뒤, 서버 데이터를 초기화합니다.
     try {
-      await api.delete('/api/analysis');
-      console.log('🗑️ 서버 분석 데이터 초기화 완료');
+      const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`);
+      if (response.ok) {
+        const data = await response.json();
+        setAnalysis(data);
+      }
+    } catch (err) {
+      console.error('분석 데이터 가져오기 실패:', err);
+    }
+
+    try {
+      const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`, { method: 'DELETE' });
+      if (response.ok) {
+        console.log('🗑️ 서버 분석 데이터 초기화 완료');
+      }
     } catch (err) {
       console.error('분석 데이터 초기화 실패:', err);
     }
-    
+
     navigate('/order');
-  }, [clearRotateTimer, finalizeCurrentImpression, navigate]);
+  }, [clearRotateTimer, finalizeCurrentImpression, navigate, setAnalysis]);
 
   // 🆕 컴포넌트 마운트 시 이전 데이터 초기화
   useEffect(() => {
     if (!initializedRef.current) {
       initializedRef.current = true;
       console.log('🔄 광고 화면 진입: 이전 얼굴 인식 데이터 초기화');
-      
-      // 이전 분석 데이터 삭제
-      api.delete('/api/analysis').catch(err => {
+
+      // 로컬(프론트) 분석 상태도 초기화하여 이전 사용자 데이터가 남지 않도록 합니다.
+      clearLocalAnalysis();
+
+      // 이전 분석 데이터 삭제 (AI core)
+      fetch(`${AI_CORE_BASE_URL}/api/analysis`, { method: 'DELETE' }).catch((err) => {
         console.error('초기 데이터 초기화 실패:', err);
       });
     }
-  }, []);
+  }, [clearLocalAnalysis]);
 
   // 🆕 SSE 연결 및 얼굴 인식 감지
   useEffect(() => {
     if (sseConnectedRef.current) return;
 
-    // ⚠️ 중요: /nok-nok 프리픽스 포함
-    const AI_CORE_BASE_URL =
-      (import.meta.env.VITE_AI_CORE_URL as string | undefined) ??
-      (import.meta.env.VITE_API_URL as string | undefined) ??
-      'http://127.0.0.1:8080/nok-nok';
-
     console.log('🔌 SSE 연결 시도:', `${AI_CORE_BASE_URL}/api/stream/status`);
-    
+
     const eventSource = new EventSource(`${AI_CORE_BASE_URL}/api/stream/status`);
     eventSourceRef.current = eventSource;
     sseConnectedRef.current = true;
@@ -337,7 +355,7 @@ export default function Advertisement() {
     eventSource.onmessage = (event: MessageEvent<string>) => {
       try {
         const data = JSON.parse(event.data);
-        
+
         // has_data가 true이고 is_analyzing이 false이면 얼굴 인식 완료
         if (data.has_data === true && data.is_analyzing === false && !finalizedRef.current) {
           console.log('👤 얼굴 인식 완료! /order로 이동합니다.', data);
