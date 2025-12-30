@@ -9,11 +9,15 @@ interface CartState {
     options?: Partial<Options>,
     quantity?: number,
     backendOptions?: { optionItemId: number; quantity: number; price: number; name: string }[]
+
   ) => void;
   removeFromCart: (cartId: string) => void;
   updateQuantity: (cartId: string, quantity: number) => void;
   clearCart: () => void;
   getTotalPrice: () => number;
+
+  
+  updateCartOptions: (cartId: string, options: Partial<Options>) => void;
 }
 
 // 옵션 비교 헬퍼
@@ -39,9 +43,10 @@ export const useCartStore = create<CartState>((set, get) => ({
     set((state) => {
       // 기존 장바구니에 동일한 옵션의 메뉴가 있는지 확인
       const existingItemIndex = state.cart.findIndex(
-        (cartItem) => 
-          cartItem.id === item.id && 
-          areOptionsEqual(cartItem.selectedBackendOptions, backendOptions)
+        (cartItem) =>
+          cartItem.id === item.id &&
+          areOptionsEqual(cartItem.selectedBackendOptions, backendOptions) &&
+          areEasyOptionsEqual(cartItem.options, options) // ✅ 온도까지 비교
       );
 
       if (existingItemIndex !== -1) {
@@ -56,6 +61,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         quantity,
         options,
         selectedBackendOptions: backendOptions,
+     
       };
 
       return { cart: [...state.cart, newItem] };
@@ -95,8 +101,8 @@ export const useCartStore = create<CartState>((set, get) => ({
     const { cart } = get();
     return cart.reduce((total, item) => {
       const optionsPrice = item.selectedBackendOptions.reduce(
-        (acc, opt) => acc + opt.price * opt.quantity,
-        0
+        (optTotal, opt) => optTotal + opt.price * opt.quantity, 0
+        
       );
       return total + (item.price + optionsPrice) * item.quantity;
     }, 0);
