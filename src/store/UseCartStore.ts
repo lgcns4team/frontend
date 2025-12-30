@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { CartItem, MenuItem, Options } from '../types/OrderTypes';
 
+
 interface CartState {
   cart: CartItem[];
   addToCart: (
@@ -13,11 +14,11 @@ interface CartState {
   updateQuantity: (cartId: string, quantity: number) => void;
   clearCart: () => void;
   getTotalPrice: () => number;
-  updateCartOptions: (cartId: string, options: Partial<Options>) => void;
 }
 
-// 옵션 비교 헬퍼 함수
+// 옵션 비교 헬퍼
 const areOptionsEqual = (opts1: any[], opts2: any[]) => {
+  if (!opts1 || !opts2) return false; // 방어 코드 추가
   if (opts1.length !== opts2.length) return false;
   const sorted1 = [...opts1].sort((a, b) => a.optionItemId - b.optionItemId);
   const sorted2 = [...opts2].sort((a, b) => a.optionItemId - b.optionItemId);
@@ -36,11 +37,11 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   addToCart: (item, options, quantity = 1, backendOptions = []) => {
     set((state) => {
+      // 기존 장바구니에 동일한 옵션의 메뉴가 있는지 확인
       const existingItemIndex = state.cart.findIndex(
-        (cartItem) =>
-          cartItem.id === item.id &&
-          areOptionsEqual(cartItem.selectedBackendOptions, backendOptions) &&
-          areEasyOptionsEqual(cartItem.options, options) // ✅ 온도까지 비교
+        (cartItem) => 
+          cartItem.id === item.id && 
+          areOptionsEqual(cartItem.selectedBackendOptions, backendOptions)
       );
 
       if (existingItemIndex !== -1) {
@@ -90,7 +91,6 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   clearCart: () => set({ cart: [] }),
 
-  // [수정 핵심] 옵션 가격 계산 시 '수량'을 곱해줍니다!
   getTotalPrice: () => {
     const { cart } = get();
     return cart.reduce((total, item) => {
@@ -101,4 +101,6 @@ export const useCartStore = create<CartState>((set, get) => ({
       return total + (item.price + optionsPrice) * item.quantity;
     }, 0);
   },
+  
+  
 }));
