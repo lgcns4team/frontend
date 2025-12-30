@@ -25,31 +25,43 @@ type MediaMarkHandlers = {
 };
 
 function renderAd(ad: Ad, handlers?: MediaMarkHandlers) {
-  if (ad.mediaType === 'VIDEO') {
-    return (
-      <video
-        className="w-full h-full object-cover"
-        src={ad.mediaUrl}
-        autoPlay
-        muted
-        playsInline
-        preload="auto"
-        onLoadedData={handlers?.onReady}
-        onCanPlay={handlers?.onReady}
-        onError={handlers?.onError}
-      />
-    );
-  }
+  // if (ad.mediaType === 'VIDEO') {
+  //   return (
+  //     <video
+  //       className="w-full h-full object-cover"
+  //       src={ad.mediaUrl}
+  //       autoPlay
+  //       muted
+  //       playsInline
+  //       preload="auto"
+  //       onLoadedData={handlers?.onReady}
+  //       onCanPlay={handlers?.onReady}
+  //       onError={handlers?.onError}
+  //     />
+  //   );
+  // }
 
   return (
-    <img
-      className="w-full h-full object-cover"
-      src={ad.mediaUrl}
-      alt={ad.title}
-      draggable={false}
-      onLoad={handlers?.onReady}
-      onError={handlers?.onError}
-    />
+    <div
+      style={{
+        width: '95%',
+        height: '95%',
+        margin: 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <img
+        className="object-contain"
+        style={{ width: '100%', height: '100%' }}
+        src={ad.mediaUrl}
+        alt={ad.title}
+        draggable={false}
+        onLoad={handlers?.onReady}
+        onError={handlers?.onError}
+      />
+    </div>
   );
 }
 
@@ -488,15 +500,15 @@ export default function Advertisement() {
 
   if (!currentAd) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-        <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-black" />
+      <div className="fixed inset-0 bg-white flex items-center justify-center overflow-hidden z-50">
+        <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-white" />
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-black">
+    <div className="fixed inset-0 bg-white flex items-center justify-center overflow-hidden z-50">
+      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-white">
         <div className="w-full h-full overflow-hidden relative">
           {/* Current */}
           <div
