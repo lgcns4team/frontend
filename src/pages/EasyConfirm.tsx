@@ -99,7 +99,7 @@ export default function EasyConfirm() {
                         type="button"
                         onClick={() => {
                           if (item.quantity <= 1) return;
-                          updateQuantity(item.cartId, -1);
+                          updateQuantity(item.cartId, item.quantity - 1);
                         }}
                         className="w-[30px] h-[30px] rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-3xl font-bold"
                       >
@@ -113,7 +113,7 @@ export default function EasyConfirm() {
                       {/* + 버튼 */}
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.cartId, 1)}
+                        onClick={() => updateQuantity(item.cartId, item.quantity + 1)}
                         className="w-[30px] h-[30px] rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-3xl font-bold"
                       >
                         +
