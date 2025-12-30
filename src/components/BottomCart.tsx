@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useCartStore } from '../store/UseCartStore';
-import type { CartItem } from '../types/OrderTypes'; // [수정] CartItem 타입 사용
+import type { CartItem } from '../types/OrderTypes';
 
 interface Props {
   onCheckout: () => void;
@@ -18,24 +18,30 @@ export default function BottomCart({
 }: Props) {
   const { cart, updateQuantity, clearCart, getTotalPrice } = useCartStore();
 
-  // [수정 1] 옵션 렌더링 로직 (한글 옵션명 표시)
+  // 옵션 텍스트 렌더링
   const renderOptions = (item: CartItem) => {
     // 디저트는 옵션 표시 안 함
     if (item.category === '디저트' || item.category === 'Dessert') return null;
 
-    // selectedBackendOptions에 있는 한글 이름(name) 사용
+    // 일반모드: 백엔드 옵션 한글명
     if (item.selectedBackendOptions && item.selectedBackendOptions.length > 0) {
-      return item.selectedBackendOptions.map(opt => {
-        // 수량이 2개 이상이면 '샷추가(2)' 형태로, 아니면 이름만
-        return opt.quantity > 1 ? `${opt.name}(${opt.quantity})` : opt.name;
-      }).join(' / ');
+      return item.selectedBackendOptions
+        .map((opt) => (opt.quantity > 1 ? `${opt.name}(${opt.quantity})` : opt.name))
+        .join(' / ');
     }
+
+    // 이지모드: 온도 옵션
+    const temp = (item as any).options?.temperature;
+    if (temp === 'hot') return 'HOT';
+    if (temp === 'cold') return 'ICE';
+
     return null;
   };
 
-  // [수정 2] 개별 아이템 가격 계산 (기본가 + 옵션가)
+  // 개별 아이템 가격 (기본가 + 옵션가) * 수량
   const getItemTotalPrice = (item: CartItem) => {
-    const optionsPrice = item.selectedBackendOptions?.reduce((acc, opt) => acc + (opt.price * opt.quantity), 0) || 0;
+    const optionsPrice =
+      item.selectedBackendOptions?.reduce((acc, opt) => acc + opt.price * opt.quantity, 0) || 0;
     return (item.price + optionsPrice) * item.quantity;
   };
 
@@ -99,53 +105,63 @@ export default function BottomCart({
               <span className="text-lg">선택된 메뉴가 없습니다</span>
             </div>
           ) : (
-            cart.map((item) => (
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                key={item.cartId}
-                className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100"
-              >
-                <div className="flex flex-col flex-1">
-                  <span className="font-bold text-gray-800 text-m">{item.name}</span>
-                  
-                  {/* [수정] 옵션 텍스트 렌더링 */}
-                  <span className="text-gray-400 text-sm mt-0.5 font-semibold">
-                    {renderOptions(item)}
-                  </span>
-                  
-                  {/* [수정] 정확한 가격 표시 */}
-                  <span className="text-gray-500 text-sm mt-1">
-                    {getItemTotalPrice(item).toLocaleString()}원
-                  </span>
-                </div>
+            cart.map((item) => {
+              const canEditOptions =
+                (item.selectedBackendOptions && item.selectedBackendOptions.length > 0) ||
+                Boolean((item as any).options?.temperature);
 
-                <div className="flex items-center gap-2">
-                  {/* 옵션 수정 버튼 */}
-                  {item.category && item.category !== '디저트' && item.category !== 'Dessert' && (
-                    <button
-                      onClick={() => onEditOptions?.(item.cartId)}
-                      className="h-9 flex items-center px-6 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-colors whitespace-nowrap"
-                    >
-                      옵션 변경
-                    </button>
-                  )}
+              return (
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  key={item.cartId}
+                  className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100"
+                >
+                  <div className="flex flex-col flex-1">
+                    <span className="font-bold text-gray-800 text-m">{item.name}</span>
 
-                  {/* 수량 조절 */}
-                  <div className="h-9 flex items-center gap-3 bg-white rounded-lg px-3 border border-gray-200 shadow-sm">
-                    <button onClick={() => updateQuantity(item.cartId, -1)} className="p-1 hover:bg-gray-100 rounded">
-                      <Minus className="w-4 h-4 text-gray-600" />
-                    </button>
-                    <span className="font-bold text-lg w-7 text-center">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.cartId, 1)} className="p-1 hover:bg-gray-100 rounded">
-                      <Plus className="w-4 h-4 text-gray-600" />
-                    </button>
+                    <span className="text-gray-400 text-sm mt-0.5 font-semibold">
+                      {renderOptions(item)}
+                    </span>
+
+                    <span className="text-gray-500 text-sm mt-1">
+                      {getItemTotalPrice(item).toLocaleString()}원
+                    </span>
                   </div>
-                </div>
-              </motion.div>
-            ))
+
+                  <div className="flex items-center gap-2">
+                    {/* 옵션 변경 버튼 */}
+                    {canEditOptions && (
+                      <button
+                        onClick={() => onEditOptions?.(item.cartId)}
+                        className="h-9 flex items-center px-6 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-colors whitespace-nowrap"
+                      >
+                        옵션 변경
+                      </button>
+                    )}
+
+                    {/* 수량 조절 */}
+                    <div className="h-9 flex items-center gap-3 bg-white rounded-lg px-3 border border-gray-200 shadow-sm">
+                      <button
+                        onClick={() => updateQuantity(item.cartId, -1)}
+                        className="p-1 hover:bg-gray-100 rounded"
+                      >
+                        <Minus className="w-4 h-4 text-gray-600" />
+                      </button>
+                      <span className="font-bold text-lg w-7 text-center">{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(item.cartId, 1)}
+                        className="p-1 hover:bg-gray-100 rounded"
+                      >
+                        <Plus className="w-4 h-4 text-gray-600" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })
           )}
         </AnimatePresence>
       </div>
@@ -163,7 +179,9 @@ export default function BottomCart({
           onClick={onCheckout}
           disabled={cart.length === 0}
           className={`w-[40%] rounded-3xl flex flex-col items-center justify-center gap-2 transition-all shadow-xl ${
-            cart.length > 0 ? 'bg-pink-500 hover:bg-pink-600 text-white cursor-pointer transform hover:scale-105 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            cart.length > 0
+              ? 'bg-pink-500 hover:bg-pink-600 text-white cursor-pointer transform hover:scale-105 active:scale-95'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
           }`}
         >
           <span className="text-xl font-bold">주문 확인</span>

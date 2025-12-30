@@ -1,30 +1,29 @@
-// src/components/EasyBeverageOptionsModal.tsx
+// src/components/EasyMode/EasyBeverageOptionsModal.tsx
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { MenuItem, Options } from '../../types';
 
 type Props = {
   open: boolean;
-  item: MenuItem | null;
+  item: (MenuItem & { options?: Pick<Options, 'temperature'> }) | null; // ✅ options 허용
   onClose: () => void;
   onAdd: (item: MenuItem, options: Pick<Options, 'temperature'>, quantity: number) => void;
 };
 
 export default function EasyBeverageOptionsModal({ open, item, onClose, onAdd }: Props) {
-  // 🔹 온도 기본값: 'cold'
   const [temperature, setTemperature] = useState<Options['temperature']>('cold');
 
   useEffect(() => {
-    if (open) {
-      // 모달이 열릴 때마다 기본값을 cold로 초기화
-      setTemperature('cold');
-    }
-  }, [open]);
+    if (!open) return;
+
+    // 편집이면 기존 값 유지, 없으면 cold
+    const prev = item?.options?.temperature;
+    setTemperature(prev ?? 'cold');
+  }, [open, item]);
 
   if (!open || !item) return null;
 
   const handleAdd = () => {
-    // 시니어 모드: 항상 1잔, 온도만 옵션으로 전달
     onAdd(item, { temperature }, 1);
   };
 
@@ -40,7 +39,6 @@ export default function EasyBeverageOptionsModal({ open, item, onClose, onAdd }:
           className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
           onClick={onClose}
         >
-          {/* 가운데 카드 */}
           <motion.div
             initial={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -49,16 +47,13 @@ export default function EasyBeverageOptionsModal({ open, item, onClose, onAdd }:
             className="bg-white rounded-3xl shadow-2xl w-[700px] max-w-[95vw] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 상단: 이미지 + 이름/가격 + 온도 선택 */}
             <div className="flex-1 flex flex-col items-center justify-center px-8 pt-10 pb-8 gap-6">
-              {/* 이미지 */}
               <div className="w-32 h-32 rounded-full overflow-hidden shadow-md bg-gray-100">
                 {imageSrc && (
                   <img src={imageSrc} alt={item.name} className="w-full h-full object-cover" />
                 )}
               </div>
 
-              {/* 이름 + 가격 */}
               <div className="flex flex-col items-center gap-2">
                 <div className="text-3xl font-bold text-gray-800">{item.name}</div>
                 <div className="text-4xl font-extrabold text-red-500">
@@ -66,12 +61,8 @@ export default function EasyBeverageOptionsModal({ open, item, onClose, onAdd }:
                 </div>
               </div>
 
-              {/* 온도 선택 */}
               <div className="mt-4 flex flex-col items-center">
-                <h3 className="text-sm font-bold text-gray-500 mb-4 text-center"></h3>
-
                 <div className="flex gap-6">
-                  {/* 아이스 */}
                   <button
                     type="button"
                     onClick={() => setTemperature('cold')}
@@ -86,7 +77,6 @@ export default function EasyBeverageOptionsModal({ open, item, onClose, onAdd }:
                     <span>아이스</span>
                   </button>
 
-                  {/* 핫 */}
                   <button
                     type="button"
                     onClick={() => setTemperature('hot')}
@@ -104,7 +94,6 @@ export default function EasyBeverageOptionsModal({ open, item, onClose, onAdd }:
               </div>
             </div>
 
-            {/* 하단: 버튼 영역 — 시니어용 크게 */}
             <div className="border-t flex">
               <button
                 type="button"

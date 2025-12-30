@@ -4,15 +4,16 @@ import type { CartItem, MenuItem, Options } from '../types/OrderTypes';
 interface CartState {
   cart: CartItem[];
   addToCart: (
-    item: MenuItem, 
-    options?: Partial<Options>, 
+    item: MenuItem,
+    options?: Partial<Options>,
     quantity?: number,
-    backendOptions?: { optionItemId: number; quantity: number; price: number; name: string }[] 
+    backendOptions?: { optionItemId: number; quantity: number; price: number; name: string }[]
   ) => void;
   removeFromCart: (cartId: string) => void;
   updateQuantity: (cartId: string, quantity: number) => void;
   clearCart: () => void;
   getTotalPrice: () => number;
+  updateCartOptions: (cartId: string, options: Partial<Options>) => void;
 }
 
 // 옵션 비교 헬퍼 함수
@@ -29,8 +30,8 @@ export const useCartStore = create<CartState>((set, get) => ({
   addToCart: (item, options, quantity = 1, backendOptions = []) => {
     set((state) => {
       const existingItemIndex = state.cart.findIndex(
-        (cartItem) => 
-          cartItem.id === item.id && 
+        (cartItem) =>
+          cartItem.id === item.id &&
           areOptionsEqual(cartItem.selectedBackendOptions, backendOptions)
       );
 
@@ -45,7 +46,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         cartId: Math.random().toString(36).substr(2, 9),
         quantity,
         options,
-        selectedBackendOptions: backendOptions, 
+        selectedBackendOptions: backendOptions,
       };
 
       return { cart: [...state.cart, newItem] };
@@ -60,8 +61,20 @@ export const useCartStore = create<CartState>((set, get) => ({
   updateQuantity: (cartId, quantity) =>
     set((state) => ({
       cart: state.cart.map((item) =>
+        item.cartId === cartId ? { ...item, quantity: Math.max(1, quantity) } : item
+      ),
+    })),
+  updateCartOptions: (cartId, options) =>
+    set((state) => ({
+      cart: state.cart.map((item) =>
         item.cartId === cartId
-          ? { ...item, quantity: Math.max(1, quantity) }
+          ? {
+              ...item,
+              options: {
+                ...(item.options ?? {}),
+                ...options,
+              },
+            }
           : item
       ),
     })),
@@ -74,7 +87,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     return cart.reduce((total, item) => {
       // (기존) acc + opt.price  ->  (수정) acc + (opt.price * opt.quantity)
       const optionsPrice = item.selectedBackendOptions.reduce(
-        (acc, opt) => acc + (opt.price * opt.quantity), 
+        (acc, opt) => acc + opt.price * opt.quantity,
         0
       );
       return total + (item.price + optionsPrice) * item.quantity;

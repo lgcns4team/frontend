@@ -21,10 +21,14 @@ const EASY_CATEGORIES = [
 export default function EasyOrder() {
   const navigate = useNavigate();
   const { items, isLoading } = useMenu();
-  const { cart, addToCart } = useCartStore();
+  const { cart, addToCart, updateCartOptions } = useCartStore();
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [editCartId, setEditCartId] = useState<string | null>(null);
+  const [editItem, setEditItem] = useState<
+    (MenuItem & { options?: Pick<Options, 'temperature'> }) | null
+  >(null);
 
   const filteredItems = useMemo(() => {
     if (!selectedCategory) return [];
@@ -64,6 +68,17 @@ export default function EasyOrder() {
   ) => {
     addToCart(item, options, quantity);
     setSelectedItem(null);
+  };
+  const handleEditOptions = (cartId: string) => {
+    const target = cart.find((c: any) => c.cartId === cartId);
+    if (!target) return;
+
+    // cart item을 모달이 받을 수 있는 형태로 넣기
+    setEditCartId(cartId);
+    setEditItem({
+      ...(target as any),
+      options: (target as any).options ?? { temperature: 'cold' },
+    });
   };
 
   // 카테고리 화면에서는 cart 있을 때만 BottomCart 보이게
@@ -153,15 +168,32 @@ export default function EasyOrder() {
           )}
         </main>
 
-        {/* 하단 장바구니 */}
-        {shouldShowBottomCart && <BottomCart onCheckout={() => navigate('/easy/confirm')} />}
+        {shouldShowBottomCart && (
+          <BottomCart
+            onCheckout={() => navigate('/easy/confirm')}
+            onEditOptions={handleEditOptions} //  추가
+          />
+        )}
 
         {/* 옵션 모달 */}
         <EasyBeverageOptionsModal
-          open={!!selectedItem}
-          item={selectedItem}
-          onClose={() => setSelectedItem(null)}
-          onAdd={handleAddWithOptions}
+          open={Boolean(selectedItem || editItem)}
+          item={selectedItem ?? editItem}
+          onClose={() => {
+            setSelectedItem(null);
+            setEditItem(null);
+            setEditCartId(null);
+          }}
+          onAdd={(item, options, quantity) => {
+            if (editCartId) {
+              updateCartOptions(editCartId, options); // 여기서 실제 반영
+              setEditItem(null);
+              setEditCartId(null);
+              return;
+            }
+
+            handleAddWithOptions(item, options, quantity);
+          }}
         />
       </div>
     </div>

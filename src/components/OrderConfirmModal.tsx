@@ -22,27 +22,35 @@ export default function OrderConfirmModal({
 }: OrderConfirmModalProps) {
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
   const totalPrice = cart.reduce((sum, item) => {
-    const optionsPrice = item.selectedBackendOptions?.reduce((acc, opt) => acc + (opt.price * opt.quantity), 0) || 0;
+    const optionsPrice =
+      item.selectedBackendOptions?.reduce((acc, opt) => acc + opt.price * opt.quantity, 0) || 0;
     return sum + (item.price + optionsPrice) * item.quantity;
   }, 0);
 
   // [수정] 옵션 렌더링 헬퍼 함수
   const renderOptions = (item: CartItem) => {
     if (item.category === '디저트' || item.category === 'Dessert') return null;
-    
-    // selectedBackendOptions 사용
+
+    // 1) 일반 오더: 백엔드 옵션
     if (item.selectedBackendOptions && item.selectedBackendOptions.length > 0) {
-      return item.selectedBackendOptions.map(opt => {
-        // 수량이 2개 이상이면 '샷추가(2)' 형태로 표시
-        return opt.quantity > 1 ? `${opt.name}(${opt.quantity})` : opt.name;
-      }).join(' / ');
+      return item.selectedBackendOptions
+        .map((opt) => (opt.quantity > 1 ? `${opt.name}(${opt.quantity})` : opt.name))
+        .join(' / ');
     }
+
+    // 2) ✅ 이지 오더: temperature 옵션
+    // (CartItem 타입에 options가 없을 수도 있으니 안전하게 any로 접근)
+    const temp = (item as any).options?.temperature;
+    if (temp === 'hot') return 'HOT';
+    if (temp === 'cold') return 'ICE';
+
     return null;
   };
 
   // [수정] 개별 아이템 가격 계산 헬퍼
   const getItemTotalPrice = (item: CartItem) => {
-    const optionsPrice = item.selectedBackendOptions?.reduce((acc, opt) => acc + (opt.price * opt.quantity), 0) || 0;
+    const optionsPrice =
+      item.selectedBackendOptions?.reduce((acc, opt) => acc + opt.price * opt.quantity, 0) || 0;
     return (item.price + optionsPrice) * item.quantity;
   };
 
@@ -109,7 +117,7 @@ export default function OrderConfirmModal({
                         <h3 className="font-bold text-lg text-gray-900 mb-2">{item.name}</h3>
 
                         <p className="text-sm text-gray-500 mb-2 font-medium">
-                           {renderOptions(item)}
+                          {renderOptions(item)}
                         </p>
 
                         <p className="text-sm text-gray-600 mb-2">수량: {item.quantity}개</p>
