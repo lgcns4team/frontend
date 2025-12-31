@@ -32,6 +32,11 @@ export default function EasyOrder() {
 
   const [selectedCategory, setSelectedCategory] = useState<EasyCategoryKey | null>(null);
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
+  const selectedCategoryLabel = useMemo(() => {
+    if (!selectedCategory) return '';
+    const c = EASY_CATEGORIES.find((c) => c.key === selectedCategory);
+    return c ? `${c.emoji} ${c.name}` : selectedCategory;
+  }, [selectedCategory]);
 
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [editCartId, setEditCartId] = useState<string | null>(null);
@@ -40,34 +45,33 @@ export default function EasyOrder() {
   >(null);
 
   // 🆕 얼굴 인식 스토어
-  const { setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
+  const { setAnalysis, clearAnalysis } = useAnalysisStore((s) => ({
     setAnalysis: s.setAnalysis,
     clearAnalysis: s.clearAnalysis,
     isSenior: s.isSenior,
   }));
   const [isLoadingFaceData, setIsLoadingFaceData] = useState(false);
 
+  const EASY_CATEGORY_NAME: Record<EasyCategoryKey, string> = {
+    COFFEE: '커피',
+    DRINK: '음료',
+    DESSERT: '디저트',
+    RECOMMEND: '추천메뉴',
+  };
+
   const filteredItems = useMemo(() => {
     if (!selectedCategory) return [];
 
-    switch (selectedCategory) {
-      case 'COFFEE':
-        return items.filter((item: any) => item.categoryId === 1);
-      case 'DRINK':
-        return items.filter((item: any) => item.categoryId === 2);
-      case 'DESSERT':
-        return items.filter((item: any) => item.categoryId === 3);
-      case 'RECOMMEND':
-        return recommendedItems;
-      default:
-        return [];
-    }
+    // 추천메뉴는 훅에서 따로 내려주는 걸 그대로 사용
+    if (selectedCategory === 'RECOMMEND') return recommendedItems ?? [];
+
+    const targetName = EASY_CATEGORY_NAME[selectedCategory];
+    return (items ?? []).filter((item: any) => item.category === targetName);
   }, [selectedCategory, items, recommendedItems]);
 
   const handleItemClick = (item: MenuItem) => {
-    // 옵션모달 띄울 대상: 커피(1), 음료(2)
-    const cid = (item as any).categoryId;
-    if (cid === 1 || cid === 2) {
+    const cat = (item as any).category;
+    if (cat === '커피' || cat === '음료') {
       setSelectedItem(item);
     } else {
       addToCart(item);
@@ -202,12 +206,14 @@ export default function EasyOrder() {
           )}
         </main>
 
-        <BottomCart
-          onCheckout={() => navigate('/easy/confirm')}
-          onEditOptions={handleEditOptions}
-          orderMethod={orderMethod}
-          onOrderMethodChange={setOrderMethod}
-        />
+        {shouldShowBottomCart && (
+          <BottomCart
+            onCheckout={() => navigate('/easy/confirm')}
+            onEditOptions={handleEditOptions}
+            orderMethod={orderMethod}
+            onOrderMethodChange={setOrderMethod}
+          />
+        )}
 
         <EasyBeverageOptionsModal
           open={Boolean(selectedItem || editItem)}
