@@ -14,10 +14,7 @@ const NEXT_MEDIA_MAX_WAIT_MS = 5_000;
 const NEXT_MEDIA_RETRY_MS = 300;
 
 // Face analysis backend base URL (must include /nok-nok prefix when applicable)
-const AI_CORE_BASE_URL =
-  (import.meta.env.VITE_AI_CORE_URL as string | undefined) ??
-  (import.meta.env.VITE_API_URL as string | undefined) ??
-  'http://127.0.0.1:8000/nok-nok';
+const AI_CORE_BASE_URL = 'http://127.0.0.1:8000/nok-nok';
 
 type MediaMarkHandlers = {
   onReady?: () => void;
