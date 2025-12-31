@@ -1,3 +1,4 @@
+// src/hooks/UseMenu.ts
 import { useQuery } from '@tanstack/react-query';
 import { fetchMenus, fetchRecommendMenus } from '../api/MenuApi';
 import type { MenuItem } from '../types/OrderTypes';
@@ -33,21 +34,31 @@ export function useMenu() {
   const basicItems: MenuItem[] = (menuQuery.data || []).flatMap((category: any) => {
     if (!category?.menus) return [];
 
-    return category.menus.map((menu: any) => ({
-      id: menu.menuId,
-      name: menu.name,
-      price: menu.price,
+    return category.menus.map((menu: any) => {
+      // [수정] 백엔드 이미지 경로를 로컬 public/images 경로로 변환
+      // 예: "http://.../lemon_ade.png" 또는 "/images/menu/lemon_ade.png" -> "lemon_ade.png" 추출
+      const fileName = menu.imageUrl ? menu.imageUrl.split('/').pop() : '';
+      
+      // 추출한 파일명을 이용해 로컬 경로 생성 (/images/lemon_ade.png)
+      const localImageSrc = fileName ? `/menu_images/${fileName}` : '';
 
-      // ✅ Order.tsx 필터가 보는 핵심 필드
-      category: category.categoryName, // 예: '커피','음료','디저트'
+      return {
+        id: menu.menuId,
+        name: menu.name,
+        price: menu.price,
 
-      // (있으면 보관)
-      categoryId: category.categoryId,
-      categoryName: category.categoryName,
+        // ✅ Order.tsx 필터가 보는 핵심 필드
+        category: category.categoryName, // 예: '커피','음료','디저트'
 
-      img: menu.imageUrl || '',
-      originalCategory: category.categoryName,
-    }));
+        // (있으면 보관)
+        categoryId: category.categoryId,
+        categoryName: category.categoryName,
+
+        // [수정] 변환된 로컬 이미지 경로 적용
+        img: localImageSrc || '',
+        originalCategory: category.categoryName,
+      };
+    });
   });
 
   // -----------------------------
@@ -59,6 +70,10 @@ export function useMenu() {
 
     const originalCategoryName =
       rec.categoryName || original?.categoryName || original?.category || '기타';
+
+    // [수정] 추천 메뉴 데이터에도 이미지가 있다면 동일하게 경로 변환
+    const recFileName = rec.imageUrl ? rec.imageUrl.split('/').pop() : '';
+    const recLocalImage = recFileName ? `/menu_images/${recFileName}` : '';
 
     return {
       id: menuId,
@@ -75,7 +90,8 @@ export function useMenu() {
       categoryId: original?.categoryId ?? -1,
       categoryName: originalCategoryName,
 
-      img: rec.imageUrl || original?.img || '',
+      // [수정] 추천 메뉴 이미지가 있으면 쓰고, 없으면 원본(이미 변환됨) 사용
+      img: recLocalImage || original?.img || '',
     };
   });
 

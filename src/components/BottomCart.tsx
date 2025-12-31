@@ -91,7 +91,7 @@ export default function BottomCart({
             <button
               type="button"
               onClick={clearCart}
-              className="text-base text-gray-400 underline hover:text-red-500 text-sm font-semibold transition-colors"
+              className="px-3 py-1 rounded-md text-sm font-semibold text-gray-600 bg-transparent border border-gray-200 hover:bg-red-500 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-red-300"
             >
               전체 삭제
             </button>
