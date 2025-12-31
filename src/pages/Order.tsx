@@ -12,11 +12,21 @@ import type { MenuItem } from '../types/OrderTypes';
 import { Home } from 'lucide-react';
 import { useAnalysisStore } from '../store/analysisStore';
 
+// AI Core Base URL
+const AI_CORE_BASE_URL = 'http://127.0.0.1:8000/nok-nok';
+
 export default function Order() {
   const navigate = useNavigate();
   const { items, categories, isLoading } = useMenu();
   const { cart, addToCart, removeFromCart } = useCartStore();
-  const isSenior = useAnalysisStore((s) => s.isSenior);
+
+  // 🆕 얼굴 인식 스토어
+  const { setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
+    setAnalysis: s.setAnalysis,
+    clearAnalysis: s.clearAnalysis,
+    isSenior: s.isSenior,
+  }));
+  const [isLoadingFaceData, setIsLoadingFaceData] = useState(false);
 
   const [activeCategory, setActiveCategory] = useState('추천메뉴');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
@@ -76,6 +86,45 @@ export default function Order() {
     setEditingCartId(null); // 수정 취소 시 ID도 초기화
   };
 
+  // 🆕 처음으로 버튼: 최신 얼굴 인식 데이터를 가져와서 적용 (화면 이동 없음)
+  const handleGoHome = async () => {
+    if (isLoadingFaceData) return;
+
+    setIsLoadingFaceData(true);
+    console.log('🏠 처음으로 버튼 클릭: 최신 얼굴 인식 데이터 확인 중...');
+
+    try {
+      // 1. Python 서버에서 최신 얼굴 인식 데이터 가져오기
+      const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📥 최신 얼굴 인식 데이터 수신:', data);
+
+        // 2. Zustand 스토어에 저장 (50세 이상 여부 자동 계산됨)
+        setAnalysis(data);
+        console.log('💾 스토어 업데이트 완료:', {
+          age: data.age,
+          gender: data.gender,
+          isSenior: data.age >= 50,
+        });
+        console.log('✅ 50세 이상 전용 애니메이션 활성화:', data.age >= 50);
+      } else {
+        console.log('ℹ️ 서버에 얼굴 인식 데이터가 없습니다. 기존 데이터 초기화.');
+        // 데이터가 없으면 초기화
+        clearAnalysis();
+      }
+    } catch (err) {
+      console.error('❌ 얼굴 인식 데이터 가져오기 실패:', err);
+      // 에러 발생 시 안전하게 초기화
+      clearAnalysis();
+    } finally {
+      setIsLoadingFaceData(false);
+    }
+
+    // 화면 이동 없음 - 현재 화면 유지
+  };
+
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl">
@@ -83,7 +132,8 @@ export default function Order() {
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
           <button
-            onClick={() => navigate('/')}
+            onClick={handleGoHome}
+            disabled={isLoadingFaceData}
             className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
           >
             <Home className="w-8 h-8" />

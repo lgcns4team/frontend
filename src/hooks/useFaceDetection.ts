@@ -16,10 +16,11 @@ interface FaceAnalysisData {
   timestamp: string;
 }
 
-const AI_CORE_BASE_URL =
-  (import.meta.env.VITE_AI_CORE_URL as string | undefined) ??
-  (import.meta.env.VITE_API_URL as string | undefined) ??
-  'http://localhost:8080/nok-nok';
+// const AI_CORE_BASE_URL =
+//   (import.meta.env.VITE_AI_CORE_URL as string | undefined) ??
+//   (import.meta.env.VITE_API_URL as string | undefined) ??
+//   'http://localhost:8000/nok-nok';
+const AI_CORE_BASE_URL = 'http://localhost:8000/nok-nok';
 
 export function useFaceDetection(shouldAutoConnect: boolean = true) {
   const [status, setStatus] = useState<FaceDetectionStatus | null>(null);

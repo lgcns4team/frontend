@@ -25,11 +25,23 @@ import {
   LAYOUT_STYLES,
   SIZES,
 } from '../styles/designTokens';
+import { useAnalysisStore } from '../store/analysisStore';
+
+// AI Core Base URL
+const AI_CORE_BASE_URL = 'http://127.0.0.1:8000/nok-nok';
 
 const VoiceOrder: React.FC = () => {
   const navigate = useNavigate();
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  
+    // 🆕 얼굴 인식 스토어
+  const { setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
+    setAnalysis: s.setAnalysis,
+    clearAnalysis: s.clearAnalysis,
+    isSenior: s.isSenior,
+  }));
+  const [isLoadingFaceData, setIsLoadingFaceData] = useState(false);
 
   // 1. 데이터 가져오기 (메뉴, 장바구니)
   const { items, isLoading } = useMenu();
@@ -67,6 +79,45 @@ const VoiceOrder: React.FC = () => {
     setIsCartOpen(true);
   };
 
+  // 🆕 처음으로 버튼: 최신 얼굴 인식 데이터를 가져와서 적용 (화면 이동 없음)
+  const handleGoHome = async () => {
+    if (isLoadingFaceData) return;
+
+    setIsLoadingFaceData(true);
+    console.log('🏠 처음으로 버튼 클릭: 최신 얼굴 인식 데이터 확인 중...');
+
+    try {
+      // 1. Python 서버에서 최신 얼굴 인식 데이터 가져오기
+      const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📥 최신 얼굴 인식 데이터 수신:', data);
+
+        // 2. Zustand 스토어에 저장 (50세 이상 여부 자동 계산됨)
+        setAnalysis(data);
+        console.log('💾 스토어 업데이트 완료:', {
+          age: data.age,
+          gender: data.gender,
+          isSenior: data.age >= 50,
+        });
+        console.log('✅ 50세 이상 전용 애니메이션 활성화:', data.age >= 50);
+      } else {
+        console.log('ℹ️ 서버에 얼굴 인식 데이터가 없습니다. 기존 데이터 초기화.');
+        // 데이터가 없으면 초기화
+        clearAnalysis();
+      }
+    } catch (err) {
+      console.error('❌ 얼굴 인식 데이터 가져오기 실패:', err);
+      // 에러 발생 시 안전하게 초기화
+      clearAnalysis();
+    } finally {
+      setIsLoadingFaceData(false);
+    }
+
+    // 화면 이동 없음 - 현재 화면 유지
+  };
+
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl relative">
@@ -81,7 +132,10 @@ const VoiceOrder: React.FC = () => {
         {/* 헤더 */}
         <header className={`${COLORS.bgPrimary} ${SPACING.headerPadding} flex justify-between items-center shadow-sm z-10 shrink-0`}>
           <h1 className={TEXT_STYLES.header}>NOK NOK</h1>
-          <button onClick={() => navigate('/')} className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
+          <button
+            onClick={handleGoHome}
+            disabled={isLoadingFaceData}
+            className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
             <Home className="w-8 h-8" />
             <span>처음으로</span>
           </button>
@@ -94,11 +148,27 @@ const VoiceOrder: React.FC = () => {
             <img src={microphoneIcon} alt="microphone" className="mic-icon w-10 h-10" />
             <span className="font-bold text-pink-900 text-xl">일반 주문</span>
           </button>
-          <button onClick={() => navigate('/easy')} className="flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group easy-button">
-            <style>{`.easy-button { animation: easyButtonGlow 0.8s ease-in-out infinite; } @keyframes easyButtonGlow { 0%, 100% { border-color: rgb(254, 208, 121); background-color: rgb(254, 245, 230); box-shadow: 0 0 0 0px rgba(217, 119, 6, 0); } 50% { border-color: rgb(217, 119, 6); background-color: rgb(255, 251, 235); box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3); } } .finger-icon { animation: fingerWiggle 0.8s ease-in-out infinite; transform-origin: bottom center; } @keyframes fingerWiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }`}</style>
-            <img src={fingerIcon} alt="finger" className="finger-icon w-12 h-12" />
-            <span className="font-bold text-orange-900 text-xl">쉬운 주문</span>
-          </button>
+          <button
+              onClick={() => navigate('/easy')}
+              className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group ${
+                isSenior ? 'easy-button' : ''
+              }`}
+            >
+              {isSenior && (
+                <style>{`
+                  .easy-button { animation: easyButtonGlow 0.8s ease-in-out infinite; }
+                  @keyframes easyButtonGlow { 0%, 100% { border-color: rgb(254, 208, 121); background-color: rgb(254, 245, 230); box-shadow: 0 0 0 0px rgba(217, 119, 6, 0); } 50% { border-color: rgb(217, 119, 6); background-color: rgb(255, 251, 235); box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3); } }
+                  .finger-icon { animation: fingerWiggle 0.8s ease-in-out infinite; transform-origin: bottom center; }
+                  @keyframes fingerWiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+                `}</style>
+              )}
+              <img
+                src={fingerIcon}
+                alt="finger"
+                className={`${isSenior ? 'finger-icon ' : ''}w-12 h-12`}
+              />
+              <span className="font-bold text-orange-900 text-xl">쉬운 주문</span>
+            </button>
         </div>
 
         {/* 메인 컨텐츠 영역 */}

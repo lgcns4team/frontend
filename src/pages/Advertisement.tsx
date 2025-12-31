@@ -1,14 +1,14 @@
 import { type TransitionEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAds } from '../hooks/useAds';
-import type { Ad } from '../types/AdTypes';
+import type { Ad } from '../types/ad';
 import { toLocalDateTimeString } from '../utils/localDateTime';
 import { adImpressionQueue } from '../utils/adImpressionQueue';
 import { useAnalysisStore } from '../store/analysisStore';
 
 const ROTATE_INTERVAL_MS = 10_000;
 const TRANSITION_DURATION_MS = 550;
-const EXIT_GUARD_MS = 400;
+const EXIT_GUARD_MS = 0; // 클릭 시 즉시 반응 (기존 400ms 제거)
 
 const NEXT_MEDIA_MAX_WAIT_MS = 5_000;
 const NEXT_MEDIA_RETRY_MS = 300;
@@ -17,7 +17,7 @@ const NEXT_MEDIA_RETRY_MS = 300;
 const AI_CORE_BASE_URL =
   (import.meta.env.VITE_AI_CORE_URL as string | undefined) ??
   (import.meta.env.VITE_API_URL as string | undefined) ??
-  'http://127.0.0.1:8080/nok-nok';
+  'http://127.0.0.1:8000/nok-nok';
 
 type MediaMarkHandlers = {
   onReady?: () => void;
@@ -25,43 +25,31 @@ type MediaMarkHandlers = {
 };
 
 function renderAd(ad: Ad, handlers?: MediaMarkHandlers) {
-  // if (ad.mediaType === 'VIDEO') {
-  //   return (
-  //     <video
-  //       className="w-full h-full object-cover"
-  //       src={ad.mediaUrl}
-  //       autoPlay
-  //       muted
-  //       playsInline
-  //       preload="auto"
-  //       onLoadedData={handlers?.onReady}
-  //       onCanPlay={handlers?.onReady}
-  //       onError={handlers?.onError}
-  //     />
-  //   );
-  // }
-
-  return (
-    <div
-      style={{
-        width: '95%',
-        height: '95%',
-        margin: 'auto',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <img
-        className="object-contain"
-        style={{ width: '100%', height: '100%' }}
+  if (ad.mediaType === 'VIDEO') {
+    return (
+      <video
+        className="w-full h-full object-cover"
         src={ad.mediaUrl}
-        alt={ad.title}
-        draggable={false}
-        onLoad={handlers?.onReady}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        onLoadedData={handlers?.onReady}
+        onCanPlay={handlers?.onReady}
         onError={handlers?.onError}
       />
-    </div>
+    );
+  }
+
+  return (
+    <img
+      className="w-full h-full object-cover"
+      src={ad.mediaUrl}
+      alt={ad.title}
+      draggable={false}
+      onLoad={handlers?.onReady}
+      onError={handlers?.onError}
+    />
   );
 }
 
@@ -70,13 +58,13 @@ function renderAd(ad: Ad, handlers?: MediaMarkHandlers) {
  * - SSE로 백엔드 상태를 실시간 감시
  * - has_data=true 감지 시 자동으로 /order로 이동
  * - 광고 노출 로그 기록
+ * - 처음으로 버튼에서 설정한 데이터는 유지
  */
 export default function Advertisement() {
   const navigate = useNavigate();
   const { ads } = useAds();
 
   const setAnalysis = useAnalysisStore((s) => s.setAnalysis);
-  const clearLocalAnalysis = useAnalysisStore((s) => s.clearAnalysis);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -301,7 +289,12 @@ export default function Advertisement() {
     finalizedRef.current = true;
 
     clearRotateTimer();
+    finalizeCurrentImpression();
 
+    // 🚀 즉시 화면 전환 (비동기 작업 전에 먼저 실행)
+    navigate('/order');
+
+    // 백그라운드에서 정리 작업 수행
     // 🆕 SSE 연결 종료
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -309,13 +302,12 @@ export default function Advertisement() {
       sseConnectedRef.current = false;
     }
 
-    finalizeCurrentImpression();
-
     // 🆕 얼굴 인식 결과를 store에 반영한 뒤, 서버 데이터를 초기화합니다.
     try {
       const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`);
       if (response.ok) {
         const data = await response.json();
+        console.log('📥 새로운 얼굴 인식 데이터 수신:', data);
         setAnalysis(data);
       }
     } catch (err) {
@@ -330,25 +322,23 @@ export default function Advertisement() {
     } catch (err) {
       console.error('분석 데이터 초기화 실패:', err);
     }
-
-    navigate('/order');
   }, [clearRotateTimer, finalizeCurrentImpression, navigate, setAnalysis]);
 
-  // 🆕 컴포넌트 마운트 시 이전 데이터 초기화
+  // 🆕 컴포넌트 마운트 시 서버 데이터만 초기화 (프론트 스토어는 유지)
   useEffect(() => {
     if (!initializedRef.current) {
       initializedRef.current = true;
-      console.log('🔄 광고 화면 진입: 이전 얼굴 인식 데이터 초기화');
+      console.log('🔄 광고 화면 진입: 서버 얼굴 인식 데이터 초기화');
+      console.log('   ℹ️  프론트 스토어 데이터는 유지됨 (처음으로 버튼에서 설정한 경우)');
 
-      // 로컬(프론트) 분석 상태도 초기화하여 이전 사용자 데이터가 남지 않도록 합니다.
-      clearLocalAnalysis();
-
-      // 이전 분석 데이터 삭제 (AI core)
+      // 서버의 분석 데이터만 삭제
+      // 프론트 스토어(clearLocalAnalysis)는 호출하지 않음
+      // → 처음으로 버튼에서 설정한 데이터를 보존
       fetch(`${AI_CORE_BASE_URL}/api/analysis`, { method: 'DELETE' }).catch((err) => {
         console.error('초기 데이터 초기화 실패:', err);
       });
     }
-  }, [clearLocalAnalysis]);
+  }, []);
 
   // 🆕 SSE 연결 및 얼굴 인식 감지
   useEffect(() => {
@@ -500,15 +490,15 @@ export default function Advertisement() {
 
   if (!currentAd) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center overflow-hidden z-50">
-        <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-white" />
+      <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
+        <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-black" />
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-white flex items-center justify-center overflow-hidden z-50">
-      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-white">
+    <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
+      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-black">
         <div className="w-full h-full overflow-hidden relative">
           {/* Current */}
           <div

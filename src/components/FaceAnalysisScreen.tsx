@@ -17,10 +17,11 @@ interface SystemStatus {
   face_detected?: boolean;
 }
 
-const AI_CORE_BASE_URL =
-  (import.meta.env.VITE_AI_CORE_URL as string | undefined) ??
-  (import.meta.env.VITE_API_URL as string | undefined) ??
-  'http://127.0.0.1:8080/nok-nok';
+// const AI_CORE_BASE_URL =
+//   (import.meta.env.VITE_AI_CORE_URL as string | undefined) ??
+//   (import.meta.env.VITE_API_URL as string | undefined) ??
+//   'http://127.0.0.1:8000/nok-nok';
+const AI_CORE_BASE_URL = 'http://localhost:8000/nok-nok';
 
 export default function FaceAnalysisScreen() {
   const setAnalysis = useAnalysisStore((s) => s.setAnalysis);
