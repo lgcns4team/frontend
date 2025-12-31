@@ -113,8 +113,14 @@ export default function EasyOrder() {
     console.log('🏠 처음으로 버튼 클릭: 최신 얼굴 인식 데이터 확인 중...');
 
     try {
-      // 1. Python 서버에서 최신 얼굴 인식 데이터 가져오기
-      const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`);
+      // 1. Python 서버에서 최신 얼굴 인식 데이터 가져오기 (타임아웃 3초)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 500); // 3초 타임아웃
+
+      const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         const data = await response.json();
@@ -134,14 +140,19 @@ export default function EasyOrder() {
         clearAnalysis();
       }
     } catch (err) {
-      console.error('❌ 얼굴 인식 데이터 가져오기 실패:', err);
+      if (err === 'AbortError') {
+        console.warn('⏱️ 데이터 가져오기 시간 초과 (1초)');
+      } else {
+        console.error('❌ 얼굴 인식 데이터 가져오기 실패:', err);
+      }
       // 에러 발생 시 안전하게 초기화
       clearAnalysis();
     } finally {
       setIsLoadingFaceData(false);
     }
 
-    // 화면 이동 없음 - 현재 화면 유지
+    // 🔄 데이터 처리 완료 후 Order 페이지로 이동
+    navigate('/order');
   };
 
   return (
