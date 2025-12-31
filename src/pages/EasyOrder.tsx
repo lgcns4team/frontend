@@ -42,6 +42,8 @@ export default function EasyOrder() {
     if (!selectedCategory) return '';
 
     const c = EASY_CATEGORIES.find((c) => c.key === selectedCategory);
+    console.log('API items sample:', items.slice(0, 3));
+    console.log('CART sample:', cart.slice(0, 3));
     return c ? `${c.emoji} ${c.name}` : '';
   }, [selectedCategory]);
 
@@ -156,7 +158,6 @@ export default function EasyOrder() {
             <span>처음으로</span>
           </button>
         </header>
-
         <main className="flex-1 flex flex-col p-10 overflow-hidden">
           {!selectedCategory ? (
             <>
@@ -207,7 +208,6 @@ export default function EasyOrder() {
             </div>
           )}
         </main>
-
         {shouldShowBottomCart && (
           <BottomCart
             onCheckout={() =>

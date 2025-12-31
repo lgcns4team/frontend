@@ -38,7 +38,7 @@ export function useMenu() {
       // [수정] 백엔드 이미지 경로를 로컬 public/images 경로로 변환
       // 예: "http://.../lemon_ade.png" 또는 "/images/menu/lemon_ade.png" -> "lemon_ade.png" 추출
       const fileName = menu.imageUrl ? menu.imageUrl.split('/').pop() : '';
-      
+
       // 추출한 파일명을 이용해 로컬 경로 생성 (/images/lemon_ade.png)
       const localImageSrc = fileName ? `/menu_images/${fileName}` : '';
 
@@ -80,7 +80,7 @@ export function useMenu() {
       name: rec.menuName ?? rec.name,
       price: rec.basePrice ?? rec.price ?? 0,
 
-      // ✅ 추천 탭에 표시되게 고정
+      //  추천 탭에 표시되게 고정
       category: '추천메뉴',
 
       // 원래 소속 카테고리(옵션 판단용)
@@ -95,8 +95,10 @@ export function useMenu() {
     };
   });
 
-  // ✅ Order.tsx가 items 하나만 써도 되게 합쳐서 내려줌
-  const items: MenuItem[] = [...recommendedItems, ...basicItems];
+  const items: MenuItem[] = [
+    ...recommendedItems,
+    ...basicItems.filter((basic) => !recommendedItems.some((rec) => rec.id === basic.id)),
+  ];
 
   // -----------------------------
   // (C) 카테고리 탭 생성

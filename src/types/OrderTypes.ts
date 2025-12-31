@@ -10,6 +10,12 @@ export interface MenuItem {
   originalCategory?: string;
   description?: string;
   isSoldOut?: boolean;
+   // ✅ 추가
+  category?: string;        // '커피' '음료' 등
+  categoryId?: number;      // 1,2,3...
+  categoryName?: string;    // '커피' '음료' 등
+  originalCategory?: string; // 추천 메뉴 원 소속
+};
 }
 
 export type CartItem = MenuItem & {
