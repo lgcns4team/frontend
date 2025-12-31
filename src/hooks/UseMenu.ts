@@ -95,9 +95,11 @@ export function useMenu() {
     };
   });
 
+  const recommendedIds = new Set(recommendedItems.map((m) => m.id));
+
   const items: MenuItem[] = [
     ...recommendedItems,
-    ...basicItems.filter((basic) => !recommendedItems.some((rec) => rec.id === basic.id)),
+    ...basicItems.filter((m) => !recommendedIds.has(m.id)),
   ];
 
   // -----------------------------
