@@ -1,21 +1,23 @@
 // ----------------------------------------------------------------------
 // 1. 프론트엔드 내부용 (화면 표시용)
 // ----------------------------------------------------------------------
+
 export interface MenuItem {
-  id: number; // 화면용 ID (백엔드 menuId를 매핑)
+  id: number;
   name: string;
   price: number;
-  category: string; // 화면용 카테고리명 (백엔드 categoryName을 매핑)
-  img: string; // 화면용 이미지 주소 (백엔드 imageUrl을 매핑)
+
+  // 화면용
+  category: string;
+  img: string;
+
+  //  UseMenu.ts에서 실제로 넣는 값들(있을 수도/없을 수도)
+  categoryId?: number;
+  categoryName?: string;
+
   originalCategory?: string;
   description?: string;
   isSoldOut?: boolean;
-   // ✅ 추가
-  category?: string;        // '커피' '음료' 등
-  categoryId?: number;      // 1,2,3...
-  categoryName?: string;    // '커피' '음료' 등
-  originalCategory?: string; // 추천 메뉴 원 소속
-};
 }
 
 export type CartItem = MenuItem & {
