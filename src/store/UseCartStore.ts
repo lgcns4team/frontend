@@ -9,7 +9,6 @@ interface CartState {
     options?: Partial<Options>,
     quantity?: number,
     backendOptions?: { optionItemId: number; quantity: number; price: number; name: string }[]
-
   ) => void;
   removeFromCart: (cartId: string) => void;
   updateQuantity: (cartId: string, quantity: number) => void;
@@ -17,7 +16,6 @@ interface CartState {
   getTotalPrice: () => number;
 
   
-  updateCartOptions: (cartId: string, options: Partial<Options>) => void;
 }
 
 // 옵션 비교 헬퍼
@@ -29,13 +27,6 @@ const areOptionsEqual = (opts1: any[], opts2: any[]) => {
   return JSON.stringify(sorted1) === JSON.stringify(sorted2);
 };
 
-// ✅ 이지모드(온도) 옵션 비교 헬퍼 (파일 상단에 둬야 함)
-const getTemp = (opts?: Partial<Options>) => opts?.temperature ?? null;
-
-const areEasyOptionsEqual = (a?: Partial<Options>, b?: Partial<Options>) => {
-  return getTemp(a) === getTemp(b);
-};
-
 export const useCartStore = create<CartState>((set, get) => ({
   cart: [],
 
@@ -45,8 +36,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       const existingItemIndex = state.cart.findIndex(
         (cartItem) =>
           cartItem.id === item.id &&
-          areOptionsEqual(cartItem.selectedBackendOptions, backendOptions) &&
-          areEasyOptionsEqual(cartItem.options, options) // ✅ 온도까지 비교
+          areOptionsEqual(cartItem.selectedBackendOptions, backendOptions)
       );
 
       if (existingItemIndex !== -1) {
@@ -61,7 +51,6 @@ export const useCartStore = create<CartState>((set, get) => ({
         quantity,
         options,
         selectedBackendOptions: backendOptions,
-     
       };
 
       return { cart: [...state.cart, newItem] };
@@ -76,21 +65,8 @@ export const useCartStore = create<CartState>((set, get) => ({
   updateQuantity: (cartId, quantity) =>
     set((state) => ({
       cart: state.cart.map((item) =>
-        item.cartId === cartId ? { ...item, quantity: Math.max(1, quantity) } : item
-      ),
-    })),
-
-  updateCartOptions: (cartId, options) =>
-    set((state) => ({
-      cart: state.cart.map((item) =>
         item.cartId === cartId
-          ? {
-              ...item,
-              options: {
-                ...(item.options ?? {}),
-                ...options,
-              },
-            }
+          ? { ...item, quantity: Math.max(1, quantity) }
           : item
       ),
     })),
@@ -101,8 +77,8 @@ export const useCartStore = create<CartState>((set, get) => ({
     const { cart } = get();
     return cart.reduce((total, item) => {
       const optionsPrice = item.selectedBackendOptions.reduce(
-        (optTotal, opt) => optTotal + opt.price * opt.quantity, 0
-        
+        (acc, opt) => acc + opt.price * opt.quantity,
+        0
       );
       return total + (item.price + optionsPrice) * item.quantity;
     }, 0);
