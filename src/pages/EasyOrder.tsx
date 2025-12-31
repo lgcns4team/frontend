@@ -38,9 +38,15 @@ export default function EasyOrder() {
   const [editItem, setEditItem] = useState<
     (MenuItem & { options?: Pick<Options, 'temperature'> }) | null
   >(null);
+  const selectedCategoryLabel = useMemo(() => {
+    if (!selectedCategory) return '';
+
+    const c = EASY_CATEGORIES.find((c) => c.key === selectedCategory);
+    return c ? `${c.emoji} ${c.name}` : '';
+  }, [selectedCategory]);
 
   // 🆕 얼굴 인식 스토어
-  const { setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
+  const { setAnalysis, clearAnalysis } = useAnalysisStore((s) => ({
     setAnalysis: s.setAnalysis,
     clearAnalysis: s.clearAnalysis,
     isSenior: s.isSenior,
@@ -202,12 +208,20 @@ export default function EasyOrder() {
           )}
         </main>
 
-        <BottomCart
-          onCheckout={() => navigate('/easy/confirm')}
-          onEditOptions={handleEditOptions}
-          orderMethod={orderMethod}
-          onOrderMethodChange={setOrderMethod}
-        />
+        {shouldShowBottomCart && (
+          <BottomCart
+            onCheckout={() =>
+              navigate('/easy/confirm', {
+                state: {
+                  orderMethod,
+                },
+              })
+            }
+            onEditOptions={handleEditOptions}
+            orderMethod={orderMethod}
+            onOrderMethodChange={setOrderMethod}
+          />
+        )}
 
         <EasyBeverageOptionsModal
           open={Boolean(selectedItem || editItem)}

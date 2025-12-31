@@ -96,7 +96,7 @@ export default function Order() {
     try {
       // 1. Python 서버에서 최신 얼굴 인식 데이터 가져오기
       const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`);
-
+      console.log(response);
       if (response.ok) {
         const data = await response.json();
         console.log('📥 최신 얼굴 인식 데이터 수신:', data);
