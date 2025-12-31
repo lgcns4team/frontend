@@ -17,7 +17,7 @@ function App() {
 }
 
 function AppRoutes() {
-  // Global idle watcher must run inside Router context.
+  // 전역 유휴(idle) 감시는 Router 컨텍스트 안에서 실행되어야 합니다.
   useIdleWatcher();
 
   return (

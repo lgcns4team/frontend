@@ -2,6 +2,7 @@
 // 1. 프론트엔드 내부용 (화면 표시용)
 // ----------------------------------------------------------------------
 export interface MenuItem {
+<<<<<<< HEAD
   id: number;
   name: string;
   price: number;
@@ -11,6 +12,13 @@ export interface MenuItem {
   categoryName?: string; // (있으면 보관)
 
   img: string;
+=======
+  id: number; // 화면용 ID (백엔드 menuId를 매핑)
+  name: string;
+  price: number;
+  category: string; // 화면용 카테고리명 (백엔드 categoryName을 매핑)
+  img: string; // 화면용 이미지 주소 (백엔드 imageUrl을 매핑)
+>>>>>>> 3b1a8328c306101a63e3db7e1fb05d5324f51e7c
   originalCategory?: string;
   description?: string;
   isSoldOut?: boolean;

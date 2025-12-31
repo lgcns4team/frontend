@@ -6,15 +6,15 @@ const IDLE_THRESHOLD_MS = 60_000;
 const IDLE_CHECK_INTERVAL_MS = 300;
 
 /**
- * App-level idle watcher.
+ * 앱 레벨 유휴(idle) 감시 훅.
  *
- * Activity events:
+ * 활동 이벤트:
  * - window `pointerdown`
- * - window custom `presence` (dispatched via window.dispatchEvent(new Event('presence')))
+ * - window 커스텀 `presence` (window.dispatchEvent(new Event('presence')) 로 발생)
  *
- * Behavior:
- * - If now - lastActive >= 60s and pathname !== '/advertisement', navigate('/advertisement')
- * - Immediately after navigating to '/advertisement', markActive() to avoid re-entry
+ * 동작:
+ * - now - lastActive >= 60s 이고 pathname !== '/advertisement' 이면 navigate('/advertisement')
+ * - '/advertisement'로 이동 직후 markActive()를 호출해 즉시 재진입을 방지
  */
 export function useIdleWatcher() {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ export function useIdleWatcher() {
     window.addEventListener('presence', onActivity);
 
     const intervalId = window.setInterval(() => {
-      // IMPORTANT: Do not navigate while already on /advertisement
+      // 중요: 이미 /advertisement에 있으면 이동하지 않음
       if (location.pathname === '/advertisement') {
         setIdle(false);
         return;
@@ -45,7 +45,7 @@ export function useIdleWatcher() {
       if (idleNow) {
         setIdle(true);
         navigate('/advertisement');
-        // Prevent immediate re-entry and satisfy requirement to update lastActive after navigate.
+        // 즉시 재진입을 방지하고, 이동 후 lastActive 갱신 요구사항을 충족합니다.
         markActive();
       } else {
         setIdle(false);

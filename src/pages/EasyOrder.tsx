@@ -11,6 +11,10 @@ import EasyMenuGrid from '../components/EasyMode/EasyMenuGrid';
 import EasyBeverageOptionsModal from '../components/EasyMode/EasyOptionsModal';
 
 import type { MenuItem, Options } from '../types';
+import { useAnalysisStore } from '../store/analysisStore';
+
+// AI Core Base URL
+const AI_CORE_BASE_URL = 'http://127.0.0.1:8000/nok-nok';
 
 type EasyCategoryKey = 'COFFEE' | 'DRINK' | 'DESSERT' | 'RECOMMEND';
 
@@ -35,10 +39,13 @@ export default function EasyOrder() {
     (MenuItem & { options?: Pick<Options, 'temperature'> }) | null
   >(null);
 
-  const selectedCategoryLabel = useMemo(() => {
-    const found = EASY_CATEGORIES.find((c) => c.key === selectedCategory);
-    return found?.name ?? '';
-  }, [selectedCategory]);
+  // 🆕 얼굴 인식 스토어
+  const { setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
+    setAnalysis: s.setAnalysis,
+    clearAnalysis: s.clearAnalysis,
+    isSenior: s.isSenior,
+  }));
+  const [isLoadingFaceData, setIsLoadingFaceData] = useState(false);
 
   const filteredItems = useMemo(() => {
     if (!selectedCategory) return [];
@@ -87,13 +94,56 @@ export default function EasyOrder() {
     });
   };
 
+  // 카테고리 화면에서는 cart 있을 때만 BottomCart 보이게
+  const shouldShowBottomCart = !selectedCategory ? cart.length > 0 : true;
+
+  // 🆕 처음으로 버튼: 최신 얼굴 인식 데이터를 가져와서 적용 (화면 이동 없음)
+  const handleGoHome = async () => {
+    if (isLoadingFaceData) return;
+
+    setIsLoadingFaceData(true);
+    console.log('🏠 처음으로 버튼 클릭: 최신 얼굴 인식 데이터 확인 중...');
+
+    try {
+      // 1. Python 서버에서 최신 얼굴 인식 데이터 가져오기
+      const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📥 최신 얼굴 인식 데이터 수신:', data);
+
+        // 2. Zustand 스토어에 저장 (50세 이상 여부 자동 계산됨)
+        setAnalysis(data);
+        console.log('💾 스토어 업데이트 완료:', {
+          age: data.age,
+          gender: data.gender,
+          isSenior: data.age >= 50,
+        });
+        console.log('✅ 50세 이상 전용 애니메이션 활성화:', data.age >= 50);
+      } else {
+        console.log('ℹ️ 서버에 얼굴 인식 데이터가 없습니다. 기존 데이터 초기화.');
+        // 데이터가 없으면 초기화
+        clearAnalysis();
+      }
+    } catch (err) {
+      console.error('❌ 얼굴 인식 데이터 가져오기 실패:', err);
+      // 에러 발생 시 안전하게 초기화
+      clearAnalysis();
+    } finally {
+      setIsLoadingFaceData(false);
+    }
+
+    // 화면 이동 없음 - 현재 화면 유지
+  };
+
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
       <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-white flex flex-col shadow-2xl">
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
           <button
-            onClick={() => navigate('/')}
+            onClick={handleGoHome}
+            disabled={isLoadingFaceData}
             className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
           >
             <Home className="w-8 h-8" />
