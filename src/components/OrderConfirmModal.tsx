@@ -1,6 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingCart } from 'lucide-react';
 import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { fetchPaymentAds } from '../api/AdApi';
+import { useFaceDetection } from '../hooks/useFaceDetection';
+import type { Ad } from '../types/AdTypes';
 import type { CartItem } from '../types/OrderTypes';
 
 interface OrderConfirmModalProps {
@@ -26,6 +30,32 @@ export default function OrderConfirmModal({
       item.selectedBackendOptions?.reduce((acc, opt) => acc + opt.price * opt.quantity, 0) || 0;
     return sum + (item.price + optionsPrice) * item.quantity;
   }, 0);
+
+  // 얼굴 분석 정보 가져오기
+  const { analysisData } = useFaceDetection(false); // 이미 분석된 데이터만 사용
+  const [ads, setAds] = useState<Ad[]>([]);
+  const [adError, setAdError] = useState<string | null>(null);
+
+  // 결제 완료 시 광고 불러오기 (팝업 열릴 때마다)
+  useEffect(() => {
+    async function loadAds() {
+      if (isOpen && analysisData?.age && analysisData?.gender) {
+        // age: 27, gender: 'M' → ageGroup: '20대', gender: 'M'
+        const age = analysisData.age;
+        const ageGroup = age < 20 ? '10대' : age < 30 ? '20대' : age < 40 ? '30대' : age < 50 ? '40대' : '50대';
+        try {
+          const result = await fetchPaymentAds(ageGroup, analysisData.gender);
+          setAds(result);
+          setAdError(null);
+        } catch (err) {
+          setAdError('광고를 불러오지 못했습니다.');
+        }
+      } else {
+        setAds([]);
+      }
+    }
+    loadAds();
+  }, [isOpen, analysisData]);
 
   // [수정] 옵션 렌더링 헬퍼 함수
   const renderOptions = (item: CartItem) => {
@@ -97,6 +127,27 @@ export default function OrderConfirmModal({
               >
                 <X className="w-8 h-8 text-gray-400 hover:text-gray-600" />
               </button>
+            </div>
+
+            {/* 맞춤형 광고 영역 */}
+            <div className="px-8 py-4 border-b border-gray-200 bg-yellow-50">
+              <h3 className="text-lg font-bold text-yellow-700 mb-2">맞춤형 광고</h3>
+              {adError && <div className="text-red-500">{adError}</div>}
+              {!adError && ads.length === 0 && <div className="text-gray-400">광고가 없습니다.</div>}
+              {!adError && ads.length > 0 && (
+                <div className="flex gap-4">
+                  {ads.map((ad) => (
+                    <div key={ad.adId} className="flex flex-col items-center border rounded-xl p-2 bg-white shadow">
+                      <div className="font-bold text-sm mb-1">{ad.title}</div>
+                      {ad.mediaType === 'IMAGE' ? (
+                        <img src={ad.mediaUrl} alt={ad.title} className="w-32 h-32 object-contain rounded" />
+                      ) : (
+                        <video src={ad.mediaUrl} controls className="w-32 h-32 rounded" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 주문 내역 영역 (스크롤 가능) */}
