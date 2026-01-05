@@ -1,5 +1,5 @@
 // src/components/EasyMenuGrid.tsx
-import type { MenuItem } from './types';
+import type { MenuItem } from '../../types';
 
 type EasyMenuGridProps = {
   items: MenuItem[];
