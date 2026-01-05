@@ -2,6 +2,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Home } from 'lucide-react';
+import microphoneIcon from '../assets/icons/microphone.svg';
+import fingerIcon from '../assets/icons/finger.svg';
 
 import { useMenu } from '../hooks/UseMenu';
 import { useCartStore } from '../store/UseCartStore';
@@ -47,11 +49,11 @@ export default function EasyOrder() {
     const c = EASY_CATEGORIES.find((c) => c.key === selectedCategory);
     console.log('API items sample:', items.slice(0, 3));
     console.log('CART sample:', cart.slice(0, 3));
-    return c ? `${c.emoji} ${c.name}` : '';
+    return c ? ` ${c.name}` : '';
   }, [selectedCategory]);
 
   // 🆕 얼굴 인식 스토어
-  const { setAnalysis, clearAnalysis } = useAnalysisStore((s) => ({
+  const { setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
     setAnalysis: s.setAnalysis,
     clearAnalysis: s.clearAnalysis,
     isSenior: s.isSenior,
@@ -172,6 +174,49 @@ export default function EasyOrder() {
             <span>처음으로</span>
           </button>
         </header>
+        {/* 상단 버튼 (음성주문 / 일반주문) */}
+        <div className="bg-white pb-2 shadow-sm z-10 shrink-0">
+          <div className="flex gap-3 px-4 py-3">
+            {/* 음성 주문 */}
+            <button
+              onClick={() => navigate('/voice')}
+              className="flex-1 bg-pink-50 p-8 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
+            >
+              <style>{`
+        .mic-icon { animation: micPulse 1.5s ease-in-out infinite; }
+        @keyframes micPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+      `}</style>
+              <img src={microphoneIcon} alt="microphone" className="mic-icon w-10 h-10" />
+              <span className="font-bold text-pink-900 text-xl">음성 주문</span>
+            </button>
+
+            {/* 일반 주문 (현재 페이지라 강조만 하고 싶으면 disabled 추천) */}
+            <button
+              onClick={() => navigate('/order')}
+              className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-200 flex items-center gap-2 justify-center transition-colors group opacity-90 cursor-default ${
+                isSenior ? 'easy-button' : ''
+              }`}
+            >
+              {isSenior && (
+                <style>{`
+          .easy-button { animation: easyButtonGlow 0.8s ease-in-out infinite; }
+          @keyframes easyButtonGlow {
+            0%, 100% { border-color: rgb(254, 208, 121); background-color: rgb(254, 245, 230); box-shadow: 0 0 0 0px rgba(217, 119, 6, 0); }
+            50% { border-color: rgb(217, 119, 6); background-color: rgb(255, 251, 235); box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3); }
+          }
+          .finger-icon { animation: fingerWiggle 0.8s ease-in-out infinite; transform-origin: bottom center; }
+          @keyframes fingerWiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+        `}</style>
+              )}
+              <img
+                src={fingerIcon}
+                alt="finger"
+                className={`${isSenior ? 'finger-icon ' : ''}w-12 h-12`}
+              />
+              <span className="font-bold text-orange-900 text-xl">일반 주문</span>
+            </button>
+          </div>
+        </div>
         <main className="flex-1 flex flex-col p-10 overflow-hidden">
           {!selectedCategory ? (
             <>
@@ -185,7 +230,7 @@ export default function EasyOrder() {
                     <button
                       key={cat.key}
                       onClick={() => setSelectedCategory(cat.key)}
-                      className="bg-gray-100 rounded-3xl p-10 flex flex-col items-center justify-center aspect-square hover:bg-orange-100 hover:border-orange-400 border-6 border-transparent transition-all duration-200"
+                      className="bg-gray-100 rounded-3xl p-10 flex flex-col items-center justify-center h-[420px] hover:bg-orange-100 hover:border-orange-400 border-6 border-transparent transition-all duration-200"
                     >
                       <img
                         src={cat.image}
