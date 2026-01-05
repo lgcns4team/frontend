@@ -17,12 +17,15 @@ import { useAnalysisStore } from '../store/analysisStore';
 const AI_CORE_BASE_URL = 'http://127.0.0.1:8000/nok-nok';
 
 type EasyCategoryKey = 'COFFEE' | 'DRINK' | 'DESSERT' | 'RECOMMEND';
-
-const EASY_CATEGORIES: { key: EasyCategoryKey; name: string; emoji: string }[] = [
-  { key: 'COFFEE', name: '커피', emoji: '☕️' },
-  { key: 'DRINK', name: '음료', emoji: '🥤' },
-  { key: 'DESSERT', name: '디저트', emoji: '🍰' },
-  { key: 'RECOMMEND', name: '추천메뉴', emoji: '🍊' },
+const EASY_CATEGORIES: {
+  key: EasyCategoryKey;
+  name: string;
+  image: string;
+}[] = [
+  { key: 'COFFEE', name: '커피', image: '/menu_images/coldbrew.png' },
+  { key: 'DRINK', name: '음료', image: '/menu_images/grapefruit_ade.png' },
+  { key: 'DESSERT', name: '디저트', image: '/menu_images/cheese_cake.png' },
+  { key: 'RECOMMEND', name: '추천메뉴', image: '/menu_images/cookie_set.png' },
 ];
 
 export default function EasyOrder() {
@@ -184,7 +187,13 @@ export default function EasyOrder() {
                       onClick={() => setSelectedCategory(cat.key)}
                       className="bg-gray-100 rounded-3xl p-10 flex flex-col items-center justify-center aspect-square hover:bg-orange-100 hover:border-orange-400 border-6 border-transparent transition-all duration-200"
                     >
-                      <span className="text-[10rem] mb-6">{cat.emoji}</span>
+                      <img
+                        src={cat.image}
+                        alt={cat.name}
+                        className="w-40 h-40 mb-6 object-contain"
+                        draggable={false}
+                      />
+
                       <span
                         className="text-6xl font-extrabold whitespace-nowrap break-keep leading-none"
                         style={{ writingMode: 'horizontal-tb' }}
