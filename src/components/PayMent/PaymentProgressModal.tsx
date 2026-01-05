@@ -3,7 +3,9 @@ import InsertCardAnimation from './InsertCardAnimation';
 import QrScanAnimation from './QrScanAnimation';
 import BarcodeScanAnimation from './BarcodeScanAnimation';
 import NfcPayAnimation from './NfcPayAnimation';
-import { getRandomAd } from '../../config/ads';
+import { useAds } from '../../hooks/useAds';
+import type { Ad } from '../../types/ad';
+import { useAnalysisStore } from '../../store/analysisStore';
 
 interface PaymentProgressModalProps {
   paymentMethod: 'card' | 'kakaopay' | 'naverpay' | 'samsungpay' | 'applepay' | 'gifticon';
@@ -30,10 +32,95 @@ export default function PaymentProgressModal({
   paymentMethod,
   onClose,
 }: PaymentProgressModalProps) {
+  const { ads } = useAds();
+  const age = useAnalysisStore((s) => s.age);
+  const gender = useAnalysisStore((s) => s.gender);
+
   const [isProcessing, setIsProcessing] = useState(true);
   const [countdown, setCountdown] = useState(5);
   const [orderNumber, setOrderNumber] = useState<number>(0);
-  const [adImage, setAdImage] = useState<string>('');
+  const [selectedAd, setSelectedAd] = useState<Ad | null>(null);
+
+  const normalizeGender = (value: string | null | undefined): 'M' | 'F' | 'U' => {
+    const v = (value ?? '').trim().toLowerCase();
+    if (!v) return 'U';
+    if (v === 'm' || v === 'male' || v === 'man' || v.includes('남')) return 'M';
+    if (v === 'f' || v === 'female' || v === 'woman' || v.includes('여')) return 'F';
+    return 'U';
+  };
+
+  const toTargetAgeGroup = (n: number | null): string | null => {
+    if (n == null) return null;
+    if (!Number.isFinite(n)) return null;
+    if (n >= 60) return '60대이상';
+    const decade = Math.floor(n / 10) * 10;
+    return `${decade}대`;
+  };
+
+  const normalizeTargetAgeGroup = (value: string | null | undefined): string | null => {
+    const v = (value ?? '').trim();
+    if (!v) return null;
+    if (v.includes('이상')) return '60대이상';
+
+    const digits = v.replace(/[^0-9]/g, '');
+    if (!digits) return null;
+    const num = Number.parseInt(digits, 10);
+    if (!Number.isFinite(num)) return null;
+    if (num >= 60) return '60대이상';
+
+    const decade = Math.floor(num / 10) * 10;
+    return `${decade}대`;
+  };
+
+  const getRules = (ad: Ad): Array<{ ageGroup?: string | null; gender?: string | null }> => {
+    if (Array.isArray(ad.targetRules) && ad.targetRules.length > 0) return ad.targetRules;
+    if (ad.ageGroup != null || ad.gender != null)
+      return [{ ageGroup: ad.ageGroup ?? null, gender: ad.gender ?? null }];
+    // 룰이 없으면 전체 대상(=NULL,NULL)로 간주
+    return [{ ageGroup: null, gender: null }];
+  };
+
+  const matchScore = (
+    rule: { ageGroup?: string | null; gender?: string | null },
+    userAgeGroup: string | null,
+    userGender: string | null
+  ): number => {
+    const rg = normalizeTargetAgeGroup(rule.ageGroup);
+    const ug = userAgeGroup;
+    if (rg && ug && rg !== ug) return -1;
+
+    // rule.gender가 NULL이면 성별 무관
+    if (rule.gender != null && rule.gender !== '') {
+      const rGender = normalizeGender(rule.gender);
+      const uGender = normalizeGender(userGender);
+      if (rGender !== 'U' && uGender !== 'U' && rGender !== uGender) return -1;
+    }
+
+    const specificity = (rg ? 1 : 0) + (rule.gender != null && rule.gender !== '' ? 1 : 0);
+    return specificity;
+  };
+
+  const pickTargetedAd = (pool: Ad[]): Ad | null => {
+    if (!pool || pool.length === 0) return null;
+
+    const userAgeGroup = toTargetAgeGroup(age);
+    const userGender = normalizeGender(gender) === 'U' ? null : normalizeGender(gender);
+
+    let best: { ad: Ad; score: number } | null = null;
+
+    for (const ad of pool) {
+      const rules = getRules(ad);
+      const scores = rules.map((r) => matchScore(r, userAgeGroup, userGender));
+      const s = Math.max(...scores);
+      if (s < 0) continue;
+
+      if (!best || s > best.score || (s === best.score && ad.adId < best.ad.adId)) {
+        best = { ad, score: s };
+      }
+    }
+
+    return best?.ad ?? null;
+  };
 
   // 1. 5초 후 처리 완료 상태로 변경
   useEffect(() => {
@@ -47,9 +134,21 @@ export default function PaymentProgressModal({
   useEffect(() => {
     if (!isProcessing) {
       setOrderNumber(getOrderNumber());
-      setAdImage(getRandomAd().image);
     }
   }, [isProcessing]);
+
+  // 2-1. 완료 시 타겟 광고 선택 (백엔드 우선 / 없으면 로컬 폴백 결과)
+  useEffect(() => {
+    if (isProcessing) return;
+    if (selectedAd) return;
+    if (!ads || ads.length === 0) return;
+
+    // 결제 완료 팝업에서는 이미지 광고를 우선 사용합니다.
+    const imageAds = ads.filter((a) => a.mediaType === 'IMAGE');
+    const pool = imageAds.length > 0 ? imageAds : ads;
+
+    setSelectedAd(pickTargetedAd(pool));
+  }, [ads, age, gender, isProcessing, selectedAd]);
 
   // 3. [수정됨] 카운트다운 타이머 (숫자만 줄임)
   useEffect(() => {
@@ -164,13 +263,24 @@ export default function PaymentProgressModal({
                 <p className="text-4xl font-bold text-gray-800 mb-6">{orderNumber}</p>
                 <p className="text-gray-600 text-lg">{countdown}초 후 주문화면으로 돌아갑니다</p>
               </div>
-              {adImage && (
+              {selectedAd?.mediaUrl && (
                 <div className="w-full max-w-lg mx-auto mb-8">
-                  <img
-                    src={adImage}
-                    alt="advertisement"
-                    className="w-full aspect-[9/16] rounded-2xl object-cover"
-                  />
+                  {selectedAd.mediaType === 'VIDEO' ? (
+                    <video
+                      src={selectedAd.mediaUrl}
+                      autoPlay
+                      muted
+                      playsInline
+                      className="w-full aspect-[9/16] rounded-2xl object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={selectedAd.mediaUrl}
+                      alt="advertisement"
+                      className="w-full aspect-[9/16] rounded-2xl object-contain"
+                      draggable={false}
+                    />
+                  )}
                 </div>
               )}
             </>
