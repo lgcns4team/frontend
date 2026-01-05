@@ -177,7 +177,7 @@ export default function EasyOrder() {
               </div>
 
               <div className="flex-1 flex justify-center overflow-y-auto">
-                <div className="grid grid-cols-2 gap-8 w-full max-w-4xl pb-8">
+                <div className="grid grid-cols-2 gap-x-2 gap-y-2 w-full max-w-[720px] pb-2 mx-auto place-content-start">
                   {EASY_CATEGORIES.map((cat) => (
                     <button
                       key={cat.key}
