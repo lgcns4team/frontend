@@ -24,10 +24,10 @@ const EASY_CATEGORIES: {
   name: string;
   image: string;
 }[] = [
-  { key: 'COFFEE', name: '커피', image: '/menu_images/coldbrew.png' },
-  { key: 'DRINK', name: '음료', image: '/menu_images/grapefruit_ade.png' },
-  { key: 'DESSERT', name: '디저트', image: '/menu_images/cheese_cake.png' },
-  { key: 'RECOMMEND', name: '추천메뉴', image: '/menu_images/cookie_set.png' },
+  { key: 'COFFEE', name: '커피', image: '/images/menu/coldbrew.png' },
+  { key: 'DRINK', name: '음료', image: '/images/menu/grapefruit_ade.png' },
+  { key: 'DESSERT', name: '디저트', image: '/images/menu/cheese_cake.png' },
+  { key: 'RECOMMEND', name: '추천메뉴', image: '/images/menu/cookie_set.png' },
 ];
 
 export default function EasyOrder() {
