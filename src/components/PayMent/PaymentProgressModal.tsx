@@ -52,7 +52,7 @@ export default function PaymentProgressModal({
   const toTargetAgeGroup = (n: number | null): string | null => {
     if (n == null) return null;
     if (!Number.isFinite(n)) return null;
-    if (n >= 60) return '60대이상';
+    if (n >= 50) return '50대이상';
     const decade = Math.floor(n / 10) * 10;
     return `${decade}대`;
   };

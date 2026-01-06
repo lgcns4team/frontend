@@ -6,16 +6,16 @@ export type LocalAdConfig = {
 };
 
 export const ADS: LocalAdConfig[] = [
-  { id: 1, image: '/ads/bakery_women_discount.png' },
-  { id: 2, image: '/ads/brunch_launch.png' },
-  { id: 3, image: '/ads/christmas_special.png' },
-  { id: 4, image: '/ads/pocari.jpg' },
-  { id: 5, image: '/ads/blackpink x pepsi.jpg' },
-  { id: 6, image: '/ads/G63 Poster.jpg' },
-  { id: 7, image: '/ads/new_menu_brown_sugar.png' },
-  { id: 8, image: '/ads/senior_discount.png' },
-  { id: 9, image: '/ads/student_discount.png' },
-  { id: 10, image: '/ads/weekend_special.png' },
+  { id: 1, image: '/images/ads/bakery_women_discount.png' },
+  { id: 2, image: '/images/ads/brunch_launch.png' },
+  { id: 3, image: '/images/ads/christmas_special.png' },
+  { id: 4, image: '/images/ads/pocari.jpg' },
+  { id: 5, image: '/images/ads/blackpink_x_pepsi.jpg' },
+  { id: 6, image: '/images/ads/G63_Poster.jpg' },
+  { id: 7, image: '/images/ads/new_menu_brown_sugar.png' },
+  { id: 8, image: '/images/ads/senior_discount.png' },
+  { id: 9, image: '/images/ads/student_discount.png' },
+  { id: 10, image: '/images/ads/weekend_special.png' },
 ];
 
 export const getRandomAd = () => {
