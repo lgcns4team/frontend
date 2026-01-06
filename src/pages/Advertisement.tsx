@@ -40,7 +40,7 @@ function renderAd(ad: Ad, handlers?: MediaMarkHandlers) {
 
   return (
     <img
-      className="w-full h-full object-cover"
+      className="w-full h-full object-contain"
       src={ad.mediaUrl}
       alt={ad.title}
       draggable={false}

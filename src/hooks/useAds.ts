@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api, joinUrl, resolveMediaUrl } from '../Lib/api';
+import { apiClient } from '../api/ApiClient';
 import { ADS } from '../config/ads';
 import type { Ad, GetAdsResponse } from '../types/ad';
-import { useAnalysisStore } from '../store/analysisStore';
 
 type UseAdsResult = {
   ads: Ad[];
@@ -10,118 +9,135 @@ type UseAdsResult = {
   error: unknown;
 };
 
+// 광고 캐시 유효 시간 (60초)
 const TTL_MS = 60_000;
 
-type CacheSource = 'backend' | 'local';
+// 전역 메모리 캐시 (여러 요청의 중복 전송 방지)
+let cache: { at: number; ads: Ad[]; key: string } | null = null;
+let inflight: { key: string; promise: Promise<Ad[]> } | null = null;
 
-type AdsFetchResult = {
-  ads: Ad[];
-  source: CacheSource;
-};
+/**
+ * 백엔드 응답을 배열로 정규화합니다.
+ * - { ads: [...] } 형식과 [...] 형식 모두 지원
+ */
+function asArrayAds(data: unknown): Ad[] {
+  if (!data) return [];
 
-let cache: { at: number; ads: Ad[]; key: string; source: CacheSource } | null = null;
-let inflight: { key: string; promise: Promise<AdsFetchResult> } | null = null;
-
-function hasAgeConstraint(a: { ageMin?: number; ageMax?: number }) {
-  return a.ageMin != null || a.ageMax != null;
-}
-
-function matchesAge(a: { ageMin?: number; ageMax?: number }, age: number): boolean {
-  if (a.ageMin != null && age < a.ageMin) return false;
-  if (a.ageMax != null && age > a.ageMax) return false;
-  return true;
-}
-
-function getLocalAds(age: number | null): Ad[] {
-  const generic = ADS.filter((a) => !hasAgeConstraint(a));
-
-  if (age == null) {
-    const base = generic.length > 0 ? generic : ADS;
-    return base.map((a) => ({
-      adId: a.id,
-      title: `ad-${a.id}`,
-      mediaType: 'IMAGE',
-      mediaUrl: resolveMediaUrl(a.image),
-      startDate: '1970-01-01',
-      endDate: '2999-12-31',
-      isActive: true,
-    }));
+  // 케이스 1) { ads: [...] } 형식
+  if (typeof data === 'object' && data !== null && 'ads' in data) {
+    const ads = (data as GetAdsResponse).ads;
+    return Array.isArray(ads) ? ads : [];
   }
 
-  const targetedMatches = ADS.filter((a) => hasAgeConstraint(a) && matchesAge(a, age));
-  const base = targetedMatches.length > 0 ? targetedMatches : generic.length > 0 ? generic : ADS;
+  // 케이스 2) [...] 직접 배열 형식
+  return Array.isArray(data) ? (data as Ad[]) : [];
+}
 
-  return base.map((a) => ({
+/**
+ * 백엔드 응답 검증 및 정규화
+ *
+ * 백엔드에서 온 광고 객체를 표준 형식으로 변환합니다.
+ * - targetRules 배열이 있으면 그대로 사용
+ * - 없으면 ageGroup/gender 필드로부터 targetRules 생성 (레거시 지원)
+ * - 타겟 정보가 완전히 없으면 undefined (모든 사용자 대상)
+ *
+ * @param ad - 백엔드에서 받은 광고 객체
+ * @returns 정규화된 광고 객체
+ */
+
+function normalizeAd(ad: any): Ad {
+  const normalized: Ad = {
+    adId: ad.adId ?? ad.id ?? 0,
+    title: ad.title ?? '',
+    mediaType: (ad.mediaType ?? 'IMAGE') as 'IMAGE' | 'VIDEO',
+    mediaUrl: ad.mediaUrl ?? '',
+    startDate: ad.startDate ?? '1970-01-01',
+    endDate: ad.endDate ?? '2999-12-31',
+    isActive: ad.isActive !== false,
+  };
+
+  // targetRules 정규화
+  if (Array.isArray(ad.targetRules) && ad.targetRules.length > 0) {
+    normalized.targetRules = ad.targetRules.map((rule: any) => ({
+      ageGroup: rule.ageGroup ?? null,
+      gender: rule.gender ?? null,
+    }));
+  } else if (ad.ageGroup != null || ad.gender != null) {
+    // 레거시 형식: 광고 자체에 ageGroup/gender가 있으면 targetRules로 변환
+    normalized.targetRules = [
+      {
+        ageGroup: ad.ageGroup ?? null,
+        gender: ad.gender ?? null,
+      },
+    ];
+  }
+
+  return normalized;
+}
+
+/**
+ * 로컬 폴백 광고 목록 반환
+ * 백엔드 연결 실패 시 사용합니다.
+ * @returns 타겟팅 정보 없는 기본 광고 목록
+ */
+function getLocalAds(): Ad[] {
+  return ADS.map((a) => ({
     adId: a.id,
     title: `ad-${a.id}`,
-    mediaType: 'IMAGE',
-    mediaUrl: resolveMediaUrl(a.image),
+    mediaType: 'IMAGE' as const,
+    mediaUrl: a.image,
     startDate: '1970-01-01',
     endDate: '2999-12-31',
     isActive: true,
   }));
 }
 
-function normalizeBackendMediaUrl(mediaUrl: string): string {
-  const url = (mediaUrl ?? '').trim();
-  if (!url) return url;
-
-  const baseUrl = (api.defaults.baseURL ?? '').toString();
-
-  // 백엔드가 정적 리소스를 /ads, /raw 같은 경로로 서빙하는 경우를 지원합니다.
-  // (resolveMediaUrl은 프론트 public 자산을 보호하려고 /ads, /raw를 same-origin으로 유지합니다.)
-  if (baseUrl && (url.startsWith('/ads/') || url.startsWith('/raw/'))) {
-    return joinUrl(baseUrl, url);
-  }
-
-  return resolveMediaUrl(url);
-}
-
-function asArrayAds(data: unknown): Ad[] {
-  if (!data) return [];
-
-  // 케이스 1) { ads: [...] }
-  if (typeof data === 'object' && data !== null && 'ads' in data) {
-    const ads = (data as GetAdsResponse).ads;
-    return Array.isArray(ads) ? ads : [];
-  }
-
-  // 케이스 2) [...]
-  return Array.isArray(data) ? (data as Ad[]) : [];
-}
-
-async function fetchAds(age: number | null): Promise<AdsFetchResult> {
+/**
+ * 백엔드에서 광고 목록을 페칭합니다.
+ * - GET /api/ads 에서 targetRules 정보까지 받습니다.
+ * - 정규화하여 표준 형식으로 변환합니다.
+ *
+ * @returns 활성화된 광고 배열 (백엔드 실패 시 로컬 광고)
+ */
+async function fetchAds(): Promise<Ad[]> {
   try {
-    // 백엔드에서 광고를 가져옵니다.
-    // - 응답 스키마는 GetAdsResponse({ ads, totalCount })를 기대하지만,
-    //   백엔드 더미/개발 편의를 위해 배열([Ad])도 허용합니다.
-    const res = await api.get<GetAdsResponse | Ad[]>('/api/ads', {
-      // 백엔드가 age 기반 필터를 지원하면 활용할 수 있습니다(미지원이면 무시될 수 있음).
-      params: age != null ? { age } : undefined,
-    });
+    const res = await apiClient.get<GetAdsResponse | Ad[]>('/ads');
 
-    const ads = asArrayAds(res.data)
-      .filter((ad) => ad && ad.isActive !== false)
-      .map((ad) => ({
-        ...ad,
-        mediaUrl: normalizeBackendMediaUrl(ad.mediaUrl),
-      }));
+    // 응답 정규화 및 검증
+    const allAds = asArrayAds(res.data).map(normalizeAd);
+    // 활성 광고만 필터링
+    const allActive = allAds.filter((ad) => ad.isActive);
 
-    // 백엔드가 비어있으면 로컬 광고로 폴백하여 광고 화면이 비지 않게 합니다.
-    return ads.length > 0 ? { ads, source: 'backend' } : { ads: getLocalAds(age), source: 'local' };
-  } catch {
-    // 네트워크/서버 문제가 있어도 앱이 비지 않도록 로컬 광고로 폴백합니다.
-    return { ads: getLocalAds(age), source: 'local' };
+    if (allActive.length === 0) {
+      return getLocalAds();
+    }
+
+    return allActive;
+  } catch (e) {
+    // 네트워크 에러나 서버 에러 발생 시 로컬 광고로 폴백
+    return getLocalAds();
   }
 }
 
 /**
- * 백엔드에서 광고를 가져오되, 간단한 메모리 캐시(60s TTL)를 사용합니다.
- * - 응답에서 `res.data.ads`만 사용합니다.
+ * 백엔드에서 광고 목록을 가져오는 커스텀 훅
+ *
+ * 특징:
+ * - 60초 TTL 메모리 캐시 (같은 광고 목록을 반복 요청하지 않음)
+ * - 중복 요청 방지 (inflight 체크)
+ * - 취소 가능한 요청 (컴포넌트 언마운트 시)
+ * - 광고와 나이/성별 타겟팅 정보를 모두 포함
+ *
+ * @returns { ads, isLoading, error }
+ * - ads: 광고 배열
+ * - isLoading: 로딩 중 여부
+ * - error: 에러 정보 (실패 시에도 로컬 광고 반환됨)
  */
 export function useAds(): UseAdsResult {
-  const age = useAnalysisStore((s) => s.age);
-  const cacheKey = `age:${age ?? 'unknown'}`;
+  // Advertisement 페이지와 결제 완료 팝업 모두에서 사용하므로
+  // 나이/성별에 상관없이 전체 광고 목록을 캐시합니다.
+  // (타겟팅은 PaymentProgressModal에서 수행)
+  const cacheKey = 'ads:all';
 
   const [ads, setAds] = useState<Ad[]>(() => (cache?.key === cacheKey ? cache.ads : []));
   const [isLoading, setIsLoading] = useState<boolean>(() => !(cache?.key === cacheKey));
@@ -130,8 +146,6 @@ export function useAds(): UseAdsResult {
   const shouldUseCache = useMemo(() => {
     if (!cache) return false;
     if (cache.key !== cacheKey) return false;
-    // 로컬 폴백 캐시는 "예전 광고"를 가릴 수 있으므로, 백엔드 캐시만 TTL로 재사용합니다.
-    if (cache.source !== 'backend') return false;
     return Date.now() - cache.at < TTL_MS;
   }, [cacheKey]);
 
@@ -150,12 +164,12 @@ export function useAds(): UseAdsResult {
     const p =
       inflight?.key === cacheKey
         ? inflight.promise
-        : (inflight = { key: cacheKey, promise: fetchAds(age) }).promise;
+        : (inflight = { key: cacheKey, promise: fetchAds() }).promise;
 
     p.then((fresh) => {
-      cache = { at: Date.now(), ads: fresh.ads, key: cacheKey, source: fresh.source };
+      cache = { at: Date.now(), ads: fresh, key: cacheKey };
       if (!cancelled) {
-        setAds(fresh.ads);
+        setAds(fresh);
         setIsLoading(false);
       }
     })
@@ -175,7 +189,7 @@ export function useAds(): UseAdsResult {
     return () => {
       cancelled = true;
     };
-  }, [age, cacheKey, shouldUseCache]);
+  }, [cacheKey, shouldUseCache]);
 
   return { ads, isLoading, error };
 }
