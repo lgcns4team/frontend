@@ -94,13 +94,14 @@ function getLocalAds(): Ad[] {
 
 /**
  * 백엔드에서 광고 목록을 페칭합니다.
- * - GET /api/ads 에서 targetRules 정보까지 받습니다.
- * - 정규화하여 표준 형식으로 변환합니다.
+ * - GET /api/ads 응답을 정규화하여 표준 형식으로 변환합니다.
  *
  * @returns 활성화된 광고 배열 (백엔드 실패 시 로컬 광고)
  */
 async function fetchAds(): Promise<Ad[]> {
   try {
+    // 전체 활성 광고를 가져옴
+    // 결제 완료 타겟팅 광고는 PaymentProgressModal에서 별도 호출합니다.
     const res = await apiClient.get<GetAdsResponse | Ad[]>('/ads');
 
     // 응답 정규화 및 검증
