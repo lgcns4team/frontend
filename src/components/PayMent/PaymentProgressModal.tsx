@@ -57,6 +57,10 @@ export default function PaymentProgressModal({
     return `${decade}대`;
   };
 
+  /**
+   * 광고의 타겟팅 나이대 값을 표준 형식으로 정규화합니다.
+   * 백엔드에서 다양한 형식으로 올 수 있으므로 정규화합니다.
+   */
   const normalizeTargetAgeGroup = (value: string | null | undefined): string | null => {
     const v = (value ?? '').trim();
     if (!v) return null;
@@ -72,14 +76,23 @@ export default function PaymentProgressModal({
     return `${decade}대`;
   };
 
+  /**
+   * 광고의 타겟팅 규칙을 추출합니다.
+   * useAds에서 이미 정규화되었으므로 targetRules를 바로 사용합니다.
+   */
   const getRules = (ad: Ad): Array<{ ageGroup?: string | null; gender?: string | null }> => {
-    if (Array.isArray(ad.targetRules) && ad.targetRules.length > 0) return ad.targetRules;
-    if (ad.ageGroup != null || ad.gender != null)
-      return [{ ageGroup: ad.ageGroup ?? null, gender: ad.gender ?? null }];
-    // 룰이 없으면 전체 대상(=NULL,NULL)로 간주
+    // useAds에서 이미 정규화되므로, targetRules가 있으면 바로 사용
+    if (Array.isArray(ad.targetRules) && ad.targetRules.length > 0) {
+      return ad.targetRules;
+    }
+    // targetRules가 없으면 전체 대상 (모든 사용자)
     return [{ ageGroup: null, gender: null }];
   };
 
+  /**
+   * 사용자가 타겟팅 규칙에 매칭되는지 판단하고 점수를 계산합니다.
+   * 점수: -1(불일치), 0(조건없음), 1(한가지일치), 2(모두일치)
+   */
   const matchScore = (
     rule: { ageGroup?: string | null; gender?: string | null },
     userAgeGroup: string | null,
@@ -100,6 +113,10 @@ export default function PaymentProgressModal({
     return specificity;
   };
 
+  /**
+   * 광고 풀에서 사용자에게 가장 적합한 광고를 선택합니다.
+   * 선택 기준: 타겟팅 점수 높은 순, 같으면 광고ID 낮은 순
+   */
   const pickTargetedAd = (pool: Ad[]): Ad | null => {
     if (!pool || pool.length === 0) return null;
 
@@ -112,7 +129,9 @@ export default function PaymentProgressModal({
       const rules = getRules(ad);
       const scores = rules.map((r) => matchScore(r, userAgeGroup, userGender));
       const s = Math.max(...scores);
-      if (s < 0) continue;
+      if (s < 0) {
+        continue;
+      }
 
       if (!best || s > best.score || (s === best.score && ad.adId < best.ad.adId)) {
         best = { ad, score: s };
