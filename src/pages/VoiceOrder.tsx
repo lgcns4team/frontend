@@ -4,7 +4,7 @@ import { Lightbulb, Home } from 'lucide-react';
 
 // [Hooks]
 import { useMenu } from '../hooks/UseMenu';
-import { useVoiceOrderProcessor } from '../hooks/UseVoiceProcessor'; // 새로 만든 훅 임포트
+import { useVoiceOrderProcessor } from '../hooks/UseVoiceProcessor'; 
 import { useCartStore } from '../store/UseCartStore';
 
 // [Components]
