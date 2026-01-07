@@ -4,15 +4,20 @@ import { sendAudioOrder } from '../api/VoiceOrderApi';
 import { fetchMenuOptions } from '../api/MenuApi';
 import { useCartStore } from '../store/UseCartStore';
 import type { MenuItem, Options } from '../types/OrderTypes';
-
-// ⭐️ [추가] VoiceOrderTypes에서 액션 타입 가져오기
 import type { OrderAction } from '../types/VoiceOrderTypes'; 
 
 const TAG_GROUPS: Record<string, string> = {
+  // 기존 설정
   hot: 'temp', cold: 'temp',
   tall: 'size', grande: 'size', venti: 'size',
   less_ice: 'ice', normal_ice: 'ice', more_ice: 'ice',
-  whip: 'whip',
+  
+  // 👇 [추가] 샷과 휘핑 관련 그룹 정의 추가
+  shot: 'shot', 
+  shot_none: 'shot', // 'shot_none'이 들어오면 기존 'shot'을 덮어써서 지움
+  
+  whip: 'whip', 
+  whip_none: 'whip'  // 휘핑 빼기도 동일한 원리로 동작
 };
 
 interface UseVoiceOrderProcessorProps {
@@ -53,7 +58,9 @@ export const useVoiceOrderProcessor = ({ items }: UseVoiceOrderProcessorProps) =
 
   const resolveBackendOptions = async (menuId: number, voiceTags: string[]) => {
     try {
+      // 1. [핵심 수정] 전체 옵션 그룹(메뉴판)을 가져와서 변수에 저장
       const optionGroups = await fetchMenuOptions(menuId);
+      
       const resolvedOptions: { optionItemId: number; quantity: number; price: number; name: string }[] = [];
       const globalOptions: Partial<Options> = {};
 
@@ -100,84 +107,110 @@ export const useVoiceOrderProcessor = ({ items }: UseVoiceOrderProcessorProps) =
         if (opt) { resolvedOptions.push({ ...opt, quantity: 1, price: opt.optionPrice }); globalOptions.ice = 'more'; }
       }
 
-      return { backendOptions: resolvedOptions, globalOptions };
+      // 2. [핵심 수정] 선택된 옵션뿐만 아니라 '전체 옵션 그룹(fullOptionGroups)'도 반환
+      return { 
+        fullOptionGroups: optionGroups, // 여기가 수정됨: 전체 목록 반환
+        backendOptions: resolvedOptions, 
+        globalOptions 
+      };
+
     } catch (e) {
       console.error(e);
-      return { backendOptions: [], globalOptions: {} };
+      // 에러 발생 시에도 빈 배열로 구조 맞춰서 반환
+      return { fullOptionGroups: [], backendOptions: [], globalOptions: {} };
     }
   };
 
-  // ⭐️ [수정] any[] 대신 OrderAction[] 타입을 명시!
   const handleVoiceActions = async (actions: OrderAction[]) => {
     for (const action of actions) {
-      // [ADD 로직은 기존과 동일]
+      /////////////////////////////추가///////////////
       if (action.type === 'ADD') {
         const targetItem = items.find((i) => i.name === action.data.name);
         if (targetItem) {
           const newTags = action.data.option_ids || [];
-          const { backendOptions, globalOptions } = await resolveBackendOptions(targetItem.id, newTags);
+          
+          // [핵심 수정] fullOptionGroups를 받아옵니다.
+          const { fullOptionGroups, backendOptions, globalOptions } = await resolveBackendOptions(targetItem.id, newTags);
+          
           addToCart(
             targetItem,
             { ...globalOptions, voiceOptionIds: newTags } as any,
             action.data.quantity || 1,
-            backendOptions
+            backendOptions,
+            // [핵심 수정] backendOptions(선택된것) 대신 fullOptionGroups(전체목록)를 넘깁니다.
+            // 타입 에러 방지를 위해 as any 사용 (UseCartStore 타입에 맞게 조정)
+            fullOptionGroups as any 
           );
         }
       } 
+
+
+      ////////////////////////////업데이트///////////////
       
-      // ⭐️ [UPDATE 로직 업그레이드] ⭐️
       else if (action.type === 'UPDATE') {
         const currentCart = useCartStore.getState().cart;
         let targetIndex = -1;
 
-        // 1. 검색할 메뉴 이름 결정
-        // action.data.name이 있으면(예: '아메리카노') 그걸로 찾고, 
-        // 없으면 targetId를 사용, 그것도 'last_item'이면 이름 정보가 없는 것.
-        const searchName = action.data.name || (action.targetId !== 'last_item' ? action.targetId : null);
+        // 1. [수정] 검색 대상은 '새 이름(data.name)'이 아니라 '타겟 이름(targetId)'이어야 합니다.
+        // targetId가 유효하면 그것을 쓰고, 아니면 'last_item'(마지막)으로 간주합니다.
+        const searchName = (action.targetId && action.targetId !== 'last_item') ? action.targetId : null;
 
         if (searchName) {
-          // 2. 이름이 일치하는 아이템을 "뒤에서부터" 검색 (가장 최근에 담은 해당 메뉴)
+          // 이름으로 장바구니 뒤에서부터 검색
           for (let i = currentCart.length - 1; i >= 0; i--) {
-            if (currentCart[i].name === searchName) {
+            if (currentCart[i].name.replace(/\s+/g, '') === searchName.replace(/\s+/g, '')) {
               targetIndex = i;
               break;
             }
           }
         } else {
-          // 3. 이름 정보가 전혀 없으면 -> 그냥 맨 마지막 아이템 선택 (Fallback)
+          // 이름 정보가 없으면 맨 마지막 아이템 선택
           if (currentCart.length > 0) {
             targetIndex = currentCart.length - 1;
           }
         }
 
-        // 대상을 찾았을 때만 업데이트 실행
+        // 대상을 찾았을 때만 실행
         if (targetIndex !== -1) {
           const targetCartItem = currentCart[targetIndex];
           
-          // 기존 태그 + 새 태그 병합
-          const oldTags = (targetCartItem.options as any)?.voiceOptionIds || [];
-          const newTagsInput = action.data.option_ids || [];
-          
-          const mergedTags = mergeVoiceTags(oldTags, newTagsInput);
-          const { backendOptions, globalOptions } = await resolveBackendOptions(targetCartItem.id, mergedTags);
+          // 2. [수정] 메뉴 자체가 바뀌는지 확인 (예: 카페라떼 -> 바닐라라떼)
+          const isMenuChange = action.data.name && action.data.name !== targetCartItem.name;
+          let itemToUpdate: MenuItem = targetCartItem; // 기본은 기존 아이템 유지
+          let currentTags = (targetCartItem.options as any)?.voiceOptionIds || [];
 
-          // 기존 아이템 삭제 후 업데이트된 정보로 재추가 (순서 유지를 위해 인덱스 고려 필요하지만, 보통 맨 뒤로 가도 무방)
-          // *완벽한 제자리 수정을 원하면 store에 updateItem 기능이 있어야 하지만, 
-          // 현재는 remove -> add 방식이므로 장바구니 맨 뒤로 이동하게 됩니다. 
-          // (사용자 입장에선 "수정됨 = 최신 상태"이므로 크게 어색하지 않음)
+          if (isMenuChange) {
+             // 메뉴가 바뀌었다면, 전체 메뉴 목록(items)에서 새 메뉴를 찾습니다.
+             const newItem = items.find(i => i.name === action.data.name);
+             if (newItem) {
+                itemToUpdate = newItem; // 업데이트 대상 교체!
+                currentTags = []; // 메뉴가 바뀌었으니 기존 옵션(예: 샷추가)은 초기화하고 새로 받은 것만 적용
+             }
+          }
+
+          // 3. 태그 병합
+          const newTagsInput = action.data.option_ids || [];
+          const mergedTags = mergeVoiceTags(currentTags, newTagsInput);
+          
+          // 4. 옵션 및 가격 정보 다시 계산 (바뀐 아이템 ID 기준)
+          const { fullOptionGroups, backendOptions, globalOptions } = await resolveBackendOptions(itemToUpdate.id, mergedTags);
+
+          // 5. 기존 아이템 삭제 후 업데이트된 아이템 추가
           removeFromCart(targetCartItem.cartId);
+          
           addToCart(
-            targetCartItem,
+            itemToUpdate, // [수정] 바뀐 메뉴 객체가 들어갑니다
             { ...globalOptions, voiceOptionIds: mergedTags } as any,
-            targetCartItem.quantity, // 수량은 기존 유지 (또는 action.data.quantity 있으면 그걸로 변경 가능)
-            backendOptions
+            action.data.quantity || targetCartItem.quantity, // 수량 변경 요청이 없으면 기존 수량 유지
+            backendOptions, // 가격 계산용
+            fullOptionGroups as any // 수정 모달용
           );
         } else {
           console.warn('수정할 대상을 찾지 못했습니다:', searchName || 'last_item');
+          speak('수정할 메뉴를 찾지 못했어요.');
         }
-      } 
+      }
       
-      // [REMOVE 로직도 이름 기반 검색으로 강화하면 좋습니다]
       else if (action.type === 'REMOVE') {
         const currentCart = useCartStore.getState().cart;
         let removeId = '';
@@ -185,11 +218,9 @@ export const useVoiceOrderProcessor = ({ items }: UseVoiceOrderProcessorProps) =
         const searchName = action.id === 'last_item' ? null : action.id;
 
         if (searchName) {
-           // 이름으로 뒤에서부터 검색
            const target = [...currentCart].reverse().find(item => item.name === searchName);
            if (target) removeId = target.cartId;
         } else {
-           // 이름 없으면 맨 마지막
            if (currentCart.length > 0) removeId = currentCart[currentCart.length - 1].cartId;
         }
 
@@ -206,7 +237,6 @@ export const useVoiceOrderProcessor = ({ items }: UseVoiceOrderProcessorProps) =
         try {
           const response = await sendAudioOrder(audioFile);
           
-          // sendAudioOrder의 반환값도 이제 타입이 명확합니다.
           if (!response.text) {
             setLogText('잘 못 들었어요\n다시 말씀해 주세요');
             speak('잘 못 들었어요. 다시 말씀해 주세요');
@@ -233,7 +263,6 @@ export const useVoiceOrderProcessor = ({ items }: UseVoiceOrderProcessorProps) =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioFile, isRecording]);
 
-  // (침묵 감지 등 나머지 로직 동일)
   useEffect(() => {
     if (isRecording && audioLevel > 0.05) lastHeardTimeRef.current = Date.now();
   }, [isRecording, audioLevel]);

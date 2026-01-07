@@ -30,6 +30,8 @@ export type CartItem = MenuItem & {
     price: number;
     name: string;
   }[];
+
+  fullOptionGroups?: any[];
   options?: any;
 };
 
@@ -102,6 +104,7 @@ export interface MenuOptionGroup {
   minSelect: number;
   maxSelect: number;
   options: MenuOptionDetail[];
+  fullOptionGroups?: any[];
 }
 
 export type Options = {

@@ -1,38 +1,33 @@
 import { create } from 'zustand';
 import type { CartItem, MenuItem, Options } from '../types/OrderTypes';
 
-
-
 interface CartState {
   cart: CartItem[];
   addToCart: (
     item: MenuItem,
     options?: Partial<Options>,
     quantity?: number,
-    backendOptions?: { optionItemId: number; quantity: number; price: number; name: string }[]
-
+    // (4) 선택된 옵션 (가격 계산용)
+    backendOptions?: { optionItemId: number; quantity: number; price: number; name: string }[],
+    // (5) [추가] 전체 옵션 정보 (수정창용)
+    fullOptionGroups?: any[] 
   ) => void;
   removeFromCart: (cartId: string) => void;
   updateQuantity: (cartId: string, quantity: number) => void;
   clearCart: () => void;
   getTotalPrice: () => number;
-
-  
   updateCartOptions: (cartId: string, options: Partial<Options>) => void;
 }
 
-// 옵션 비교 헬퍼
 const areOptionsEqual = (opts1: any[], opts2: any[]) => {
-  if (!opts1 || !opts2) return false; // 방어 코드 추가
+  if (!opts1 || !opts2) return false;
   if (opts1.length !== opts2.length) return false;
   const sorted1 = [...opts1].sort((a, b) => a.optionItemId - b.optionItemId);
   const sorted2 = [...opts2].sort((a, b) => a.optionItemId - b.optionItemId);
   return JSON.stringify(sorted1) === JSON.stringify(sorted2);
 };
 
-// ✅ 이지모드(온도) 옵션 비교 헬퍼 (파일 상단에 둬야 함)
 const getTemp = (opts?: Partial<Options>) => opts?.temperature ?? null;
-
 const areEasyOptionsEqual = (a?: Partial<Options>, b?: Partial<Options>) => {
   return getTemp(a) === getTemp(b);
 };
@@ -40,14 +35,14 @@ const areEasyOptionsEqual = (a?: Partial<Options>, b?: Partial<Options>) => {
 export const useCartStore = create<CartState>((set, get) => ({
   cart: [],
 
-  addToCart: (item, options, quantity = 1, backendOptions = []) => {
+  // ✅ 5번째 인자 fullOptionGroups 추가
+  addToCart: (item, options, quantity = 1, backendOptions = [], fullOptionGroups = []) => {
     set((state) => {
-      // 기존 장바구니에 동일한 옵션의 메뉴가 있는지 확인
       const existingItemIndex = state.cart.findIndex(
         (cartItem) =>
           cartItem.id === item.id &&
           areOptionsEqual(cartItem.selectedBackendOptions, backendOptions) &&
-          areEasyOptionsEqual(cartItem.options, options) // ✅ 온도까지 비교
+          areEasyOptionsEqual(cartItem.options, options)
       );
 
       if (existingItemIndex !== -1) {
@@ -61,8 +56,8 @@ export const useCartStore = create<CartState>((set, get) => ({
         cartId: Math.random().toString(36).substr(2, 9),
         quantity,
         options,
-        selectedBackendOptions: backendOptions,
-     
+        selectedBackendOptions: backendOptions, // 가격 계산용 (선택된 것)
+        fullOptionGroups: fullOptionGroups,     // ✅ 수정창용 (전체 목록) 저장
       };
 
       return { cart: [...state.cart, newItem] };
@@ -87,10 +82,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         item.cartId === cartId
           ? {
               ...item,
-              options: {
-                ...(item.options ?? {}),
-                ...options,
-              },
+              options: { ...(item.options ?? {}), ...options },
             }
           : item
       ),
@@ -101,13 +93,11 @@ export const useCartStore = create<CartState>((set, get) => ({
   getTotalPrice: () => {
     const { cart } = get();
     return cart.reduce((total, item) => {
+      // ✅ 여기는 여전히 selectedBackendOptions를 써야 가격이 계산됩니다!
       const optionsPrice = item.selectedBackendOptions.reduce(
         (optTotal, opt) => optTotal + opt.price * opt.quantity, 0
-        
       );
       return total + (item.price + optionsPrice) * item.quantity;
     }, 0);
   },
-  
-  
 }));
