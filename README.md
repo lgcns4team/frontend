@@ -1,164 +1,48 @@
-# ☕ AI Smart Kiosk (Frontend)
+# git clone 후 꼭!!!!! npm ci 로 설치하기 npm install 금지!!!!
 
-> 대상인식과 실시간 대화 기능이 탑재된 스마트 키오스크 프론트엔드 프로젝트입니다. </br>
-> React 18과 Vite 5를 기반으로 구축되었으며, 엄격한 버전 관리를 통해 안정성을 보장합니다. 
+
+# 신규브랜치 - React Query를 이용한 API 캐싱과 MSW(Mock Service Worker)를 활용한 개발 환경 API Mock 처리를 사용함에 따라 아래 1~4 방법 필요
+
+1. 의존성 설치
+npm install
+2. react-query 설치 여부 확인
+npm ls @tanstack/react-query
+없으면
+npm install @tanstack/react-query
+
+3. MSW 설치 여부 확인
+npm ls msw
+없으면
+npm install -D msw
+
+4. Service Worker 파일 존재 여부 확인
+ls public/mockServiceWorker.js
+없으면 (최초 1회)
+npx msw init public/
+
 
 ---
 
-## 🛠️ Tech Stack & Version Policy (중요)
+## FaceAnalysisScreen (ai-core / DeepFace 기반)
 
-이 프로젝트는 팀원 간의 개발 환경 통일과 배포 안정성을 위해 **아래 명시된 버전을 엄격히 준수**합니다.  
-라이브러리 추가 시 반드시 `--save-exact` 옵션을 사용하여 버전을 고정해 주세요.
+얼굴(대상) 인식/나이·성별 추정은 프론트가 아니라 `ai-core`(FastAPI + DeepFace)에서 수행합니다.
+프론트의 FaceAnalysisScreen은 아래 API를 호출해 상태를 표시하고 결과를 가져옵니다.
 
-| Category | Technology | Version (Fixed) | Description |
-| :--- | :--- | :--- | :--- |
-| **Runtime** | **Node.js** | **20.x (LTS)** | 실행 환경 (필수) |
-| **Framework** | React | 18.2.0 | UI 라이브러리 |
-| **Build Tool** | Vite | 5.0.8 | 초고속 빌드 도구 |
-| **Language** | TypeScript | 5.3.3 | 정적 타입 언어 |
-| **Styling** | Tailwind CSS | 3.4.1 | 유틸리티 퍼스트 CSS |
-| **Routing** | React Router | 6.22.1 | SPA 라우팅 |
-| **HTTP** | Axios | 1.6.5 | API 통신 |
-| **Realtime** | WebSocket | Native | 실시간 주문/음성 데이터 전송 |
+- SSE 상태 스트림: `GET /api/stream/status`
+- 상태 조회: `GET /api/status`
+- 결과 조회: `GET /api/analysis`
+- 결과 초기화: `DELETE /api/analysis`
 
----
+### 환경변수
 
-## ✨ Key Features
+기본 ai-core 주소는 `http://127.0.0.1:8000` 입니다.
 
-* **🗣️ AI 음성 주문 (Voice Ordering)**
-    * 사용자의 음성을 실시간으로 녹음하여 서버로 전송합니다.
-    * Whisper 모델을 활용한 정확한 메뉴 인식 및 의도 파악(주문/취소/결제).
-* **🛒 스마트 장바구니 (Smart Cart)**
-    * 음성 명령("아메리카노 담아줘", "라떼 취소해")에 따라 장바구니가 자동으로 업데이트됩니다.
-* **⚡ 실시간 반응 (Real-time Interaction)**
-    * WebSocket을 통해 지연 시간 없는 즉각적인 피드백을 제공합니다.
-* **📱 키오스크 전용 UI (Kiosk Mode)**
-    * 터치 스크린에 최적화된 UX/UI 디자인.
-    * 스크롤 방지 및 드래그 방지 등 키오스크 필수 스타일 적용.
+- `VITE_AI_CORE_URL=http://127.0.0.1:8000`
 
----
+### 실행 흐름
 
-## 🚀 Getting Started
-
-로컬 개발 환경을 세팅하기 위해 다음 절차를 따라주세요.
-
-### 1. 사전 요구사항 (Prerequisites)
-반드시 **Node.js v20 이상**이 설치되어 있어야 합니다.
-```bash
-node -v
-# v20.x.x 버전인지 확인하세요.
-
-# 레포지토리 복제
-git clone [레포지토리 URL 입력]
-cd kiosk-app
-
-# 의존성 설치 (Clean Install)
-npm ci
-# 또는 npm install
-npm run dev
-
-```
-
-## 🤝 Contribution Guidelines
-라이브러리 설치 규칙
-
-* ** ❌ 잘못된 예 (버전 유동적) **
-  * npm install 라이브러리명
-
-* ** ✅ 올바른 예 (버전 고정) **
-  * npm install 라이브러리명@버전 --save-exact
-
-* ** 커밋 메시지 컨벤션 **
-
-  * feat: 새로운 기능 추가
-
-  * fix: 버그 수정
-
-  * style: 코드 포맷팅, 세미콜론 누락 등 (로직 변경 없음)
-
-  * refactor: 코드 리팩토링
-
-  * chore: 빌드 업무 수정, 패키지 매니저 설정 등](url)
-
-## 🖥️ Deployment (Kiosk Mode)
-실제 키오스크 기기(Windows/Chrome OS)에서 배포 시, 크롬 브라우저를 아래 옵션으로 실행하여 전체 화면 모드를 활성화합니다.
-
-```Bash
-
-chrome.exe --kiosk "http://localhost:5173" --disable-pinch --overscroll-history-navigation=0
-
-```
-
-```Bash
-
-react:                 18.2.0
-react-dom:             18.2.0
-vite:                  5.0.8
-@vitejs/plugin-react:  4.2.1
-typescript:            5.3.3
-react-router-dom:      6.22.1
-axios:                 1.6.5
-tailwindcss:           3.4.1
-postcss:               8.4.33
-autoprefixer:          10.4.16
-zustand:               4.5.2
-zod:                   3.22.4
-socket.io-client:      4.7.2 (선택)
-
-⭐ 이것들 한 번에 설치하는 명령어
-1 기본 의존성
-npm install react@18.2.0 react-dom@18.2.0
-npm install react-router-dom@6.22.1
-npm install axios@1.6.5
-npm install zustand@4.5.2
-npm install zod@3.22.4
-
-2 개발 의존성
-npm install -D vite@5.0.8 @vitejs/plugin-react@4.2.1
-npm install -D typescript@5.3.3
-npm install -D tailwindcss@3.4.1 postcss@8.4.33 autoprefixer@10.4.16
-
-3 WebSocket 옵션
-npm install socket.io-client@4.7.2
-
-## 🔀 Routing 구조 (Frontend)
-
-프론트엔드는 `react-router-dom@6`을 사용하여 SPA 라우팅을 구성했습니다.  
-주요 경로와 화면 역할은 아래와 같습니다.
-
-| Path        | Component   | Description                                  |
-|------------|------------|----------------------------------------------|
-| `/`        | `AdScreen` | 키오스크 대기/광고 화면. 최초 진입 화면입니다. |
-| `/order`   | `Order`    | 메뉴를 선택하고 장바구니에 담는 주문 화면입니다. |
-| `/voice`   | `Voice`    | 음성 인식 기반 AI 주문/대화가 이루어지는 화면입니다. |
-| `/payment` | `Payment`  | 주문 내역 확인 및 결제를 진행하는 화면입니다. |
-| `/easy`    | `Easy`     | 고령자/초보자용 쉬운 모드 UI 화면입니다.      |
-
-라우팅 설정은 `src/App.tsx`에서 관리하며, `Routes` / `Route` 컴포넌트를 통해 각 경로와 페이지 컴포넌트를 매핑합니다.
-
-```tsx
-// src/App.tsx
-import { Routes, Route } from "react-router-dom";
-import AdScreen from "@/src/pages/AdScreen";
-import Order from "@/src/pages/Order";
-import Voice from "@/src/pages/Voice";
-import Payment from "@/src/pages/Payment";
-import Easy from "@/src/pages/Easy";
-
-function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<AdScreen />} />
-      <Route path="/order" element={<Order />} />
-      <Route path="/voice" element={<Voice />} />
-      <Route path="/payment" element={<Payment />} />
-      <Route path="/easy" element={<Easy />} />
-    </Routes>
-  );
-}
-
-export default App;
+1) `ai-core` 서버를 먼저 실행
+2) 프론트 실행 후 FaceAnalysisScreen 진입
+3) 백엔드에서 `has_data=true`가 되면 프론트가 `/api/analysis`를 자동 조회
 
 
-
-```
