@@ -12,6 +12,7 @@ import RecordButton from '../components/VoiceMode/RecordButton';
 import BottomCart from '../components/BottomCart';
 import OrderConfirmModal from '../components/OrderConfirmModal';
 import AudioVisualizer from '../components/VoiceMode/AudioVisualizer';
+import BeverageOptionsModal from '../components/OptionsModal';
 
 // [Styles & Assets]
 import microphoneIcon from '../assets/icons/microphone.svg';
@@ -34,8 +35,11 @@ const VoiceOrder: React.FC = () => {
   const navigate = useNavigate();
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
   const [isCartOpen, setIsCartOpen] = useState(false);
-  
-    // 🆕 얼굴 인식 스토어
+
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [editingCartId, setEditingCartId] = useState<string | null>(null);
+
+  // 🆕 얼굴 인식 스토어
   const { setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
     setAnalysis: s.setAnalysis,
     clearAnalysis: s.clearAnalysis,
@@ -45,23 +49,37 @@ const VoiceOrder: React.FC = () => {
 
   // 1. 데이터 가져오기 (메뉴, 장바구니)
   const { items, isLoading } = useMenu();
-  const { removeFromCart } = useCartStore();
-  const cart = useCartStore((state) => state.cart);
+  const { cart, addToCart, removeFromCart } = useCartStore();
+
+  const handleEditOptions = (cartId: string) => {
+    const itemToEdit = cart.find((item) => item.cartId === cartId);
+    if (itemToEdit) {
+      setEditingCartId(cartId);
+      setSelectedItem(itemToEdit);
+    }
+  };
+
+  const handleAddToCartFromModal = (item: any, opts: any, qty: number, backendOptions: any[]) => {
+    if (editingCartId) {
+      removeFromCart(editingCartId);
+    }
+    addToCart(item, opts, qty, backendOptions);
+    setSelectedItem(null);
+    setEditingCartId(null);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setEditingCartId(null);
+  };
 
   // 2. 메뉴 분류
   const recommendedItems = items.filter((item) => item.category === '추천메뉴');
   const normalItems = items.filter((item) => item.category !== '추천메뉴');
 
   // ⭐️ [핵심] 복잡한 로직은 이 훅 하나로 끝!
-  const {
-    logText,
-    isProcessing,
-    isRecording,
-    audioLevel,
-    startRecording,
-    stopRecording,
-    speak,
-  } = useVoiceOrderProcessor({ items });
+  const { logText, isProcessing, isRecording, audioLevel, startRecording, stopRecording, speak } =
+    useVoiceOrderProcessor({ items });
 
   // 3. 페이지 진입 안내
   useEffect(() => {
@@ -141,63 +159,83 @@ const VoiceOrder: React.FC = () => {
         )}
 
         {/* 헤더 */}
-        <header className={`${COLORS.bgPrimary} ${SPACING.headerPadding} flex justify-between items-center shadow-sm z-10 shrink-0`}>
+        <header
+          className={`${COLORS.bgPrimary} ${SPACING.headerPadding} flex justify-between items-center shadow-sm z-10 shrink-0`}
+        >
           <h1 className={TEXT_STYLES.header}>NOK NOK</h1>
           <button
             onClick={handleGoHome}
             disabled={isLoadingFaceData}
-            className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
+            className="text-base text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
+          >
             <Home className="w-8 h-8" />
             <span>처음으로</span>
           </button>
         </header>
 
         {/* 네비게이션 */}
-        <div className={`${COLORS.bgPrimary} ${SPACING.navSectionPadding} shadow-sm z-10 shrink-0 flex ${SPACING.navGap}`}>
-          <button onClick={() => navigate('/order')} className="flex-1 bg-pink-50 p-8 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group">
+        <div
+          className={`${COLORS.bgPrimary} ${SPACING.navSectionPadding} shadow-sm z-10 shrink-0 flex ${SPACING.navGap}`}
+        >
+          <button
+            onClick={() => navigate('/order')}
+            className="flex-1 bg-pink-50 p-8 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
+          >
             <style>{`.mic-icon { animation: micPulse 1.5s ease-in-out infinite; } @keyframes micPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }`}</style>
             <img src={microphoneIcon} alt="microphone" className="mic-icon w-10 h-10" />
             <span className="font-bold text-pink-900 text-xl">일반 주문</span>
           </button>
           <button
-              onClick={() => navigate('/easy')}
-              className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group ${
-                isSenior ? 'easy-button' : ''
-              }`}
-            >
-              {isSenior && (
-                <style>{`
+            onClick={() => navigate('/easy')}
+            className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center hover:bg-orange-100 hover:border-orange-200 transition-colors group ${
+              isSenior ? 'easy-button' : ''
+            }`}
+          >
+            {isSenior && (
+              <style>{`
                   .easy-button { animation: easyButtonGlow 0.8s ease-in-out infinite; }
                   @keyframes easyButtonGlow { 0%, 100% { border-color: rgb(254, 208, 121); background-color: rgb(254, 245, 230); box-shadow: 0 0 0 0px rgba(217, 119, 6, 0); } 50% { border-color: rgb(217, 119, 6); background-color: rgb(255, 251, 235); box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3); } }
                   .finger-icon { animation: fingerWiggle 0.8s ease-in-out infinite; transform-origin: bottom center; }
                   @keyframes fingerWiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
                 `}</style>
-              )}
-              <img
-                src={fingerIcon}
-                alt="finger"
-                className={`${isSenior ? 'finger-icon ' : ''}w-12 h-12`}
-              />
-              <span className="font-bold text-orange-900 text-xl">쉬운 주문</span>
-            </button>
+            )}
+            <img
+              src={fingerIcon}
+              alt="finger"
+              className={`${isSenior ? 'finger-icon ' : ''}w-12 h-12`}
+            />
+            <span className="font-bold text-orange-900 text-xl">쉬운 주문</span>
+          </button>
         </div>
 
         {/* 메인 컨텐츠 영역 */}
         <main className="flex-1 flex flex-col overflow-hidden relative bg-gray-50">
           <section className="flex-1 overflow-y-auto p-4 bg-gray-50 scrollbar-hide">
             {isLoading ? (
-              <div className="h-full flex items-center justify-center text-gray-400">메뉴 정보를 불러오고 있어요...</div>
+              <div className="h-full flex items-center justify-center text-gray-400">
+                메뉴 정보를 불러오고 있어요...
+              </div>
             ) : (
               <>
                 {/* 추천 메뉴 */}
                 {recommendedItems.length > 0 && (
                   <div className="mb-8">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4 pl-2 border-l-4 border-red-500 flex items-center gap-2">🔥 추천 메뉴</h2>
+                    <h2 className="text-xl font-bold text-gray-800 mb-4 pl-2 border-l-4 border-red-500 flex items-center gap-2">
+                      🔥 추천 메뉴
+                    </h2>
                     <div className={LAYOUT_STYLES.menuGrid}>
                       {recommendedItems.map((item, index) => (
-                        <button key={`rec-${item.id}-${index}`} className={`${CARD_STYLES.menuCard} ${SIZES.menuCardHeight} ring-2 ring-red-100 bg-red-50/30`} onClick={() => speak(`${item.name}입니다.`)}>
-                          <span className={`${TEXT_STYLES.menuCardTitle} leading-tight break-keep`}>{item.name}</span>
-                          <span className={`${TEXT_STYLES.menuCardPrice} text-red-600 font-bold`}>{item.price.toLocaleString()}원</span>
+                        <button
+                          key={`rec-${item.id}-${index}`}
+                          className={`${CARD_STYLES.menuCard} ${SIZES.menuCardHeight} ring-2 ring-red-100 bg-red-50/30`}
+                          onClick={() => speak(`${item.name}입니다.`)}
+                        >
+                          <span className={`${TEXT_STYLES.menuCardTitle} leading-tight break-keep`}>
+                            {item.name}
+                          </span>
+                          <span className={`${TEXT_STYLES.menuCardPrice} text-red-600 font-bold`}>
+                            {item.price.toLocaleString()}원
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -205,12 +243,22 @@ const VoiceOrder: React.FC = () => {
                 )}
                 {/* 전체 메뉴 */}
                 <div className="mb-4">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4 pl-2 border-l-4 border-gray-800">📋 전체 메뉴</h2>
+                  <h2 className="text-xl font-bold text-gray-800 mb-4 pl-2 border-l-4 border-gray-800">
+                    📋 전체 메뉴
+                  </h2>
                   <div className={LAYOUT_STYLES.menuGrid}>
                     {normalItems.map((item, index) => (
-                      <button key={`norm-${item.id}-${index}`} className={`${CARD_STYLES.menuCard} ${SIZES.menuCardHeight}`} onClick={() => speak(`${item.name}입니다.`)}>
-                        <span className={`${TEXT_STYLES.menuCardTitle} leading-tight break-keep`}>{item.name}</span>
-                        <span className={`${TEXT_STYLES.menuCardPrice} text-gray-500`}>{item.price.toLocaleString()}원</span>
+                      <button
+                        key={`norm-${item.id}-${index}`}
+                        className={`${CARD_STYLES.menuCard} ${SIZES.menuCardHeight}`}
+                        onClick={() => speak(`${item.name}입니다.`)}
+                      >
+                        <span className={`${TEXT_STYLES.menuCardTitle} leading-tight break-keep`}>
+                          {item.name}
+                        </span>
+                        <span className={`${TEXT_STYLES.menuCardPrice} text-gray-500`}>
+                          {item.price.toLocaleString()}원
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -220,24 +268,48 @@ const VoiceOrder: React.FC = () => {
           </section>
 
           {/* 하단 제어 바 */}
-          <section className={`shrink-0 ${COLORS.bgPrimary} border-t ${COLORS.primary.border} ${SPACING.bottomBarPaddingX} py-6 flex flex-row items-center justify-center gap-12 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] z-20 relative min-h-[240px]`}>
+          <section
+            className={`shrink-0 ${COLORS.bgPrimary} border-t ${COLORS.primary.border} ${SPACING.bottomBarPaddingX} py-6 flex flex-row items-center justify-center gap-12 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] z-20 relative min-h-[240px]`}
+          >
             <div className="flex flex-col gap-3 h-full justify-center w-[450px] shrink-0">
-              <div className={`${SPACING.panelPadding} ${BORDERS.largeRadius} border text-center transition-all duration-300 flex flex-col items-center justify-center h-[120px] shadow-sm gap-2 ${isRecording ? 'bg-white border-blue-500 border-2 text-blue-600 scale-[1.0] shadow-md' : `${COLORS.blue.bg} ${COLORS.blue.border} text-blue-700`}`}>
-                {isRecording ? <div className="w-full mb-6"><AudioVisualizer level={audioLevel} /></div> : null}
+              <div
+                className={`${SPACING.panelPadding} ${
+                  BORDERS.largeRadius
+                } border text-center transition-all duration-300 flex flex-col items-center justify-center h-[120px] shadow-sm gap-2 ${
+                  isRecording
+                    ? 'bg-white border-blue-500 border-2 text-blue-600 scale-[1.0] shadow-md'
+                    : `${COLORS.blue.bg} ${COLORS.blue.border} text-blue-700`
+                }`}
+              >
+                {isRecording ? (
+                  <div className="w-full mb-6">
+                    <AudioVisualizer level={audioLevel} />
+                  </div>
+                ) : null}
                 <p className="text-xl font-bold leading-tight">{logText}</p>
               </div>
-              <div className={`${COLORS.bgTertiary} ${SPACING.panelPadding} ${BORDERS.largeRadius} border ${COLORS.primary.border} flex flex-col justify-center min-h-[80px] text-gray-500 shadow-inner`}>
+              <div
+                className={`${COLORS.bgTertiary} ${SPACING.panelPadding} ${BORDERS.largeRadius} border ${COLORS.primary.border} flex flex-col justify-center min-h-[80px] text-gray-500 shadow-inner`}
+              >
                 <div className="flex items-center gap-2 mb-1 text-gray-600 font-bold text-sm">
                   <Lightbulb className="w-4 h-4 text-yellow-500" />
                   <span>이렇게 말해보세요</span>
                 </div>
-                <p className="text-lg font-medium text-gray-700 pl-1">"아이스 아메리카노 한 잔 줘"</p>
+                <p className="text-lg font-medium text-gray-700 pl-1">
+                  "아이스 아메리카노 한 잔 줘"
+                </p>
               </div>
             </div>
             <div className="shrink-0 relative flex items-center justify-center">
-              {!isRecording && !isProcessing && <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-10 scale-[1.5]"></div>}
+              {!isRecording && !isProcessing && (
+                <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-10 scale-[1.5]"></div>
+              )}
               <div className="transform scale-[1.3] origin-center relative z-10 drop-shadow-lg active:scale-[1.5] transition-transform">
-                <RecordButton isRecording={isRecording} onStart={startRecording} onStop={stopRecording} />
+                <RecordButton
+                  isRecording={isRecording}
+                  onStart={startRecording}
+                  onStop={stopRecording}
+                />
               </div>
             </div>
           </section>
@@ -245,9 +317,16 @@ const VoiceOrder: React.FC = () => {
 
         <BottomCart
           onCheckout={handleCheckout}
-          onEditOptions={() => {}}
+          onEditOptions={handleEditOptions}
           orderMethod={orderMethod}
           onOrderMethodChange={setOrderMethod}
+        />
+
+        <BeverageOptionsModal
+          open={!!selectedItem}
+          item={selectedItem}
+          onClose={handleCloseModal}
+          onAdd={handleAddToCartFromModal}
         />
 
         <OrderConfirmModal
