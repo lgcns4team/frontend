@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Minus, ShoppingCart } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, X } from 'lucide-react';
 import { useCartStore } from '../store/UseCartStore';
 import type { CartItem } from '../types/OrderTypes';
 
@@ -16,7 +16,7 @@ export default function BottomCart({
   orderMethod = 'dine-in',
   onOrderMethodChange,
 }: Props) {
-  const { cart, updateQuantity, clearCart, getTotalPrice } = useCartStore();
+  const { cart, updateQuantity, removeFromCart, clearCart, getTotalPrice } = useCartStore();
 
   // 옵션 텍스트 렌더링
   const renderOptions = (item: CartItem) => {
@@ -134,7 +134,7 @@ export default function BottomCart({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     {/* 옵션 변경 버튼 */}
                     {canEditOptions && (
                       <button
@@ -164,6 +164,16 @@ export default function BottomCart({
                         <Plus className="w-4 h-4 text-gray-600" />
                       </button>
                     </div>
+
+                    {/* 개별 삭제 */}
+                    <button
+                      type="button"
+                      onClick={() => removeFromCart(item.cartId)}
+                      aria-label="메뉴 삭제"
+                      className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </motion.div>
               );
