@@ -7,6 +7,7 @@ import { useAds } from '../../hooks/useAds';
 import type { Ad, GetAdsResponse } from '../../types/ad';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { apiClient } from '../../api/ApiClient';
+import { ADS } from '../../config/ads';
 
 interface PaymentProgressModalProps {
   paymentMethod: 'card' | 'kakaopay' | 'naverpay' | 'samsungpay' | 'applepay' | 'gifticon';
@@ -68,11 +69,40 @@ export default function PaymentProgressModal({
     return [];
   };
 
+  // 백엔드 응답이 snake_case/legacy 형태여도 화면에서 사용할 수 있도록 정규화
+  const normalizeAd = (raw: any): Ad => {
+    return {
+      adId: raw?.adId ?? raw?.id ?? 0,
+      title: raw?.title ?? '',
+      mediaType: (raw?.mediaType ?? raw?.media_type ?? 'IMAGE') as 'IMAGE' | 'VIDEO',
+      mediaUrl: raw?.mediaUrl ?? raw?.media_url ?? raw?.mediaPath ?? raw?.url ?? '',
+      startDate: raw?.startDate ?? raw?.start_date ?? '1970-01-01',
+      endDate: raw?.endDate ?? raw?.end_date ?? '2999-12-31',
+      isActive: raw?.isActive ?? raw?.is_active ?? true,
+      // 타겟팅 필드는 이 화면에서 직접 사용하진 않지만 타입 호환을 위해 보존
+      ageGroup: raw?.ageGroup ?? raw?.age_group ?? null,
+      gender: raw?.gender ?? null,
+      targetRules: raw?.targetRules ?? raw?.target_rules,
+    };
+  };
+
   const pickRandom = (list: Ad[]): Ad | null => {
     const candidates = (list ?? []).filter((a) => !!a?.mediaUrl);
     if (candidates.length === 0) return null;
     const idx = Math.floor(Math.random() * candidates.length);
     return candidates[idx] ?? null;
+  };
+
+  const getLocalAds = (): Ad[] => {
+    return ADS.map((a) => ({
+      adId: a.id,
+      title: `ad-${a.id}`,
+      mediaType: 'IMAGE' as const,
+      mediaUrl: a.image,
+      startDate: '1970-01-01',
+      endDate: '2999-12-31',
+      isActive: true,
+    }));
   };
 
   // 1. 5초 후 처리 완료 상태로 변경
@@ -114,17 +144,24 @@ export default function PaymentProgressModal({
 
         // (A) 타겟 파라미터를 포함해 조회
         const targetedRes = await apiClient.get<GetAdsResponse | Ad[]>('/ads/payment', { params });
-        const targetedCandidates = asArrayAds(targetedRes.data);
+        const targetedCandidates = asArrayAds(targetedRes.data).map(normalizeAd);
 
         // (B) 파라미터 없이 조회: "타겟 규칙이 없는(=모든 사용자 대상)" 광고들만 나오는 성질을 이용
         const genericRes = await apiClient.get<GetAdsResponse | Ad[]>('/ads/payment');
-        const genericCandidates = asArrayAds(genericRes.data);
+        const genericCandidates = asArrayAds(genericRes.data).map(normalizeAd);
         const genericIds = new Set(genericCandidates.map((a) => a.adId));
 
         // (C) 타겟 조회 결과 중에서 generic에 없는 것만 = "타겟룰로 인해 추가로 매칭된 광고"
         const trulyTargeted = targetedCandidates.filter((a) => !genericIds.has(a.adId));
 
-        const chosen = trulyTargeted.length > 0 ? pickRandom(trulyTargeted) : pickRandom(ads);
+        // 타겟 광고군이 있더라도(IDs 기준) mediaUrl이 없으면 null이 될 수 있으므로 안전한 폴백 체인 적용
+        const targetedPick = trulyTargeted.length > 0 ? pickRandom(trulyTargeted) : null;
+        const chosen =
+          targetedPick ??
+          pickRandom(ads) ??
+          pickRandom(genericCandidates) ??
+          pickRandom(targetedCandidates) ??
+          pickRandom(getLocalAds());
 
         if (!cancelled) {
           setSelectedAd(chosen);
