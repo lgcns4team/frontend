@@ -150,7 +150,7 @@ export default function BottomCart({
                     <div className="h-9 flex items-center gap-3 bg-white rounded-lg px-3 border border-gray-200 shadow-sm">
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.cartId, -1)}
+                        onClick={() => updateQuantity(item.cartId, item.quantity - 1)}
                         className="p-1 hover:bg-gray-100 rounded"
                       >
                         <Minus className="w-4 h-4 text-gray-600" />
@@ -158,7 +158,7 @@ export default function BottomCart({
                       <span className="font-bold text-lg w-7 text-center">{item.quantity}</span>
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.cartId, 1)}
+                        onClick={() => updateQuantity(item.cartId, item.quantity + 1)}
                         className="p-1 hover:bg-gray-100 rounded"
                       >
                         <Plus className="w-4 h-4 text-gray-600" />
