@@ -7,11 +7,13 @@ import VoiceOrder from './pages/VoiceOrder';
 import Advertisement from './pages/Advertisement';
 import './index.css';
 import { useIdleWatcher } from './hooks/useIdleWatcher';
+import CustomCursor from './components/CustomCursor';
 
 function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+    <CustomCursor />
+    <AppRoutes />
     </BrowserRouter>
   );
 }
@@ -34,3 +36,4 @@ function AppRoutes() {
 }
 
 export default App;
+

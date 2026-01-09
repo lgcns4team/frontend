@@ -241,7 +241,7 @@ export default function PaymentProgressModal({
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-transparent flex flex-col items-center justify-center">
+      <div className=" w-full h-full origin-center bg-transparent flex flex-col items-center justify-center">
         <div className="bg-white rounded-3xl p-12 w-[95%] h-[90%] shadow-2xl text-center flex flex-col items-center justify-center overflow-hidden">
           <h2 className="text-4xl font-bold mb-12">{content.title}</h2>
 

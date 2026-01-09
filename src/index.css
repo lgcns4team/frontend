@@ -1,48 +1,65 @@
-@tailwind base;
+/* src/index.css */
+
+@tailwind base;       /* <--- 이 줄이 없으면 @layer base에서 에러가 납니다 */
 @tailwind components;
 @tailwind utilities;
 
-/* 1. 커서 설정 (평소엔 손바닥, 클릭 시 움켜쥐는 손) */
 @layer base {
+  /* 모든 요소에서 기본 커서를 숨깁니다. */
+  html, body, * {
+    cursor: none !important;
+  }
+
+  button, a, input, select, textarea, [role="button"] {
+    cursor: none !important;
+  }
+
   body {
-    /* ✋ 이모지를 90도 돌려서 커서로 씀 */
-    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewport='0 0 32 32'><text y='22' font-size='24' transform='rotate(-90 16 16)'>✋</text></svg>")
-        16 16,
-      grab;
-  }
-
-  body:active {
-    /* ✊ 이모지를 90도 돌려서 클릭 커서로 씀 */
-    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewport='0 0 32 32'><text y='22' font-size='24' transform='rotate(-90 16 16)'>✊</text></svg>")
-        16 16,
-      grabbing;
-  }
-
-  button,
-  a {
-    cursor: inherit;
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
   }
 }
 
-/* 2. 스크롤바 숨기기 유틸리티 (Tailwind 레이어에 등록) */
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+.custom-cursor {
+  width: 24px;
+  height: 24px;
+  background-color: rgba(211, 211, 211, 0.4); 
+  border: 2px solid rgba(169, 169, 169, 0.8);
+  position: fixed;
+  pointer-events: none; /* 클릭 이벤트가 실제 버튼에 전달되도록 필수 설정 */
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s ease-out, background-color 0.2s;
+  border-radius: 50%;
 }
 
-/* 3. 일반 CSS 클래스로도 사용 가능하도록 유지 (기존 코드 보존) */
-/* Chrome, Safari, Edge */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+.custom-cursor.clicking {
+  transform: translate(-50%, -50%) scale(0.8);
+  background-color: rgba(150, 150, 150, 0.7); 
 }
 
-/* Firefox */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.click-effect {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(200, 200, 200, 0.5); 
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  animation: click-animation 0.4s ease-out forwards;
+}
+
+@keyframes click-animation {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1.1); 
+    opacity: 0;
+  }
 }

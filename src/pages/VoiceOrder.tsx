@@ -149,7 +149,7 @@ const VoiceOrder: React.FC = () => {
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl relative">
+      <div className=" w-full h-full origin-center bg-gray-50 flex flex-col shadow-2xl relative">
         {/* 로딩 오버레이 */}
         {isProcessing && (
           <div className="absolute inset-0 z-50 bg-white/60 flex flex-col items-center justify-center backdrop-blur-sm">
@@ -304,7 +304,7 @@ const VoiceOrder: React.FC = () => {
               {!isRecording && !isProcessing && (
                 <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-10 scale-[1.5]"></div>
               )}
-              <div className="transform scale-[1.3] origin-center relative z-10 drop-shadow-lg active:scale-[1.5] transition-transform">
+              <div className="transform scale-[1.3]  origin-center relative z-10 drop-shadow-lg active:scale-[1.5] transition-transform">
                 <RecordButton
                   isRecording={isRecording}
                   onStart={startRecording}
