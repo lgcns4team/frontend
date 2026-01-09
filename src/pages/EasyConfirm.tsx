@@ -27,7 +27,7 @@ export default function EasyConfirm() {
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
       {/* 90도 회전된 전체 캔버스 */}
-      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-pink-50 flex flex-col shadow-2xl relative">
+      <div className=" w-full h-full origin-center bg-pink-50 flex flex-col shadow-2xl relative">
         {/* 헤더 */}
         <header className="flex items-center justify-between px-8 py-5">
           <h1 className="text-3xl font-extrabold">주문 확인</h1>

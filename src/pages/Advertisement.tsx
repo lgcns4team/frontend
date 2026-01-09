@@ -488,14 +488,14 @@ export default function Advertisement() {
   if (!currentAd) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-        <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-black" />
+        <div className=" w-full h-full origin-center bg-black" />
       </div>
     );
   }
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-black">
+      <div className=" w-full h-full origin-center bg-black">
         <div className="w-full h-full overflow-hidden relative">
           {/* Current */}
           <div

@@ -177,7 +177,7 @@ export default function Payment() {
   return (
     <>
       <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-        <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl">
+        <div className=" w-full h-full origin-center bg-gray-50 flex flex-col shadow-2xl">
           {/* 헤더 */}
           <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
             <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
