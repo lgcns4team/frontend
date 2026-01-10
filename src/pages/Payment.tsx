@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Home } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import PaymentMethodPage from '../components/PayMent/PaymentMethodPage';
 import PaymentProgressModal from '../components/PayMent/PaymentProgressModal';
 import { useCartStore } from '../store/UseCartStore';
@@ -12,12 +13,18 @@ import type {
   OrderVerificationResponse,
 } from '../types/OrderTypes';
 
+// 기준 화면 크기 (9:16 비율)
+const BASE_WIDTH = 900;
+const BASE_HEIGHT = 1600;
+
 type PaymentStep = 'initial' | 'method' | 'processing';
 
 export default function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
   const { cart, getTotalPrice, clearCart } = useCartStore();
+
+  const [scale, setScale] = useState(1);
 
   // 중복 요청 방지용 Ref
   const isProcessingRef = useRef(false);
@@ -26,6 +33,20 @@ export default function Payment() {
   const [paymentMethod, setPaymentMethod] = useState<
     'card' | 'kakaopay' | 'naverpay' | 'samsungpay' | 'applepay' | 'gifticon' | null
   >(null);
+
+  // 🎯 반응형 스케일 계산
+  useEffect(() => {
+    const calculateScale = () => {
+      const scaleX = window.innerWidth / BASE_WIDTH;
+      const scaleY = window.innerHeight / BASE_HEIGHT;
+      const newScale = Math.min(scaleX, scaleY);
+      setScale(newScale);
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, []);
 
   useEffect(() => {
     const skip = (location.state as any)?.skipMethod;
@@ -176,8 +197,22 @@ export default function Payment() {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-        <div className=" w-full h-full origin-center bg-gray-50 flex flex-col shadow-2xl">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
+      >
+        <div 
+          style={{
+            width: `${BASE_WIDTH}px`,
+            height: `${BASE_HEIGHT}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: 'center center',
+          }}
+          className="origin-center bg-gray-50 flex flex-col shadow-2xl"
+        >
           {/* 헤더 */}
           <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
             <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
@@ -211,7 +246,7 @@ export default function Payment() {
             {step === 'method' && <PaymentMethodPage onSelectMethod={handleSelectMethod} />}
           </main>
         </div>
-      </div>
+      </motion.div>
 
       {step === 'processing' && paymentMethod && (
         <PaymentProgressModal paymentMethod={paymentMethod} onClose={handlePaymentComplete} />
