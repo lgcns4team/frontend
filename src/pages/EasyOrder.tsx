@@ -227,9 +227,11 @@ export default function EasyOrder() {
             {/* 일반 주문 (현재 페이지라 강조만 하고 싶으면 disabled 추천) */}
             <button
               onClick={() => navigate('/order')}
-              className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-200 flex items-center gap-2 justify-center transition-colors group opacity-90 cursor-default ${
-                isSenior ? 'easy-button' : ''
-              }`}
+              className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center
+    hover:bg-orange-100 hover:border-orange-200 active:bg-orange-200 active:scale-[0.99]
+    transition-all duration-200 group
+    ${isSenior ? 'easy-button' : ''}
+  `}
             >
               {isSenior && (
                 <style>{`
