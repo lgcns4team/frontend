@@ -2,32 +2,83 @@
 import { useNavigate } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import { useCartStore } from '../store/UseCartStore';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+
+// 기준 화면 크기 (9:16 비율)
+const BASE_WIDTH = 900;
+const BASE_HEIGHT = 1600;
 
 export default function EasyConfirm() {
   const navigate = useNavigate();
   const { cart, updateQuantity, removeFromCart } = useCartStore();
+  const [scale, setScale] = useState(1);
 
   const firstItem = cart[0];
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  // 🎯 반응형 스케일 계산
+  useEffect(() => {
+    const calculateScale = () => {
+      const scaleX = window.innerWidth / BASE_WIDTH;
+      const scaleY = window.innerHeight / BASE_HEIGHT;
+      const newScale = Math.min(scaleX, scaleY);
+      setScale(newScale);
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, []);
+
   // 장바구니가 비어있으면 다시 쉬운 주문으로
   if (!firstItem) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black text-white">
-        <button
-          onClick={() => navigate('/easy')}
-          className="px-8 py-4 bg-pink-500 rounded-2xl font-bold text-2xl"
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
+      >
+        <div 
+          style={{
+            width: `${BASE_WIDTH}px`,
+            height: `${BASE_HEIGHT}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: 'center center',
+          }}
+          className="flex items-center justify-center bg-black text-white"
         >
-          먼저 메뉴를 선택해주세요
-        </button>
-      </div>
+          <button
+            onClick={() => navigate('/easy')}
+            className="px-8 py-4 bg-pink-500 rounded-2xl font-bold text-2xl"
+          >
+            먼저 메뉴를 선택해주세요
+          </button>
+        </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
+    >
       {/* 90도 회전된 전체 캔버스 */}
-      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-pink-50 flex flex-col shadow-2xl relative">
+      <div 
+        style={{
+          width: `${BASE_WIDTH}px`,
+          height: `${BASE_HEIGHT}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
+        className="origin-center bg-pink-50 flex flex-col shadow-2xl relative"
+      >
         {/* 헤더 */}
         <header className="flex items-center justify-between px-8 py-5">
           <h1 className="text-3xl font-extrabold">주문 확인</h1>
@@ -182,6 +233,6 @@ export default function EasyConfirm() {
           </div>
         </footer>
       </div>
-    </div>
+    </motion.div>
   );
 }

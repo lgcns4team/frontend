@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lightbulb, Home } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 // [Hooks]
 import { useMenu } from '../hooks/UseMenu';
@@ -31,8 +32,13 @@ import { useAnalysisStore } from '../store/analysisStore';
 // AI Core Base URL
 const AI_CORE_BASE_URL = 'http://127.0.0.1:8000/nok-nok';
 
+// 기준 화면 크기 (9:16 비율)
+const BASE_WIDTH = 900;
+const BASE_HEIGHT = 1600;
+
 const VoiceOrder: React.FC = () => {
   const navigate = useNavigate();
+  const [scale, setScale] = useState(1);
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -97,6 +103,20 @@ const VoiceOrder: React.FC = () => {
     setIsCartOpen(true);
   };
 
+  // 🎯 반응형 스케일 계산
+  useEffect(() => {
+    const calculateScale = () => {
+      const scaleX = window.innerWidth / BASE_WIDTH;
+      const scaleY = window.innerHeight / BASE_HEIGHT;
+      const newScale = Math.min(scaleX, scaleY);
+      setScale(newScale);
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, []);
+
   // 🆕 처음으로 버튼: 최신 얼굴 인식 데이터를 가져와서 적용 (화면 이동 없음)
   const handleGoHome = async () => {
     if (isLoadingFaceData) return;
@@ -148,8 +168,22 @@ const VoiceOrder: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-gray-50 flex flex-col shadow-2xl relative">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
+    >
+      <div 
+        style={{
+          width: `${BASE_WIDTH}px`,
+          height: `${BASE_HEIGHT}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
+        className="origin-center bg-gray-50 flex flex-col shadow-2xl relative"
+      >
         {/* 로딩 오버레이 */}
         {isProcessing && (
           <div className="absolute inset-0 z-50 bg-white/60 flex flex-col items-center justify-center backdrop-blur-sm">
@@ -304,7 +338,7 @@ const VoiceOrder: React.FC = () => {
               {!isRecording && !isProcessing && (
                 <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-10 scale-[1.5]"></div>
               )}
-              <div className="transform scale-[1.3] origin-center relative z-10 drop-shadow-lg active:scale-[1.5] transition-transform">
+              <div className="transform scale-[1.3]  origin-center relative z-10 drop-shadow-lg active:scale-[1.5] transition-transform">
                 <RecordButton
                   isRecording={isRecording}
                   onStart={startRecording}
@@ -338,7 +372,7 @@ const VoiceOrder: React.FC = () => {
           onRemoveItem={removeFromCart}
         />
       </div>
-    </div>
+    </motion.div>
   );
 };
 

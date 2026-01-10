@@ -1,5 +1,6 @@
 import { type TransitionEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAds } from '../hooks/useAds';
 import type { Ad } from '../types/ad';
 import { toLocalDateTimeString } from '../utils/localDateTime';
@@ -12,6 +13,10 @@ const EXIT_GUARD_MS = 0; // 클릭 시 즉시 반응 (기존 400ms 제거)
 
 const NEXT_MEDIA_MAX_WAIT_MS = 5_000;
 const NEXT_MEDIA_RETRY_MS = 300;
+
+// 기준 화면 크기 (9:16 비율)
+const BASE_WIDTH = 900;
+const BASE_HEIGHT = 1600;
 
 // Face analysis backend base URL (must include /nok-nok prefix when applicable)
 const AI_CORE_BASE_URL = 'http://127.0.0.1:8000/nok-nok';
@@ -63,6 +68,7 @@ export default function Advertisement() {
 
   const setAnalysis = useAnalysisStore((s) => s.setAnalysis);
 
+  const [scale, setScale] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -337,6 +343,20 @@ export default function Advertisement() {
     }
   }, []);
 
+  // 🎯 반응형 스케일 계산
+  useEffect(() => {
+    const calculateScale = () => {
+      const scaleX = window.innerWidth / BASE_WIDTH;
+      const scaleY = window.innerHeight / BASE_HEIGHT;
+      const newScale = Math.min(scaleX, scaleY);
+      setScale(newScale);
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, []);
+
   // 🆕 SSE 연결 및 얼굴 인식 감지
   useEffect(() => {
     if (sseConnectedRef.current) return;
@@ -487,15 +507,43 @@ export default function Advertisement() {
 
   if (!currentAd) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-        <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-black" />
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
+      >
+        <div 
+          style={{
+            width: `${BASE_WIDTH}px`,
+            height: `${BASE_HEIGHT}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: 'center center',
+          }}
+          className="origin-center bg-black" 
+        />
+      </motion.div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      <div className="w-[100vh] h-[100vw] -rotate-90 origin-center bg-black">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
+    >
+      <div 
+        style={{
+          width: `${BASE_WIDTH}px`,
+          height: `${BASE_HEIGHT}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
+        className="origin-center bg-black"
+      >
         <div className="w-full h-full overflow-hidden relative">
           {/* Current */}
           <div
@@ -529,6 +577,6 @@ export default function Advertisement() {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
