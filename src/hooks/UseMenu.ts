@@ -10,10 +10,9 @@ const getCurrentTimeSlot = () => {
   return 'EVENING';
 };
 
-// fallback(응답 없을 때만)
-export const CATEGORIES = ['추천메뉴', '커피', '음료', '디저트', '브랜치', '베이커리'];
 
-export function useMenu() {
+
+export function useMenu(gender?: string, ageGroup?: string) {
   const menuQuery = useQuery({
     queryKey: ['menus'],
     queryFn: fetchMenus,
@@ -21,8 +20,12 @@ export function useMenu() {
 
   const timeSlot = getCurrentTimeSlot();
   const recommendQuery = useQuery({
-    queryKey: ['recommend', timeSlot],
-    queryFn: () => fetchRecommendMenus({ timeSlot }),
+    queryKey: ['recommend', timeSlot, gender, ageGroup], 
+    queryFn: () => fetchRecommendMenus({ 
+      timeSlot, 
+      gender, 
+      ageGroup
+    }),
   });
 
   const isLoading = menuQuery.isLoading || recommendQuery.isLoading;
@@ -34,6 +37,7 @@ export function useMenu() {
   const basicItems: MenuItem[] = (menuQuery.data || []).flatMap((category: any) => {
     if (!category?.menus) return [];
 
+
     return category.menus.map((menu: any) => {
       return {
         id: menu.menuId,
@@ -42,9 +46,11 @@ export function useMenu() {
 
         category: category.categoryName,
 
+
         categoryId: category.categoryId,
         categoryName: category.categoryName,
 
+     
         img: menu.imageUrl || '',
 
         originalCategory: category.categoryName,
@@ -70,14 +76,20 @@ export function useMenu() {
       category: '추천메뉴',
       originalCategory: originalCategoryName,
 
+   
       categoryId: original?.categoryId ?? -1,
       categoryName: originalCategoryName,
 
+   
       img: rec.image_Url || original?.img || '',
     };
   });
 
-  const items: MenuItem[] = [...basicItems];
+
+  const items: MenuItem[] = [
+    ...recommendedItems,
+    ...basicItems,
+  ];
 
   // -----------------------------
   // (C) 카테고리 탭 생성
@@ -85,10 +97,10 @@ export function useMenu() {
   const apiCategories = (menuQuery.data || []).map((c: any) => c.categoryName).filter(Boolean);
 
   const categories =
-    apiCategories.length > 0 ? Array.from(new Set(['추천메뉴', ...apiCategories])) : CATEGORIES;
+    apiCategories.length > 0 ? Array.from(new Set(['추천메뉴', ...apiCategories])) : [];
 
   return {
-    items,
+    items, 
     recommendedItems,
     isLoading,
     categories,
