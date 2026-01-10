@@ -158,9 +158,9 @@ export default function EasyOrder() {
           gender: data.gender,
           isSenior: data.age >= 50,
         });
-        console.log('✅ 50세 이상 전용 애니메이션 활성화:', data.age >= 50);
+        console.log(' 50세 이상 전용 애니메이션 활성화:', data.age >= 50);
       } else {
-        console.log('ℹ️ 서버에 얼굴 인식 데이터가 없습니다. 기존 데이터 초기화.');
+        console.log('ℹ 서버에 얼굴 인식 데이터가 없습니다. 기존 데이터 초기화.');
         // 데이터가 없으면 초기화
         clearAnalysis();
       }
@@ -188,7 +188,7 @@ export default function EasyOrder() {
       transition={{ duration: 0.3, ease: 'easeInOut' }}
       className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
     >
-      <div 
+      <div
         style={{
           width: `${BASE_WIDTH}px`,
           height: `${BASE_HEIGHT}px`,

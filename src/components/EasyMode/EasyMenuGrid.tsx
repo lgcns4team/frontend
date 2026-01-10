@@ -7,9 +7,14 @@ type EasyMenuGridProps = {
 };
 
 export default function EasyMenuGrid({ items, onItemClick }: EasyMenuGridProps) {
+  // ✅ id 기준 중복 제거 (첫 번째만 남김)
+  const dedupedItems = items.filter((item, index, arr) => {
+    return arr.findIndex((x) => x.id === item.id) === index;
+  });
+
   return (
     <div className="grid grid-cols-2 gap-8 max-w-[900px] mx-auto">
-      {items.map((item) => (
+      {dedupedItems.map((item) => (
         <button
           key={item.id}
           onClick={() => onItemClick(item)}
