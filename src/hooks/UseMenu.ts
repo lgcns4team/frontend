@@ -24,7 +24,7 @@ export function useMenu(gender?: string, ageGroup?: string) {
     queryFn: () => fetchRecommendMenus({ 
       timeSlot, 
       gender, 
-      ageGroup: ageGroup?.toString()
+      ageGroup
     }),
   });
 
@@ -37,6 +37,7 @@ export function useMenu(gender?: string, ageGroup?: string) {
   const basicItems: MenuItem[] = (menuQuery.data || []).flatMap((category: any) => {
     if (!category?.menus) return [];
 
+
     return category.menus.map((menu: any) => {
       return {
         id: menu.menuId,
@@ -45,9 +46,11 @@ export function useMenu(gender?: string, ageGroup?: string) {
 
         category: category.categoryName,
 
+
         categoryId: category.categoryId,
         categoryName: category.categoryName,
 
+     
         img: menu.imageUrl || '',
 
         originalCategory: category.categoryName,
@@ -73,14 +76,20 @@ export function useMenu(gender?: string, ageGroup?: string) {
       category: '추천메뉴',
       originalCategory: originalCategoryName,
 
+   
       categoryId: original?.categoryId ?? -1,
       categoryName: originalCategoryName,
 
+   
       img: rec.image_Url || original?.img || '',
     };
   });
 
-  const items: MenuItem[] = [...basicItems];
+
+  const items: MenuItem[] = [
+    ...recommendedItems,
+    ...basicItems,
+  ];
 
   // -----------------------------
   // (C) 카테고리 탭 생성
@@ -91,7 +100,7 @@ export function useMenu(gender?: string, ageGroup?: string) {
     apiCategories.length > 0 ? Array.from(new Set(['추천메뉴', ...apiCategories])) : [];
 
   return {
-    items,
+    items, 
     recommendedItems,
     isLoading,
     categories,

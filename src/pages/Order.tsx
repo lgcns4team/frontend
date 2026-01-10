@@ -22,16 +22,26 @@ const BASE_HEIGHT = 1600;
 
 export default function Order() {
   const navigate = useNavigate();
-  const { items, categories, isLoading } = useMenu();
   const { cart, addToCart, removeFromCart } = useCartStore();
   const [scale, setScale] = useState(1);
 
   // 🆕 얼굴 인식 스토어
-  const { setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
+  const { gender, age, setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
+    gender: s.gender,
+    age: s.age,
     setAnalysis: s.setAnalysis,
     clearAnalysis: s.clearAnalysis,
     isSenior: s.isSenior,
   }));
+
+  // 연령대 계산 (예: 23 -> "20s")
+  const ageGroup = age ? `${Math.floor(age / 10) * 10}s` : undefined;
+
+  const { items, recommendedItems, categories, isLoading } = useMenu(
+    gender || undefined,
+    ageGroup
+  );
+
   const [isLoadingFaceData, setIsLoadingFaceData] = useState(false);
 
   const [activeCategory, setActiveCategory] = useState('추천메뉴');
@@ -57,10 +67,14 @@ export default function Order() {
     return () => window.removeEventListener('resize', calculateScale);
   }, []);
 
+
   const filteredItems = useMemo(() => {
+    if (activeCategory === '추천메뉴') {
+      return recommendedItems || []; // 추천메뉴 탭일 때는 추천 데이터 반환
+    }
     if (!items) return [];
     return items.filter((item) => item.category === activeCategory);
-  }, [activeCategory, items]);
+  }, [activeCategory, items, recommendedItems]);
 
   const isOptionMenu = (item: MenuItem) => {
     if (['커피', '음료'].includes(item.category)) return true;
@@ -72,6 +86,7 @@ export default function Order() {
       return true;
     return false;
   };
+  
 
   // [기능 추가] 옵션 변경 버튼 클릭 핸들러
   const handleEditOptions = (cartId: string) => {
@@ -142,7 +157,7 @@ export default function Order() {
     } finally {
       setIsLoadingFaceData(false);
     }
-
+    setActiveCategory('추천메뉴');
     navigate('/order');
   };
 
