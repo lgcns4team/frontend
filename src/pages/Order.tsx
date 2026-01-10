@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useMenu } from '../hooks/UseMenu';
 import { useCartStore } from '../store/UseCartStore';
 import MenuGrid from '../components/MenuGrid';
@@ -15,10 +16,15 @@ import { useAnalysisStore } from '../store/analysisStore';
 // AI Core Base URL
 const AI_CORE_BASE_URL = 'http://127.0.0.1:8000/nok-nok';
 
+// 기준 화면 크기 (맥북 에어 15인치)
+const BASE_WIDTH = 900;
+const BASE_HEIGHT = 1600;
+
 export default function Order() {
   const navigate = useNavigate();
   const { items, categories, isLoading } = useMenu();
   const { cart, addToCart, removeFromCart } = useCartStore();
+  const [scale, setScale] = useState(1);
 
   // 🆕 얼굴 인식 스토어
   const { setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
@@ -36,6 +42,20 @@ export default function Order() {
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
   // [상태 추가] 현재 수정 중인 카트 아이템 ID (옵션 변경 시 사용)
   const [editingCartId, setEditingCartId] = useState<string | null>(null);
+
+  // 🎯 반응형 스케일 계산
+  useEffect(() => {
+    const calculateScale = () => {
+      const scaleX = window.innerWidth / BASE_WIDTH;
+      const scaleY = window.innerHeight / BASE_HEIGHT;
+      const newScale = Math.min(scaleX, scaleY);
+      setScale(newScale);
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, []);
 
   const filteredItems = useMemo(() => {
     if (!items) return [];
@@ -57,8 +77,8 @@ export default function Order() {
   const handleEditOptions = (cartId: string) => {
     const itemToEdit = cart.find((item) => item.cartId === cartId);
     if (itemToEdit) {
-      setEditingCartId(cartId); // 수정 중인 ID 저장
-      setSelectedItem(itemToEdit); // 해당 아이템으로 모달 열기
+      setEditingCartId(cartId);
+      setSelectedItem(itemToEdit);
     }
   };
 
@@ -69,24 +89,20 @@ export default function Order() {
     qty: number,
     backendOptions: any[]
   ) => {
-    // 1. 만약 수정 중이었다면, 기존 아이템 삭제 (교체 효과)
     if (editingCartId) {
       removeFromCart(editingCartId);
     }
-    // 2. 새 아이템 추가
     addToCart(item, opts, qty, backendOptions);
-
-    // 3. 상태 초기화
     setSelectedItem(null);
     setEditingCartId(null);
   };
 
   const handleCloseModal = () => {
     setSelectedItem(null);
-    setEditingCartId(null); // 수정 취소 시 ID도 초기화
+    setEditingCartId(null);
   };
 
-  // 🆕 처음으로 버튼: 최신 얼굴 인식 데이터를 가져와서 적용 (화면 이동 없음)
+  // 🆕 처음으로 버튼: 최신 얼굴 인식 데이터를 가져와서 적용
   const handleGoHome = async () => {
     if (isLoadingFaceData) return;
 
@@ -94,9 +110,8 @@ export default function Order() {
     console.log('🏠 처음으로 버튼 클릭: 최신 얼굴 인식 데이터 확인 중...');
 
     try {
-      // 1. Python 서버에서 최신 얼굴 인식 데이터 가져오기 (타임아웃 3초)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 500); // 3초 타임아웃
+      const timeoutId = setTimeout(() => controller.abort(), 500);
 
       const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`, {
         signal: controller.signal,
@@ -106,8 +121,6 @@ export default function Order() {
       if (response.ok) {
         const data = await response.json();
         console.log('📥 최신 얼굴 인식 데이터 수신:', data);
-
-        // 2. Zustand 스토어에 저장 (50세 이상 여부 자동 계산됨)
         setAnalysis(data);
         console.log('💾 스토어 업데이트 완료:', {
           age: data.age,
@@ -117,7 +130,6 @@ export default function Order() {
         console.log('✅ 50세 이상 전용 애니메이션 활성화:', data.age >= 50);
       } else {
         console.log('ℹ️ 서버에 얼굴 인식 데이터가 없습니다. 기존 데이터 초기화.');
-        // 데이터가 없으면 초기화
         clearAnalysis();
       }
     } catch (err) {
@@ -126,19 +138,32 @@ export default function Order() {
       } else {
         console.error('❌ 얼굴 인식 데이터 가져오기 실패:', err);
       }
-      // 에러 발생 시 안전하게 초기화
       clearAnalysis();
     } finally {
       setIsLoadingFaceData(false);
     }
 
-    // 🔄 데이터 처리 완료 후 Order 페이지로 이동
     navigate('/order');
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      <div className=" w-full h-full origin-center bg-gray-50 flex flex-col shadow-2xl">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
+    >
+      {/* 🎯 스케일 적용된 컨테이너 */}
+      <div
+        style={{
+          width: `${BASE_WIDTH}px`,
+          height: `${BASE_HEIGHT}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
+        className="origin-center bg-gray-50 flex flex-col shadow-2xl"
+      >
         {/* 헤더 */}
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
@@ -251,6 +276,6 @@ export default function Order() {
           onRemoveItem={removeFromCart}
         />
       </div>
-    </div>
+    </motion.div>
   );
 }

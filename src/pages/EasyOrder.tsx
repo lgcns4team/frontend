@@ -1,7 +1,8 @@
 // src/pages/EasyOrder.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Home } from 'lucide-react';
+import { motion } from 'framer-motion';
 import microphoneIcon from '../assets/icons/microphone.svg';
 import fingerIcon from '../assets/icons/finger.svg';
 
@@ -17,6 +18,10 @@ import { useAnalysisStore } from '../store/analysisStore';
 
 // AI Core Base URL
 const AI_CORE_BASE_URL = 'http://127.0.0.1:8000/nok-nok';
+
+// 기준 화면 크기 (9:16 비율)
+const BASE_WIDTH = 900;
+const BASE_HEIGHT = 1600;
 
 type EasyCategoryKey = 'COFFEE' | 'DRINK' | 'DESSERT' | 'RECOMMEND';
 const EASY_CATEGORIES: {
@@ -35,6 +40,7 @@ export default function EasyOrder() {
   const { items, recommendedItems, isLoading } = useMenu();
   const { cart, addToCart, updateCartOptions } = useCartStore();
 
+  const [scale, setScale] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<EasyCategoryKey | null>(null);
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
 
@@ -110,6 +116,20 @@ export default function EasyOrder() {
   // 카테고리 화면에서는 cart 있을 때만 BottomCart 보이게
   const shouldShowBottomCart = !selectedCategory ? cart.length > 0 : true;
 
+  // 🎯 반응형 스케일 계산
+  useEffect(() => {
+    const calculateScale = () => {
+      const scaleX = window.innerWidth / BASE_WIDTH;
+      const scaleY = window.innerHeight / BASE_HEIGHT;
+      const newScale = Math.min(scaleX, scaleY);
+      setScale(newScale);
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, []);
+
   // 🆕 처음으로 버튼: 최신 얼굴 인식 데이터를 가져와서 적용 (화면 이동 없음)
   const handleGoHome = async () => {
     if (isLoadingFaceData) return;
@@ -138,9 +158,9 @@ export default function EasyOrder() {
           gender: data.gender,
           isSenior: data.age >= 50,
         });
-        console.log('✅ 50세 이상 전용 애니메이션 활성화:', data.age >= 50);
+        console.log(' 50세 이상 전용 애니메이션 활성화:', data.age >= 50);
       } else {
-        console.log('ℹ️ 서버에 얼굴 인식 데이터가 없습니다. 기존 데이터 초기화.');
+        console.log('ℹ 서버에 얼굴 인식 데이터가 없습니다. 기존 데이터 초기화.');
         // 데이터가 없으면 초기화
         clearAnalysis();
       }
@@ -161,8 +181,22 @@ export default function EasyOrder() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50">
-      <div className=" w-full h-full origin-center bg-white flex flex-col shadow-2xl">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
+    >
+      <div
+        style={{
+          width: `${BASE_WIDTH}px`,
+          height: `${BASE_HEIGHT}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
+        className="origin-center bg-white flex flex-col shadow-2xl"
+      >
         <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 shrink-0">
           <h1 className="text-2xl font-extrabold text-gray-900">NOK NOK</h1>
           <button
@@ -193,9 +227,11 @@ export default function EasyOrder() {
             {/* 일반 주문 (현재 페이지라 강조만 하고 싶으면 disabled 추천) */}
             <button
               onClick={() => navigate('/order')}
-              className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-200 flex items-center gap-2 justify-center transition-colors group opacity-90 cursor-default ${
-                isSenior ? 'easy-button' : ''
-              }`}
+              className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center
+    hover:bg-orange-100 hover:border-orange-200 active:bg-orange-200 active:scale-[0.99]
+    transition-all duration-200 group
+    ${isSenior ? 'easy-button' : ''}
+  `}
             >
               {isSenior && (
                 <style>{`
@@ -232,12 +268,14 @@ export default function EasyOrder() {
                       onClick={() => setSelectedCategory(cat.key)}
                       className="bg-gray-100 rounded-3xl p-10 flex flex-col items-center justify-center h-[420px] hover:bg-orange-100 hover:border-orange-400 border-6 border-transparent transition-all duration-200"
                     >
-                      <img
-                        src={cat.image}
-                        alt={cat.name}
-                        className="w-40 h-40 mb-6 object-contain"
-                        draggable={false}
-                      />
+                      <div className="w-[280px] h-[280px] mb-6 flex items-center justify-center overflow-hidden">
+                        <img
+                          src={cat.image}
+                          alt={cat.name}
+                          className="w-full h-full object-contain"
+                          draggable={false}
+                        />
+                      </div>
 
                       <span
                         className="text-6xl font-extrabold whitespace-nowrap break-keep leading-none"
@@ -307,6 +345,6 @@ export default function EasyOrder() {
           }}
         />
       </div>
-    </div>
+    </motion.div>
   );
 }

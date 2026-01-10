@@ -7,19 +7,24 @@ type EasyMenuGridProps = {
 };
 
 export default function EasyMenuGrid({ items, onItemClick }: EasyMenuGridProps) {
+  // ✅ id 기준 중복 제거 (첫 번째만 남김)
+  const dedupedItems = items.filter((item, index, arr) => {
+    return arr.findIndex((x) => x.id === item.id) === index;
+  });
+
   return (
     <div className="grid grid-cols-2 gap-8 max-w-[900px] mx-auto">
-      {items.map((item) => (
+      {dedupedItems.map((item) => (
         <button
           key={item.id}
           onClick={() => onItemClick(item)}
           className="bg-white rounded-3xl shadow-lg overflow-hidden flex flex-col h-[380px]"
         >
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 bg-white flex items-center justify-center overflow-hidden">
             <img
               src={item.img}
               alt={item.name}
-              className="w-full h-full object-cover"
+              className="max-w-full max-h-full object-contain"
               draggable={false}
             />
           </div>
