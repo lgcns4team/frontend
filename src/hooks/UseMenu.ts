@@ -10,10 +10,9 @@ const getCurrentTimeSlot = () => {
   return 'EVENING';
 };
 
-// fallback(응답 없을 때만)
-export const CATEGORIES = ['추천메뉴', '커피', '음료', '디저트', '브랜치', '베이커리'];
 
-export function useMenu() {
+
+export function useMenu(gender?: string, ageGroup?: string) {
   const menuQuery = useQuery({
     queryKey: ['menus'],
     queryFn: fetchMenus,
@@ -21,8 +20,12 @@ export function useMenu() {
 
   const timeSlot = getCurrentTimeSlot();
   const recommendQuery = useQuery({
-    queryKey: ['recommend', timeSlot],
-    queryFn: () => fetchRecommendMenus({ timeSlot }),
+    queryKey: ['recommend', timeSlot, gender, ageGroup], 
+    queryFn: () => fetchRecommendMenus({ 
+      timeSlot, 
+      gender, 
+      ageGroup: ageGroup?.toString()
+    }),
   });
 
   const isLoading = menuQuery.isLoading || recommendQuery.isLoading;
@@ -65,8 +68,6 @@ export function useMenu() {
     const originalCategoryName =
       rec.categoryName || original?.categoryName || original?.category || '기타';
 
-   
-
     return {
       id: menuId,
       name: rec.menuName ?? rec.name,
@@ -96,7 +97,7 @@ export function useMenu() {
   const apiCategories = (menuQuery.data || []).map((c: any) => c.categoryName).filter(Boolean);
 
   const categories =
-    apiCategories.length > 0 ? Array.from(new Set(['추천메뉴', ...apiCategories])) : CATEGORIES;
+    apiCategories.length > 0 ? Array.from(new Set(['추천메뉴', ...apiCategories])) : [];
 
   return {
     items, 
