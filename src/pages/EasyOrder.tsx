@@ -158,9 +158,9 @@ export default function EasyOrder() {
           gender: data.gender,
           isSenior: data.age >= 50,
         });
-        console.log('✅ 50세 이상 전용 애니메이션 활성화:', data.age >= 50);
+        console.log(' 50세 이상 전용 애니메이션 활성화:', data.age >= 50);
       } else {
-        console.log('ℹ️ 서버에 얼굴 인식 데이터가 없습니다. 기존 데이터 초기화.');
+        console.log('ℹ 서버에 얼굴 인식 데이터가 없습니다. 기존 데이터 초기화.');
         // 데이터가 없으면 초기화
         clearAnalysis();
       }
@@ -188,7 +188,7 @@ export default function EasyOrder() {
       transition={{ duration: 0.3, ease: 'easeInOut' }}
       className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
     >
-      <div 
+      <div
         style={{
           width: `${BASE_WIDTH}px`,
           height: `${BASE_HEIGHT}px`,
@@ -227,9 +227,11 @@ export default function EasyOrder() {
             {/* 일반 주문 (현재 페이지라 강조만 하고 싶으면 disabled 추천) */}
             <button
               onClick={() => navigate('/order')}
-              className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-200 flex items-center gap-2 justify-center transition-colors group opacity-90 cursor-default ${
-                isSenior ? 'easy-button' : ''
-              }`}
+              className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center
+    hover:bg-orange-100 hover:border-orange-200 active:bg-orange-200 active:scale-[0.99]
+    transition-all duration-200 group
+    ${isSenior ? 'easy-button' : ''}
+  `}
             >
               {isSenior && (
                 <style>{`
@@ -266,12 +268,14 @@ export default function EasyOrder() {
                       onClick={() => setSelectedCategory(cat.key)}
                       className="bg-gray-100 rounded-3xl p-10 flex flex-col items-center justify-center h-[420px] hover:bg-orange-100 hover:border-orange-400 border-6 border-transparent transition-all duration-200"
                     >
-                      <img
-                        src={cat.image}
-                        alt={cat.name}
-                        className="w-40 h-40 mb-6 object-contain"
-                        draggable={false}
-                      />
+                      <div className="w-[280px] h-[280px] mb-6 flex items-center justify-center overflow-hidden">
+                        <img
+                          src={cat.image}
+                          alt={cat.name}
+                          className="w-full h-full object-contain"
+                          draggable={false}
+                        />
+                      </div>
 
                       <span
                         className="text-6xl font-extrabold whitespace-nowrap break-keep leading-none"

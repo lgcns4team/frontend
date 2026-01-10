@@ -34,7 +34,6 @@ export function useMenu() {
   const basicItems: MenuItem[] = (menuQuery.data || []).flatMap((category: any) => {
     if (!category?.menus) return [];
 
-
     return category.menus.map((menu: any) => {
       return {
         id: menu.menuId,
@@ -43,11 +42,9 @@ export function useMenu() {
 
         category: category.categoryName,
 
-
         categoryId: category.categoryId,
         categoryName: category.categoryName,
 
-     
         img: menu.imageUrl || '',
 
         originalCategory: category.categoryName,
@@ -65,8 +62,6 @@ export function useMenu() {
     const originalCategoryName =
       rec.categoryName || original?.categoryName || original?.category || '기타';
 
-   
-
     return {
       id: menuId,
       name: rec.menuName ?? rec.name,
@@ -75,20 +70,14 @@ export function useMenu() {
       category: '추천메뉴',
       originalCategory: originalCategoryName,
 
-   
       categoryId: original?.categoryId ?? -1,
       categoryName: originalCategoryName,
 
-   
       img: rec.image_Url || original?.img || '',
     };
   });
 
-
-  const items: MenuItem[] = [
-    ...recommendedItems,
-    ...basicItems,
-  ];
+  const items: MenuItem[] = [...basicItems];
 
   // -----------------------------
   // (C) 카테고리 탭 생성
@@ -99,7 +88,7 @@ export function useMenu() {
     apiCategories.length > 0 ? Array.from(new Set(['추천메뉴', ...apiCategories])) : CATEGORIES;
 
   return {
-    items, 
+    items,
     recommendedItems,
     isLoading,
     categories,
