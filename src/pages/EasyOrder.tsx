@@ -266,12 +266,14 @@ export default function EasyOrder() {
                       onClick={() => setSelectedCategory(cat.key)}
                       className="bg-gray-100 rounded-3xl p-10 flex flex-col items-center justify-center h-[420px] hover:bg-orange-100 hover:border-orange-400 border-6 border-transparent transition-all duration-200"
                     >
-                      <img
-                        src={cat.image}
-                        alt={cat.name}
-                        className="w-40 h-40 mb-6 object-contain"
-                        draggable={false}
-                      />
+                      <div className="w-[280px] h-[280px] mb-6 flex items-center justify-center overflow-hidden">
+                        <img
+                          src={cat.image}
+                          alt={cat.name}
+                          className="w-full h-full object-contain"
+                          draggable={false}
+                        />
+                      </div>
 
                       <span
                         className="text-6xl font-extrabold whitespace-nowrap break-keep leading-none"
