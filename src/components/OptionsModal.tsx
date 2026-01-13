@@ -84,15 +84,30 @@ export default function BeverageOptionsModal({ open, item, onClose, onAdd }: Pro
           });
         });
         setSelections(loadedSelections);
-      } else {
-        // 신규 모드: 기본값(필수 옵션 첫번째) 자동 선택
+} else {
+        // 신규 모드: 기본값 자동 선택
         setQuantity(1);
         const initSel: Record<number, Record<number, number>> = {};
+        
         optionGroups.forEach((g) => {
+          const groupNameLower = g.name.toLowerCase();
+          
+          // 1. 필수 옵션 (온도, 사이즈 등): 첫 번째 자동 선택
           if (g.isRequired && g.options.length > 0) {
             initSel[g.optionGroupId] = { [g.options[0].optionItemId]: 1 };
           }
+          // 2. 휘핑크림: "없음" 기본 선택 (필수 아니어도 선택)
+          else if (groupNameLower.includes('휘핑') || groupNameLower.includes('whip')) {
+            const noWhipOption = g.options.find(opt => 
+              opt.name.includes('없음') || opt.name.toLowerCase().includes('no')
+            );
+            const defaultOption = noWhipOption || g.options[0];
+            if (defaultOption) {
+              initSel[g.optionGroupId] = { [defaultOption.optionItemId]: 1 };
+            }
+          }
         });
+        
         setSelections(initSel);
       }
     }

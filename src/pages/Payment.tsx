@@ -204,7 +204,7 @@ export default function Payment() {
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
       >
-        <div 
+        <div
           style={{
             width: `${BASE_WIDTH}px`,
             height: `${BASE_HEIGHT}px`,
@@ -245,12 +245,11 @@ export default function Payment() {
 
             {step === 'method' && <PaymentMethodPage onSelectMethod={handleSelectMethod} />}
           </main>
+          {step === 'processing' && paymentMethod && (
+            <PaymentProgressModal paymentMethod={paymentMethod} onClose={handlePaymentComplete} />
+          )}
         </div>
       </motion.div>
-
-      {step === 'processing' && paymentMethod && (
-        <PaymentProgressModal paymentMethod={paymentMethod} onClose={handlePaymentComplete} />
-      )}
     </>
   );
 }
