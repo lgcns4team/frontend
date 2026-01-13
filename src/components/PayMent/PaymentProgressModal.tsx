@@ -272,7 +272,7 @@ export default function PaymentProgressModal({
               </div>
 
               {(content as any).instruction && (
-                <p className="text-xl font-semibold text-gray-700 mb-8">
+                <p className="text-2xl font-semibold text-gray-700 mb-8">
                   {(content as any).instruction}
                 </p>
               )}
@@ -300,7 +300,7 @@ export default function PaymentProgressModal({
                     <img
                       src={selectedAd.mediaUrl}
                       alt="advertisement"
-                      className="w-full aspect-[9/16] rounded-2xl object-contain"
+                      className="w-full aspect-[9/16] rounded-2xl object-cover"
                       draggable={false}
                     />
                   )}

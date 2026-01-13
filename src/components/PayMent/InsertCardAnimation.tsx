@@ -108,7 +108,7 @@ export default function InsertCardAnimation() {
       </div>
 
       <div className="text-center mt-4">
-        <p className="text-sm text-gray-600">카드를 투입구에 천천히 밀어 넣어주세요</p>
+      <p className="text-2xl font-semibold text-gray-600">카드를 투입구에 천천히 밀어 넣어주세요</p>
       </div>
     </div>
   );
