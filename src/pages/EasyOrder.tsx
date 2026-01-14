@@ -1,5 +1,5 @@
 // src/pages/EasyOrder.tsx
-import { useLayoutEffect, useState, useMemo, useEffect } from 'react';
+import { useLayoutEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Home } from 'lucide-react';
 import { motion } from 'framer-motion';

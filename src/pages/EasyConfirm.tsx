@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import { useCartStore } from '../store/UseCartStore';
-import { useLayoutEffect, useState, useEffect } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 // 기준 화면 크기 (9:16 비율)
