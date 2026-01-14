@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import { useCartStore } from '../store/UseCartStore';
-import { useState, useEffect } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 // 기준 화면 크기 (9:16 비율)
@@ -12,13 +12,13 @@ const BASE_HEIGHT = 1600;
 export default function EasyConfirm() {
   const navigate = useNavigate();
   const { cart, updateQuantity, removeFromCart } = useCartStore();
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState<number | null>(null);
 
   const firstItem = cart[0];
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   // 🎯 반응형 스케일 계산
-  useEffect(() => {
+  useLayoutEffect(() => {
     const calculateScale = () => {
       const scaleX = window.innerWidth / BASE_WIDTH;
       const scaleY = window.innerHeight / BASE_HEIGHT;
@@ -30,6 +30,10 @@ export default function EasyConfirm() {
     window.addEventListener('resize', calculateScale);
     return () => window.removeEventListener('resize', calculateScale);
   }, []);
+
+  // scale이 계산되지 않았을 때는 아무것도 보여주지 않음 (흰 화면)
+  // 아주 찰나의 순간이라 사용자는 인지하지 못하고 바로 완성된 화면을 보게 됩니다.
+
 
   // 장바구니가 비어있으면 다시 쉬운 주문으로
   if (!firstItem) {
@@ -61,15 +65,13 @@ export default function EasyConfirm() {
     );
   }
 
+  if (scale === null) return null;
+
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
       className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
     >
-      {/* 90도 회전된 전체 캔버스 */}
+
       <div 
         style={{
           width: `${BASE_WIDTH}px`,
