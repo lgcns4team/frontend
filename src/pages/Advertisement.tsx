@@ -1,4 +1,4 @@
-import { type TransitionEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type TransitionEvent, useLayoutEffect, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAds } from '../hooks/useAds';
@@ -68,7 +68,7 @@ export default function Advertisement() {
 
   const setAnalysis = useAnalysisStore((s) => s.setAnalysis);
 
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState<number | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -344,7 +344,7 @@ export default function Advertisement() {
   }, []);
 
   // 🎯 반응형 스케일 계산
-  useEffect(() => {
+  useLayoutEffect(() => {
     const calculateScale = () => {
       const scaleX = window.innerWidth / BASE_WIDTH;
       const scaleY = window.innerHeight / BASE_HEIGHT;
@@ -356,6 +356,10 @@ export default function Advertisement() {
     window.addEventListener('resize', calculateScale);
     return () => window.removeEventListener('resize', calculateScale);
   }, []);
+
+  // scale이 계산되지 않았을 때는 아무것도 보여주지 않음 (흰 화면)
+  // 아주 찰나의 순간이라 사용자는 인지하지 못하고 바로 완성된 화면을 보게 됩니다.
+  
 
   // 🆕 SSE 연결 및 얼굴 인식 감지
   useEffect(() => {
@@ -505,13 +509,11 @@ export default function Advertisement() {
     [ads.length, finalizeCurrentImpression, isTransitioning]
   );
 
+  if (scale === null) return null;
+
   if (!currentAd) {
     return (
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
         className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
       >
         <div 

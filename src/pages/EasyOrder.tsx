@@ -1,5 +1,5 @@
 // src/pages/EasyOrder.tsx
-import { useState, useMemo, useEffect } from 'react';
+import { useLayoutEffect, useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -37,10 +37,28 @@ const EASY_CATEGORIES: {
 
 export default function EasyOrder() {
   const navigate = useNavigate();
-  const { items, recommendedItems, isLoading } = useMenu();
+
+  // [수정 1] 얼굴 인식 스토어에서 데이터 추출 (괄호/중괄호 주의)
+  const { gender, age, setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
+    gender: s.gender,
+    age: s.age,
+    setAnalysis: s.setAnalysis,
+    clearAnalysis: s.clearAnalysis,
+    isSenior: s.isSenior,
+  }));
+
+  // [수정 2] 연령대 계산 (예: 23 -> "20s")
+  const ageGroup = age ? `${Math.floor(age / 10) * 10}s` : undefined;
+
+  // [수정 3] useMenu 호출 시 성별과 연령대 전달 (중복 선언 없이 이 부분만 유지)
+  const { items, recommendedItems, isLoading } = useMenu(
+    gender || undefined,
+    ageGroup
+  );
+
   const { cart, addToCart, updateCartOptions } = useCartStore();
 
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<EasyCategoryKey | null>(null);
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
 
@@ -49,23 +67,16 @@ export default function EasyOrder() {
   const [editItem, setEditItem] = useState<
     (MenuItem & { options?: Pick<Options, 'temperature'> }) | null
   >(null);
+
   const selectedCategoryLabel = useMemo(() => {
     if (!selectedCategory) return '';
-
     const c = EASY_CATEGORIES.find((c) => c.key === selectedCategory);
-    console.log('API items sample:', items.slice(0, 3));
-    console.log('CART sample:', cart.slice(0, 3));
     return c ? ` ${c.name}` : '';
   }, [selectedCategory]);
 
-  // 🆕 얼굴 인식 스토어
-  const { setAnalysis, clearAnalysis, isSenior } = useAnalysisStore((s) => ({
-    setAnalysis: s.setAnalysis,
-    clearAnalysis: s.clearAnalysis,
-    isSenior: s.isSenior,
-  }));
   const [isLoadingFaceData, setIsLoadingFaceData] = useState(false);
 
+  // [수정 4] 추천 메뉴 선택 시 recommendedItems 반환 로직 연결
   const filteredItems = useMemo(() => {
     if (!selectedCategory) return [];
 
@@ -77,7 +88,8 @@ export default function EasyOrder() {
       case 'DESSERT':
         return items.filter((item: any) => item.categoryId === 3);
       case 'RECOMMEND':
-        return recommendedItems;
+        // 일반 주문과 동일하게 맞춤 추천 리스트 사용
+        return recommendedItems || [];
       default:
         return [];
     }
@@ -113,11 +125,10 @@ export default function EasyOrder() {
     });
   };
 
-  // 카테고리 화면에서는 cart 있을 때만 BottomCart 보이게
   const shouldShowBottomCart = !selectedCategory ? cart.length > 0 : true;
 
   // 🎯 반응형 스케일 계산
-  useEffect(() => {
+  useLayoutEffect(() => {
     const calculateScale = () => {
       const scaleX = window.innerWidth / BASE_WIDTH;
       const scaleY = window.innerHeight / BASE_HEIGHT;
@@ -130,17 +141,18 @@ export default function EasyOrder() {
     return () => window.removeEventListener('resize', calculateScale);
   }, []);
 
-  // 🆕 처음으로 버튼: 최신 얼굴 인식 데이터를 가져와서 적용 (화면 이동 없음)
+  // scale이 계산되지 않았을 때는 아무것도 보여주지 않음 (흰 화면)
+  // 아주 찰나의 순간이라 사용자는 인지하지 못하고 바로 완성된 화면을 보게 됩니다.
+  if (scale === null) return null;
+
+  // 🆕 처음으로 버튼: 최신 얼굴 인식 데이터를 가져와서 적용
   const handleGoHome = async () => {
     if (isLoadingFaceData) return;
-
     setIsLoadingFaceData(true);
-    console.log('🏠 처음으로 버튼 클릭: 최신 얼굴 인식 데이터 확인 중...');
 
     try {
-      // 1. Python 서버에서 최신 얼굴 인식 데이터 가져오기 (타임아웃 3초)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 500); // 3초 타임아웃
+      const timeoutId = setTimeout(() => controller.abort(), 500);
 
       const response = await fetch(`${AI_CORE_BASE_URL}/api/analysis`, {
         signal: controller.signal,
@@ -149,43 +161,22 @@ export default function EasyOrder() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('📥 최신 얼굴 인식 데이터 수신:', data);
-
-        // 2. Zustand 스토어에 저장 (50세 이상 여부 자동 계산됨)
         setAnalysis(data);
-        console.log('💾 스토어 업데이트 완료:', {
-          age: data.age,
-          gender: data.gender,
-          isSenior: data.age >= 50,
-        });
-        console.log(' 50세 이상 전용 애니메이션 활성화:', data.age >= 50);
       } else {
-        console.log('ℹ 서버에 얼굴 인식 데이터가 없습니다. 기존 데이터 초기화.');
-        // 데이터가 없으면 초기화
         clearAnalysis();
       }
     } catch (err) {
-      if (err === 'AbortError') {
-        console.warn('⏱️ 데이터 가져오기 시간 초과 (1초)');
-      } else {
-        console.error('❌ 얼굴 인식 데이터 가져오기 실패:', err);
-      }
-      // 에러 발생 시 안전하게 초기화
       clearAnalysis();
     } finally {
       setIsLoadingFaceData(false);
     }
-
-    // 🔄 데이터 처리 완료 후 Order 페이지로 이동
+    // 쉬운 주문 모드이므로 처음 화면(카테고리 선택)으로 돌아가거나 메인으로 이동
+    // 여기서는 기존 로직대로 '/order'로 이동하지만, 필요시 '/'나 '/easy'로 변경 가능
     navigate('/order');
   };
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
       className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
     >
       <div
@@ -208,41 +199,39 @@ export default function EasyOrder() {
             <span>처음으로</span>
           </button>
         </header>
-        {/* 상단 버튼 (음성주문 / 일반주문) */}
+
         <div className="bg-white pb-2 shadow-sm z-10 shrink-0">
           <div className="flex gap-3 px-4 py-3">
-            {/* 음성 주문 */}
             <button
               onClick={() => navigate('/voice')}
               className="flex-1 bg-pink-50 p-8 rounded-xl border border-pink-100 flex items-center gap-2 justify-center relative hover:bg-pink-100 hover:border-pink-200 transition-colors group"
             >
               <style>{`
-        .mic-icon { animation: micPulse 1.5s ease-in-out infinite; }
-        @keyframes micPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-      `}</style>
+                .mic-icon { animation: micPulse 1.5s ease-in-out infinite; }
+                @keyframes micPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+              `}</style>
               <img src={microphoneIcon} alt="microphone" className="mic-icon w-10 h-10" />
               <span className="font-bold text-pink-900 text-xl">음성 주문</span>
             </button>
 
-            {/* 일반 주문 (현재 페이지라 강조만 하고 싶으면 disabled 추천) */}
             <button
               onClick={() => navigate('/order')}
               className={`flex-1 bg-orange-50 p-8 rounded-xl border border-orange-100 flex items-center gap-2 justify-center
-    hover:bg-orange-100 hover:border-orange-200 active:bg-orange-200 active:scale-[0.99]
-    transition-all duration-200 group
-    ${isSenior ? 'easy-button' : ''}
-  `}
+                hover:bg-orange-100 hover:border-orange-200 active:bg-orange-200 active:scale-[0.99]
+                transition-all duration-200 group
+                ${isSenior ? 'easy-button' : ''}
+              `}
             >
               {isSenior && (
                 <style>{`
-          .easy-button { animation: easyButtonGlow 0.8s ease-in-out infinite; }
-          @keyframes easyButtonGlow {
-            0%, 100% { border-color: rgb(254, 208, 121); background-color: rgb(254, 245, 230); box-shadow: 0 0 0 0px rgba(217, 119, 6, 0); }
-            50% { border-color: rgb(217, 119, 6); background-color: rgb(255, 251, 235); box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3); }
-          }
-          .finger-icon { animation: fingerWiggle 0.8s ease-in-out infinite; transform-origin: bottom center; }
-          @keyframes fingerWiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
-        `}</style>
+                  .easy-button { animation: easyButtonGlow 0.8s ease-in-out infinite; }
+                  @keyframes easyButtonGlow {
+                    0%, 100% { border-color: rgb(254, 208, 121); background-color: rgb(254, 245, 230); box-shadow: 0 0 0 0px rgba(217, 119, 6, 0); }
+                    50% { border-color: rgb(217, 119, 6); background-color: rgb(255, 251, 235); box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.3); }
+                  }
+                  .finger-icon { animation: fingerWiggle 0.8s ease-in-out infinite; transform-origin: bottom center; }
+                  @keyframes fingerWiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+                `}</style>
               )}
               <img
                 src={fingerIcon}
@@ -253,6 +242,7 @@ export default function EasyOrder() {
             </button>
           </div>
         </div>
+
         <main className="flex-1 flex flex-col p-10 overflow-hidden">
           {!selectedCategory ? (
             <>
@@ -276,11 +266,7 @@ export default function EasyOrder() {
                           draggable={false}
                         />
                       </div>
-
-                      <span
-                        className="text-6xl font-extrabold whitespace-nowrap break-keep leading-none"
-                        style={{ writingMode: 'horizontal-tb' }}
-                      >
+                      <span className="text-6xl font-extrabold whitespace-nowrap break-keep leading-none">
                         {cat.name}
                       </span>
                     </button>
@@ -298,7 +284,6 @@ export default function EasyOrder() {
                   <ArrowLeft className="w-8 h-8" />
                   <span>뒤로가기</span>
                 </button>
-
                 <h2 className="text-5xl font-bold text-center flex-1">{selectedCategoryLabel}</h2>
                 <div className="w-[140px]" />
               </div>
@@ -311,13 +296,12 @@ export default function EasyOrder() {
             </div>
           )}
         </main>
+
         {shouldShowBottomCart && (
           <BottomCart
             onCheckout={() =>
               navigate('/easy/confirm', {
-                state: {
-                  orderMethod,
-                },
+                state: { orderMethod },
               })
             }
             onEditOptions={handleEditOptions}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useLayoutEffect, useState, useEffect, useRef } from 'react';
 import { Home } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -24,7 +24,7 @@ export default function Payment() {
   const location = useLocation();
   const { cart, getTotalPrice, clearCart } = useCartStore();
 
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState<number | null>(null);
 
   // 중복 요청 방지용 Ref
   const isProcessingRef = useRef(false);
@@ -35,7 +35,7 @@ export default function Payment() {
   >(null);
 
   // 🎯 반응형 스케일 계산
-  useEffect(() => {
+  useLayoutEffect(() => {
     const calculateScale = () => {
       const scaleX = window.innerWidth / BASE_WIDTH;
       const scaleY = window.innerHeight / BASE_HEIGHT;
@@ -47,6 +47,9 @@ export default function Payment() {
     window.addEventListener('resize', calculateScale);
     return () => window.removeEventListener('resize', calculateScale);
   }, []);
+
+
+
 
   useEffect(() => {
     const skip = (location.state as any)?.skipMethod;
@@ -195,13 +198,11 @@ export default function Payment() {
     setStep('processing');
   };
 
+  if (scale === null) return null;
+
   return (
     <>
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
         className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
       >
         <div
