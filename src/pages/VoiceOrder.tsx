@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useLayoutEffect, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lightbulb, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -38,7 +38,7 @@ const BASE_HEIGHT = 1600;
 
 const VoiceOrder: React.FC = () => {
   const navigate = useNavigate();
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState<number | null>(null);
   const [orderMethod, setOrderMethod] = useState<'dine-in' | 'takeout'>('dine-in');
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -104,7 +104,7 @@ const VoiceOrder: React.FC = () => {
   };
 
   // 🎯 반응형 스케일 계산
-  useEffect(() => {
+  useLayoutEffect(() => {
     const calculateScale = () => {
       const scaleX = window.innerWidth / BASE_WIDTH;
       const scaleY = window.innerHeight / BASE_HEIGHT;
@@ -116,6 +116,10 @@ const VoiceOrder: React.FC = () => {
     window.addEventListener('resize', calculateScale);
     return () => window.removeEventListener('resize', calculateScale);
   }, []);
+
+
+
+
 
   // 🆕 처음으로 버튼: 최신 얼굴 인식 데이터를 가져와서 적용 (화면 이동 없음)
   const handleGoHome = async () => {
@@ -167,12 +171,10 @@ const VoiceOrder: React.FC = () => {
     navigate('/order');
   };
 
+  if (scale === null) return null;
+
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
       className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden z-50"
     >
       <div 

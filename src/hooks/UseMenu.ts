@@ -20,11 +20,12 @@ export function useMenu(gender?: string, ageGroup?: string) {
 
   const timeSlot = getCurrentTimeSlot();
   const recommendQuery = useQuery({
-    queryKey: ['recommend', timeSlot, gender, ageGroup], 
+    queryKey: ['recommend', gender, ageGroup], 
     queryFn: () => fetchRecommendMenus({ 
       timeSlot, 
       gender, 
-      ageGroup
+      ageGroup,
+      limit: 10
     }),
   });
 
@@ -59,40 +60,53 @@ export function useMenu(gender?: string, ageGroup?: string) {
   });
 
   // -----------------------------
-  // (B) 추천 메뉴 변환 + 보정
+  // (B) 추천 메뉴 변환
   // -----------------------------
-  const recommendedItems: MenuItem[] = (recommendQuery.data || []).map((rec: any) => {
+  const apiRecommendedItems: MenuItem[] = (recommendQuery.data || []).map((rec: any) => {
     const menuId = rec.menuId;
     const original = basicItems.find((m) => m.id === menuId);
-
-    const originalCategoryName =
-      rec.categoryName || original?.categoryName || original?.category || '기타';
+    const originalCategoryName = rec.categoryName || original?.categoryName || '기타';
 
     return {
       id: menuId,
-      name: rec.menuName ?? rec.name,
-      price: rec.basePrice ?? rec.price ?? 0,
-
+      name: rec.menuName ?? original?.name ?? '',
+      price: rec.basePrice ?? original?.price ?? 0,
       category: '추천메뉴',
       originalCategory: originalCategoryName,
-
-   
       categoryId: original?.categoryId ?? -1,
       categoryName: originalCategoryName,
-
-   
-      img: rec.image_Url || original?.img || '',
+      img: rec.imageUrl || original?.img || '',
     };
   });
 
+  // -----------------------------
+  // (C) 추천 메뉴 10개 보충
+  // -----------------------------
+  let recommendedItems = [...apiRecommendedItems];
+  
+  if (recommendedItems.length < 10) {
+    const recommendedMenuIds = new Set(recommendedItems.map(item => item.id));
+    
+    // 추천 메뉴에 없는 일반 메뉴 필터링
+    const remainingItems = basicItems.filter(
+      item => !recommendedMenuIds.has(item.id)
+    );
+    
+    // 부족한 개수만큼 추가
+    const needed = 10 - recommendedItems.length;
+    const additionalItems = remainingItems.slice(0, needed).map(item => ({
+      ...item,
+      category: '추천메뉴',
+    }));
+    
+    recommendedItems = [...recommendedItems, ...additionalItems];
+  }
 
-  const items: MenuItem[] = [
-    ...recommendedItems,
-    ...basicItems,
-  ];
+  const items: MenuItem[] = [...recommendedItems, ...basicItems];
+
 
   // -----------------------------
-  // (C) 카테고리 탭 생성
+  // (D) 카테고리 탭 생성
   // -----------------------------
   const apiCategories = (menuQuery.data || []).map((c: any) => c.categoryName).filter(Boolean);
 
